@@ -1,0 +1,15 @@
+{
+    "main": "src/main.js",
+    "name": "hme-auth-service",
+    "version": "1.0.0",
+    "scripts": {
+        "start": "node src/main.js",
+        "dev": "nodemon src/main.js"
+    },
+    "dependencies": {
+        "bcryptjs": "^3.0.3",
+        "jsonwebtoken": "^9.0.3",
+        "knex": "^3.2.9",
+        "pg": "^8.20.0"
+    }
+}
