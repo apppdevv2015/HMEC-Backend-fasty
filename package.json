@@ -14,7 +14,8 @@
         "migrate:rollback": "knex migrate:rollback",
         "migrate:create": "node -e \"const fs=require('fs'); const d=new Date(); const date=`${String(d.getDate()).padStart(2,'0')}-${String(d.getMonth()+1).padStart(2,'0')}-${d.getFullYear()}`; const name=process.env.npm_config_name || 'migration'; const filename=`./infra/database/migrations/${date}_${name}.js`; fs.writeFileSync(filename, 'exports.up = function(knex) {\\n\\n};\\n\\nexports.down = function(knex) {\\n\\n};'); console.log('Created:', filename);\"",
         "seed": "node infra/database/seed-admin.js",
-        "setup": "npm run migrate && npm run seed"
+        "seed:intel": "node infra/database/seed-intelligence.js",
+        "setup": "npm run migrate && npm run seed && npm run seed:intel"
     },
     "devDependencies": {
         "concurrently": "^9.2.1",

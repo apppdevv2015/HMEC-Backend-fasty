@@ -43,7 +43,7 @@ exports.up = async function(knex) {
   });
 
   await knex('roles').insert([
-    { name: 'system_admin' },
+    { name: 'super_admin' },
     { name: 'admin' },
     { name: 'engineer' },
     { name: 'planner' },

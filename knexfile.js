@@ -5,6 +5,9 @@ module.exports = {
     migrations: {
       directory: './infra/database/migrations',
       tableName: 'knex_migrations'
+    },
+    seeds: {
+      directory: './infra/database/seeds'
     }
   },
   production: {

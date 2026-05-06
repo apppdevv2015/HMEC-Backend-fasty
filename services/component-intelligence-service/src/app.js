@@ -8,7 +8,7 @@ app.use(express.json());
 
 // Database Configuration
 const pool = new Pool({
-    connectionString: process.env.DATABASE_URL
+    connectionString: process.env.DATABASE_URL || 'postgres://admin:password@localhost:5433/hme_intelligence'
 });
 
 // Real Database Health Check
@@ -34,6 +34,10 @@ app.get('/health', async (req, res) => {
         });
     }
 });
+
+// --- Intelligence Routes ---
+const intelligenceRoutes = require('./routes/intelligence')(pool);
+app.use('/', intelligenceRoutes);
 
 // Global Error Handler
 app.use((err, req, res, next) => {

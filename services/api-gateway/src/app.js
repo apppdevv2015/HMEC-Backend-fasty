@@ -179,6 +179,225 @@ const SERVICES = {
  *         description: Role deleted
  */
 
+/**
+ * @swagger
+ * /api/auth/me:
+ *   get:
+ *     summary: Get current user profile
+ *     tags: [Profile]
+ *     responses:
+ *       200:
+ *         description: User profile data
+ */
+
+/**
+ * @swagger
+ * /api/auth/users:
+ *   get:
+ *     summary: List all users (Filtered by company for non-admins)
+ *     tags: [Users]
+ *     responses:
+ *       200:
+ *         description: List of users
+ *   post:
+ *     summary: Create a new user (Admin/Super Admin Only)
+ *     tags: [Users]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *               - first_name
+ *               - role_name
+ *             properties:
+ *               first_name: { type: string, example: "John" }
+ *               last_name: { type: string, example: "Doe" }
+ *               email: { type: string, example: "john@example.com" }
+ *               password: { type: string, example: "password123" }
+ *               mobile_number: { type: string, example: "1234567890" }
+ *               role_name: { type: string, example: "engineer" }
+ *               company_id: { type: string, description: "Only for Super Admin to specify company" }
+ *     responses:
+ *       201:
+ *         description: User created
+ */
+
+/**
+ * @swagger
+ * /api/auth/users/{id}:
+ *   get:
+ *     summary: Get user by ID
+ *     tags: [Users]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: User data
+ *   put:
+ *     summary: Update user details
+ *     tags: [Users]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               first_name: { type: string }
+ *               last_name: { type: string }
+ *               mobile_number: { type: string }
+ *     responses:
+ *       200:
+ *         description: User updated
+ *   delete:
+ *     summary: Delete user
+ *     tags: [Users]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: User deleted
+ */
+
+/**
+ * @swagger
+ * /api/auth/company/dashboard:
+ *   get:
+ *     summary: Get Company Dashboard (Admin Only)
+ *     description: Returns stats about users, machines, and current subscription plan for the logged-in admin's company.
+ *     tags: [Dashboard]
+ *     responses:
+ *       200:
+ *         description: Dashboard data fetched successfully
+ *       403:
+ *         description: Forbidden (Not an Admin)
+ */
+
+/**
+ * @swagger
+ * /api/auth/companies:
+ *   get:
+ *     summary: List all companies (System Admin Only)
+ *     tags: [Companies]
+ *     responses:
+ *       200:
+ *         description: List of companies
+ */
+
+/**
+ * @swagger
+ * /api/auth/companies/{id}:
+ *   get:
+ *     summary: Get company by ID
+ *     tags: [Companies]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Company data
+ *   put:
+ *     summary: Update company name
+ *     tags: [Companies]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name: { type: string }
+ *     responses:
+ *       200:
+ *         description: Company updated
+ *   delete:
+ *     summary: Delete company (System Admin Only)
+ *     tags: [Companies]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Company deleted
+ */
+
+/**
+ * @swagger
+ * /api/intelligence/analyze:
+ *   post:
+ *     summary: Trigger AI analysis for a company
+ *     tags: [Decision Intelligence]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               companyId: { type: string, example: "uuid" }
+ *     responses:
+ *       200:
+ *         description: Analysis complete
+ * 
+ * /api/intelligence/recommendations:
+ *   get:
+ *     summary: Fetch maintenance recommendations with cost impact
+ *     tags: [Decision Intelligence]
+ *     responses:
+ *       200:
+ *         description: List of recommendations
+ * 
+ * /api/intelligence/predictions:
+ *   get:
+ *     summary: Fetch component failure predictions (RUL)
+ *     tags: [Decision Intelligence]
+ *     responses:
+ *       200:
+ *         description: List of predictions
+ * 
+ * /api/intelligence/machine-health/{id}:
+ *   get:
+ *     summary: Get Machine Health Index (MHI)
+ *     tags: [Decision Intelligence]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Health score data
+ */
+
 app.get('/health', (req, res) => {
     res.json({ status: 'UP', gateway: 'HME API Gateway', port: 4000 });
 });

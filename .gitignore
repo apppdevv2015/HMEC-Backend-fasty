@@ -7,3 +7,9 @@ logs/
 npm-debug.log*
 .DS_Store
 Thumbs.db
+
+# Development & Testing
+scratch/
+infra/database/seeds/
+infra/database/seed-*.js
+scripts/create-super-admin.js
