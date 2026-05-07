@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HME | Complete Payment Test</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #00a859;
+            --primary-dark: #008f4c;
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        body { 
+            font-family: 'Outfit', sans-serif; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh; 
+            background: var(--bg); 
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .card { 
+            background: var(--card-bg); 
+            padding: 2.5rem; 
+            border-radius: 16px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3); 
+            text-align: center; 
+            max-width: 450px;
+            width: 100%;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        h2 { margin-bottom: 0.5rem; color: var(--primary); }
+        p { color: var(--text-muted); margin-bottom: 1.5rem; font-size: 0.9rem; }
+
+        .section {
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            text-align: left;
+        }
+
+        .section-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--primary);
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        .input-group {
+            margin-bottom: 1rem;
+        }
+
+        label {
+            display: block;
+            font-size: 0.8rem;
+            margin-bottom: 0.3rem;
+            color: var(--text-muted);
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #334155;
+            background: #0f172a;
+            color: white;
+            box-sizing: border-box;
+            font-family: inherit;
+        }
+
+        button { 
+            background: var(--primary); 
+            color: white; 
+            border: none; 
+            padding: 12px 24px; 
+            font-size: 0.9rem; 
+            font-weight: 600;
+            border-radius: 8px; 
+            cursor: pointer; 
+            transition: all 0.3s ease; 
+            width: 100%;
+            margin-top: 0.5rem;
+        }
+
+        button:hover { 
+            background: var(--primary-dark); 
+            transform: translateY(-1px);
+        }
+
+        button.secondary {
+            background: #475569;
+        }
+
+        button.secondary:hover {
+            background: #334155;
+        }
+
+        button:disabled {
+            background: #1e293b;
+            color: #475569;
+            cursor: not-allowed;
+            border: 1px solid #334155;
+        }
+
+        .status {
+            margin-top: 1rem;
+            font-size: 0.85rem;
+            padding: 8px;
+            border-radius: 4px;
+            display: none;
+        }
+
+        .error { background: rgba(239, 68, 68, 0.1); color: #ef4444; display: block; }
+        .success { background: rgba(16, 185, 129, 0.1); color: #10b981; display: block; }
+
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>HME Payments</h2>
+        <p>End-to-end Subscription Testing</p>
+        
+        <!-- Step 1: Login -->
+        <div id="loginSection" class="section">
+            <div class="section-title">Step 1: Admin Authentication</div>
+            <div class="input-group">
+                <label>Email</label>
+                <input type="email" id="email" value="admin@example.com">
+            </div>
+            <div class="input-group">
+                <label>Password</label>
+                <input type="password" id="password" value="password123">
+            </div>
+            <button onclick="handleLogin()">Login & Load Plans</button>
+        </div>
+
+        <!-- Step 2: Select Plan & Pay -->
+        <div id="paymentSection" class="section hidden">
+            <div class="section-title">Step 2: Subscription Details</div>
+            <div class="input-group">
+                <label>Select Plan</label>
+                <select id="planSelect">
+                    <option value="">Loading plans...</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label>Auth Token (Auto-filled)</label>
+                <input type="text" id="token" readonly style="opacity: 0.6; font-size: 0.7rem;">
+            </div>
+            <button id="payBtn" onclick="initiatePayment()">Pay Now with PayFast</button>
+            <button class="secondary" onclick="reset()">Logout / Reset</button>
+        </div>
+
+        <div id="status" class="status"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:4000/api/auth';
+
+        function showStatus(msg, isError = false) {
+            const status = document.getElementById('status');
+            status.innerText = msg;
+            status.className = 'status ' + (isError ? 'error' : 'success');
+        }
+
+        async function handleLogin() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                showStatus("Logging in...");
+                
+                const response = await fetch(`${API_BASE}/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error || "Login failed");
+
+                // Save token
+                document.getElementById('token').value = data.token;
+                
+                showStatus("Login Successful! Loading plans...");
+                await loadPlans(data.token);
+
+                // Switch UI
+                document.getElementById('loginSection').classList.add('hidden');
+                document.getElementById('paymentSection').classList.remove('hidden');
+
+            } catch (err) {
+                showStatus(err.message, true);
+            }
+        }
+
+        async function loadPlans(token) {
+            try {
+                const response = await fetch(`${API_BASE}/subscriptions/plans`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const plans = await response.json();
+                
+                const select = document.getElementById('planSelect');
+                select.innerHTML = '';
+                
+                plans.forEach(plan => {
+                    const opt = document.createElement('option');
+                    opt.value = plan.id;
+                    opt.innerText = `${plan.name} - R ${plan.price}`;
+                    select.appendChild(opt);
+                });
+            } catch (err) {
+                showStatus("Error loading plans: " + err.message, true);
+            }
+        }
+
+        async function initiatePayment() {
+            const token = document.getElementById('token').value;
+            const planId = document.getElementById('planSelect').value;
+            const btn = document.getElementById('payBtn');
+
+            if (!planId) return showStatus("Select a plan first", true);
+
+            try {
+                btn.disabled = true;
+                showStatus("Creating unique subscription record...");
+
+                const response = await fetch(`${API_BASE}/subscriptions/checkout`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ plan_id: planId })
+                });
+
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.error || "Checkout failed");
+
+                showStatus("✅ Subscription ID: " + result.subscription_id + ". Redirecting...");
+
+                setTimeout(() => {
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = result.payment_url;
+
+                    for (const key in result.data) {
+                        const input = document.createElement('input');
+                        input.type = 'hidden';
+                        input.name = key;
+                        input.value = result.data[key];
+                        form.appendChild(input);
+                    }
+
+                    document.body.appendChild(form);
+                    form.submit();
+                }, 1000);
+
+            } catch (err) {
+                showStatus(err.message, true);
+                btn.disabled = false;
+            }
+        }
+
+        function reset() {
+            document.getElementById('loginSection').classList.remove('hidden');
+            document.getElementById('paymentSection').classList.add('hidden');
+            document.getElementById('status').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
+
+

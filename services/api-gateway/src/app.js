@@ -414,4 +414,93 @@ Object.entries(SERVICES).forEach(([name, url]) => {
     }));
 });
 
+/**
+ * @swagger
+ * tags:
+ *   - name: Subscriptions
+ *     description: PayFast Integration and Plans
+ */
+
+/**
+ * @swagger
+ * /api/auth/subscriptions/plans:
+ *   get:
+ *     summary: Get all available subscription plans
+ *     tags: [Subscriptions]
+ *     responses:
+ *       200:
+ *         description: List of plans
+ *   post:
+ *     summary: Create a new Plan (Super Admin Only)
+ *     tags: [Subscriptions]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [name, machine_limit, price]
+ *             properties:
+ *               name: { type: string, example: "Gold Plan" }
+ *               machine_limit: { type: integer, example: 50 }
+ *               price: { type: number, example: 500.00 }
+ *               features: { type: object, example: { "analytics": true } }
+ *     responses:
+ *       201:
+ *         description: Plan created
+ * 
+ * /api/auth/subscriptions/plans/{id}:
+ *   put:
+ *     summary: Update a Plan (Super Admin Only)
+ *     tags: [Subscriptions]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name: { type: string }
+ *               machine_limit: { type: integer }
+ *               price: { type: number }
+ *     responses:
+ *       200:
+ *         description: Plan updated
+ *   delete:
+ *     summary: Delete a Plan (Super Admin Only)
+ *     tags: [Subscriptions]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: Plan deleted
+ */
+
+/**
+ * @swagger
+ * /api/auth/subscriptions/checkout:
+ *   post:
+ *     summary: Initiate PayFast Checkout
+ *     tags: [Subscriptions]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [plan_id]
+ *             properties:
+ *               plan_id: { type: string, example: "uuid-of-plan" }
+ *     responses:
+ *       200:
+ *         description: PayFast Redirect URL and Data
+ */
+
 module.exports = app;
