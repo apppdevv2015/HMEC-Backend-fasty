@@ -33,7 +33,7 @@ class SubscriptionService {
         return subscriptionRepository.deletePlan(id);
     }
 
-    async initiateCheckout(userId, planId, companyId) {
+    async initiateCheckout(userId, planId, companyId, userEmail) {
         const plan = await subscriptionRepository.getPlanById(planId);
         if (!plan) throw new Error('Plan not found');
 
@@ -44,17 +44,46 @@ class SubscriptionService {
         let subscription = await subscriptionRepository.getPendingSubscription(companyId, planId);
 
         if (!subscription) {
+            const validityDays = plan.validity_days || 30;
+            const endDate = new Date();
+            endDate.setDate(endDate.getDate() + validityDays);
+
             const [newSub] = await subscriptionRepository.createSubscription({
                 company_id: companyId,
                 plan_id: planId,
                 status: 'pending',
                 start_date: new Date(),
-                end_date: new Date(new Date().setMonth(new Date().getMonth() + 1))
+                end_date: endDate
             });
             subscription = newSub;
         } else {
             // Update the existing pending subscription's timestamp
             await subscriptionRepository.updateSubscriptionStatus(subscription.id, 'pending');
+        }
+
+        // Handle Free Plans (e.g. Demo)
+        if (Number(plan.price) === 0) {
+            const validityDays = plan.validity_days || 14;
+            const endDate = new Date();
+            endDate.setDate(endDate.getDate() + validityDays);
+
+            const [sub] = await subscriptionRepository.createSubscription({
+                company_id: companyId,
+                plan_id: planId,
+                status: 'active', // Direct active for free plans
+                payment_status: 'COMPLETE',
+                start_date: new Date(),
+                end_date: endDate
+            });
+
+            // Send Email immediately
+            await this.sendConfirmationEmail(userEmail || 'admin@example.com', plan.name, 0);
+
+            return {
+                message: 'Free plan activated successfully',
+                skip_payment: true,
+                subscription_id: sub.id
+            };
         }
 
         const paymentData = {
@@ -65,10 +94,11 @@ class SubscriptionService {
             m_payment_id: subscription.id,
             return_url: process.env.PAYFAST_RETURN_URL || `http://localhost:3000/payment/success`,
             cancel_url: process.env.PAYFAST_CANCEL_URL || `http://localhost:3000/payment/cancel`,
-            notify_url: process.env.PAYFAST_NOTIFY_URL || `http://localhost:4000/api/auth/subscriptions/webhook`,
+            notify_url: process.env.PAYFAST_NOTIFY_URL || `http://localhost:4000/api/auth/plans/webhook`,
         };
 
         return {
+            message: 'Checkout initiated successfully',
             payment_url: process.env.PAYFAST_URL || 'https://sandbox.payfast.co.za/eng/process',
             data: paymentData,
             subscription_id: subscription.id

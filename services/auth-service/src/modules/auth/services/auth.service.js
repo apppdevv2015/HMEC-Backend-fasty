@@ -2,6 +2,8 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 const authRepository = require('../repositories/auth.repository');
+const activityLogRepository = require('../repositories/activity-log.repository');
+const templateService = require('../services/template.service');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'hme-secret-key-2026';
 
@@ -35,8 +37,17 @@ class AuthService {
                 company_code: user.company_code 
             },
             JWT_SECRET,
-            { expiresIn: '24h' }
+            { expiresIn: '1825d' }
         );
+
+        // Log Activity
+        await activityLogRepository.log({
+            userId: user.id,
+            companyId: user.company_id,
+            action: 'LOGIN',
+            module: 'AUTH',
+            details: { email: user.email }
+        });
 
         return {
             token,
@@ -72,38 +83,73 @@ class AuthService {
             company_id: company.id
         });
 
-        // Send Welcome Email
+        // Send Welcome Email to Admin
         await this.sendWelcomeEmail(email, fname, companyCode);
+
+        // Send Notification Email to Super Admin
+        const superAdminEmail = process.env.SUPER_ADMIN_EMAIL || 'owner@hme.com';
+        await this.sendSuperAdminNotification(superAdminEmail, { name, fname, lname, email, mobile });
 
         return { user, company_code: companyCode };
     }
 
     async sendWelcomeEmail(email, name, companyCode) {
-        const mailOptions = {
-            from: '"HME Intelligence" <no-reply@hme.com>',
-            to: email,
-            subject: 'Welcome to HME Intelligence! 🌍',
-            html: `
-                <div style="font-family: 'Outfit', sans-serif; color: #333; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
-                    <h2 style="color: #00a859;">Welcome to the Team, ${name}!</h2>
-                    <p>Your company registration for <b>HME Intelligence</b> is successful.</p>
-                    <div style="background: #f4f4f9; padding: 15px; border-radius: 8px; margin: 20px 0;">
-                        <p style="margin: 0;"><b>Your Company Code:</b> <span style="font-size: 1.2rem; color: #00a859;">${companyCode}</span></p>
-                        <p style="margin: 5px 0 0 0; font-size: 0.8rem; color: #666;">Keep this code safe, you will need it for login.</p>
-                    </div>
-                    <p>Next steps: Log in to your dashboard and subscribe to a plan to start monitoring your fleet.</p>
-                    <hr style="margin-top: 30px; border: 0; border-top: 1px solid #eee;">
-                    <p style="font-size: 0.75rem; color: #999;">HME Intelligence South Africa. Helping you make better fleet decisions.</p>
-                </div>
-            `
-        };
-
         try {
+            const html = await templateService.getTemplate('welcome', {
+                name,
+                companyCode,
+                loginUrl: process.env.FRONTEND_URL || 'http://localhost:3000/login'
+            });
+
+            const mailOptions = {
+                from: '"HME Intelligence" <no-reply@hme.com>',
+                to: email,
+                subject: 'Welcome to HME Intelligence! 🌍',
+                html
+            };
+
             await this.transporter.sendMail(mailOptions);
             console.log('[WELCOME EMAIL SENT]', email);
         } catch (error) {
             console.error('[WELCOME EMAIL ERROR]', error);
         }
+    }
+
+    async sendSuperAdminNotification(superAdminEmail, data) {
+        try {
+            const html = await templateService.getTemplate('admin-alert', {
+                companyName: data.name,
+                adminName: `${data.fname} ${data.lname}`,
+                email: data.email,
+                mobile: data.mobile || 'N/A',
+                timestamp: new Date().toLocaleString()
+            });
+
+            const mailOptions = {
+                from: '"HME System Alert" <alerts@hme.com>',
+                to: superAdminEmail,
+                subject: 'New Company Registered! 🏢',
+                html
+            };
+
+            await this.transporter.sendMail(mailOptions);
+            console.log('[SUPER-ADMIN NOTIFIED]', superAdminEmail);
+        } catch (error) {
+            console.error('[SUPER-ADMIN NOTIFY ERROR]', error);
+        }
+    }
+
+    async logout(userId, companyId) {
+        return await activityLogRepository.log({
+            userId,
+            companyId,
+            action: 'LOGOUT',
+            module: 'AUTH'
+        });
+    }
+
+    async getActivityLogs(companyId, isSuperAdmin, page, limit) {
+        return await activityLogRepository.getLogs(companyId, isSuperAdmin, page, limit);
     }
 
     async getDashboard(user) {

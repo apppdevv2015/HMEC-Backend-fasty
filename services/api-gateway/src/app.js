@@ -74,7 +74,7 @@ const SERVICES = {
  *               - email
  *               - password
  *             properties:
- *               name: { type: string, example: "HME Global" }
+ *               company_name: { type: string, example: "HME Global" }
  *               fname: { type: string, example: "Aakash" }
  *               lname: { type: string, example: "Admin" }
  *               email: { type: string, example: "admin@gmail.com" }
@@ -91,7 +91,7 @@ const SERVICES = {
  * @swagger
  * /api/auth/login:
  *   post:
- *     summary: Login to get JWT Token
+ *     summary: Login to get JWT Token (Valid for 5 Years)
  *     tags: [Authentication]
  *     security: []
  *     requestBody:
@@ -114,6 +114,31 @@ const SERVICES = {
  *                 token: { type: string }
  *       401:
  *         description: Invalid credentials
+ * 
+ * /api/auth/logout:
+ *   post:
+ *     summary: Logout and record session end
+ *     tags: [Authentication]
+ *     responses:
+ *       200:
+ *         description: Logged out successfully
+ * 
+ * /api/auth/logs:
+ *   get:
+ *     summary: View System Activity Logs (Super Admin Only)
+ *     tags: [Audit Logs]
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema: { type: integer, default: 1 }
+ *       - in: query
+ *         name: limit
+ *         schema: { type: integer, default: 20 }
+ *     responses:
+ *       200:
+ *         description: Paginated activity logs
+ *       403:
+ *         description: Access Denied
  */
 
 /**
@@ -122,11 +147,18 @@ const SERVICES = {
  *   get:
  *     summary: Get all roles (Requires Auth)
  *     tags: [Roles]
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema: { type: integer, default: 1 }
+ *       - in: query
+ *         name: limit
+ *         schema: { type: integer, default: 10 }
  *     responses:
  *       200:
- *         description: List of roles
+ *         description: List of roles with pagination
  *   post:
- *     summary: Create a new role (Admin Only)
+ *     summary: Create a new role (Super Admin Only)
  *     tags: [Roles]
  *     requestBody:
  *       required: true
@@ -138,7 +170,7 @@ const SERVICES = {
  *               name: { type: string, example: "technician" }
  *     responses:
  *       201:
- *         description: Role created
+ *         description: Role created successfully
  */
 
 /**
@@ -194,11 +226,30 @@ const SERVICES = {
  * @swagger
  * /api/auth/users:
  *   get:
- *     summary: List all users (Filtered by company for non-admins)
+ *     summary: List all users with Search & Filters
  *     tags: [Users]
+ *     parameters:
+ *       - in: query
+ *         name: search
+ *         schema: { type: string }
+ *         description: Search by name or email
+ *       - in: query
+ *         name: role
+ *         schema: { type: string }
+ *         description: Filter by role name
+ *       - in: query
+ *         name: active
+ *         schema: { type: boolean }
+ *         description: Filter by status
+ *       - in: query
+ *         name: page
+ *         schema: { type: integer, default: 1 }
+ *       - in: query
+ *         name: limit
+ *         schema: { type: integer, default: 10 }
  *     responses:
  *       200:
- *         description: List of users
+ *         description: List of users with pagination info
  *   post:
  *     summary: Create a new user (Admin/Super Admin Only)
  *     tags: [Users]
@@ -220,7 +271,7 @@ const SERVICES = {
  *               password: { type: string, example: "password123" }
  *               mobile_number: { type: string, example: "1234567890" }
  *               role_name: { type: string, example: "engineer" }
- *               company_id: { type: string, description: "Only for Super Admin to specify company" }
+ *               company_id: { type: string, description: "ONLY for Super Admin (Optional). Regular Admins' company is linked automatically." }
  *     responses:
  *       201:
  *         description: User created
@@ -259,6 +310,7 @@ const SERVICES = {
  *               first_name: { type: string }
  *               last_name: { type: string }
  *               mobile_number: { type: string }
+ *               is_active: { type: boolean }
  *     responses:
  *       200:
  *         description: User updated
@@ -332,12 +384,12 @@ const SERVICES = {
  *             type: object
  *             properties:
  *               name: { type: string }
+ *               subscription_status: { type: string }
  *     responses:
  *       200:
  *         description: Company updated
  *   delete:
  *     summary: Delete company (System Admin Only)
- *     tags: [Companies]
  *     parameters:
  *       - in: path
  *         name: id
@@ -417,42 +469,43 @@ Object.entries(SERVICES).forEach(([name, url]) => {
 /**
  * @swagger
  * tags:
- *   - name: Subscriptions
- *     description: PayFast Integration and Plans
+ *   - name: Plans
+ *     description: Subscription Plans and Payments
  */
 
 /**
  * @swagger
- * /api/auth/subscriptions/plans:
+ * /api/auth/plans/plans:
  *   get:
  *     summary: Get all available subscription plans
- *     tags: [Subscriptions]
+ *     tags: [Plans]
  *     responses:
  *       200:
  *         description: List of plans
  *   post:
  *     summary: Create a new Plan (Super Admin Only)
- *     tags: [Subscriptions]
+ *     tags: [Plans]
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
- *             required: [name, machine_limit, price]
+ *             required: [plan_name, machine_limit, price]
  *             properties:
- *               name: { type: string, example: "Gold Plan" }
+ *               plan_name: { type: string, example: "Gold Plan" }
  *               machine_limit: { type: integer, example: 50 }
  *               price: { type: number, example: 500.00 }
+ *               validity_days: { type: integer, example: 30 }
  *               features: { type: object, example: { "analytics": true } }
  *     responses:
  *       201:
- *         description: Plan created
+ *         description: Plan created successfully
  * 
- * /api/auth/subscriptions/plans/{id}:
+ * /api/auth/plans/plans/{id}:
  *   put:
  *     summary: Update a Plan (Super Admin Only)
- *     tags: [Subscriptions]
+ *     tags: [Plans]
  *     parameters:
  *       - in: path
  *         name: id
@@ -464,15 +517,16 @@ Object.entries(SERVICES).forEach(([name, url]) => {
  *           schema:
  *             type: object
  *             properties:
- *               name: { type: string }
+ *               plan_name: { type: string }
  *               machine_limit: { type: integer }
  *               price: { type: number }
+ *               validity_days: { type: integer }
  *     responses:
  *       200:
- *         description: Plan updated
+ *         description: Plan updated successfully
  *   delete:
  *     summary: Delete a Plan (Super Admin Only)
- *     tags: [Subscriptions]
+ *     tags: [Plans]
  *     parameters:
  *       - in: path
  *         name: id
@@ -485,10 +539,10 @@ Object.entries(SERVICES).forEach(([name, url]) => {
 
 /**
  * @swagger
- * /api/auth/subscriptions/checkout:
+ * /api/auth/plans/checkout:
  *   post:
  *     summary: Initiate PayFast Checkout
- *     tags: [Subscriptions]
+ *     tags: [Plans]
  *     requestBody:
  *       required: true
  *       content:

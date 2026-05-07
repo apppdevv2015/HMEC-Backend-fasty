@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        .email-container { font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: auto; border: 1px solid #eee; border-radius: 12px; }
+        .header { background: #2196f3; color: white; padding: 25px; text-align: center; }
+        .content { padding: 30px; }
+        .cred-box { background: #e3f2fd; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        .footer { padding: 20px; text-align: center; font-size: 12px; color: #777; border-top: 1px solid #eee; }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <h1>Welcome to the Team! 👷‍♂️</h1>
+        </div>
+        <div class="content">
+            <h2>Hello {{name}},</h2>
+            <p>You have been added as a <b>{{role}}</b> to the HME Intelligence System.</p>
+            
+            <div class="cred-box">
+                <p style="margin: 0;"><b>Login Email:</b> {{email}}</p>
+                <p style="margin: 10px 0 0 0;"><b>Temporary Password:</b> <span style="color: #1976d2; font-weight: bold;">{{password}}</span></p>
+            </div>
+
+            <p>Please log in and change your password immediately for security.</p>
+        </div>
+        <div class="footer">
+            <p>HME Intelligence - South Africa Fleet Management</p>
+        </div>
+    </div>
+</body>
+</html>
