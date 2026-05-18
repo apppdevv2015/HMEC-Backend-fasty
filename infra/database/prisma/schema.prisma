@@ -1,0 +1,104 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Auth Service Models
+model Company {
+  id                  String   @id @default(uuid())
+  companyCode         String   @unique
+  name                String   @unique
+  subscriptionStatus  String   @default("active")
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  users               User[]
+  subscriptions       Subscription[]
+}
+
+model Role {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  users     User[]
+}
+
+model User {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  password      String
+  firstName     String
+  lastName      String?
+  mobileNumber  String?
+  isActive      Boolean  @default(true)
+  roleId        String
+  companyId     String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  role          Role     @relation(fields: [roleId], references: [id])
+  company       Company  @relation(fields: [companyId], references: [id])
+}
+
+model SubscriptionPlan {
+  id            String   @id @default(uuid())
+  planName      String   @unique
+  price         Decimal
+  machineLimit  Int
+  staffLimit    Int
+  validityDays  Int
+  isPublic      Boolean  @default(true)
+  isActive      Boolean  @default(true)
+  subscriptions Subscription[]
+
+  @@map("subscription_plans")
+}
+
+model Subscription {
+  id                    String   @id @default(uuid())
+  companyId             String
+  userId                String?
+  planId                String
+  status                String   @default("pending")
+  paymentStatus         String   @default("PENDING")
+  idempotencyKey        String?  @unique
+  subscriptionStartDate DateTime @default(now())
+  subscriptionEndDate   DateTime?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  company               Company          @relation(fields: [companyId], references: [id])
+  plan                  SubscriptionPlan @relation(fields: [planId], references: [id])
+
+  @@map("subscriptions")
+}
+
+// Intelligence Service Models
+model Machine {
+  id           String      @id @default(uuid())
+  name         String
+  model        String
+  serialNumber String      @unique
+  companyId    String
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  components   Component[]
+}
+
+model Component {
+  id           String   @id @default(uuid())
+  machineId    String
+  type         String
+  serialNumber String   @unique
+  purchaseCost Decimal
+  targetLife   Int
+  currentHours Int      @default(0)
+  healthIndex  Int      @default(100)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  machine      Machine  @relation(fields: [machineId], references: [id])
+}

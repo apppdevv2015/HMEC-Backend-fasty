@@ -1,0 +1,99 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Machine {
+  id           String      @id @default(uuid())
+  name         String      // e.g., CK&IJ-990-020
+  equipmentType String     @default("FEL") // e.g., FEL, Excavator
+  model        String
+  serialNumber String      @unique
+  companyId    String
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  components   Component[]
+}
+
+model Component {
+  id              String   @id @default(uuid())
+  machineId       String
+  category        String   // e.g., Tyre, Engine
+  description     String   // e.g., Front Left Tyre
+  serialNumber    String   @unique
+  supplier        String?  // e.g., CK & IJ Group
+  installHours    Int      @default(0)
+  currentHours    Int      @default(0)
+  plannedLife     Int      @default(0) // target life in hrs
+  replacementCost Decimal  @default(0)
+  condition       Int      @default(1) // 1-New, 2-Good, 3-Monitor, 4-Warning, 5-Critical
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  machine         Machine  @relation(fields: [machineId], references: [id])
+}
+
+model Company {
+  id                 String          @id
+  companyCode        String          @unique
+  name               String
+  subscriptionStatus String          @default("active")
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime
+  User               User[]
+  subscriptions      subscriptions[]
+}
+
+model Role {
+  id   String @id
+  name String @unique
+  User User[]
+}
+
+model User {
+  id           String   @id
+  email        String   @unique
+  password     String
+  firstName    String
+  lastName     String?
+  mobileNumber String?
+  isActive     Boolean  @default(true)
+  roleId       String
+  companyId    String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime
+  Company      Company  @relation(fields: [companyId], references: [id])
+  Role         Role     @relation(fields: [roleId], references: [id])
+}
+
+model subscription_plans {
+  id            String          @id
+  planName      String          @unique
+  price         Decimal
+  machineLimit  Int
+  staffLimit    Int
+  validityDays  Int
+  isPublic      Boolean         @default(true)
+  isActive      Boolean         @default(true)
+  subscriptions subscriptions[]
+}
+
+model subscriptions {
+  id                    String             @id
+  companyId             String
+  userId                String?
+  planId                String
+  status                String             @default("pending")
+  paymentStatus         String             @default("PENDING")
+  idempotencyKey        String?            @unique
+  subscriptionStartDate DateTime           @default(now())
+  subscriptionEndDate   DateTime?
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime
+  Company               Company            @relation(fields: [companyId], references: [id])
+  subscription_plans    subscription_plans @relation(fields: [planId], references: [id])
+}

@@ -1,20 +1,21 @@
-const intelligenceRepository = require('../repositories/intelligence.repository');
-const decisionEngine = require('../../../modules/decision-engine'); // Assuming old path or refactor it too
-
 class IntelligenceService {
-    async analyzeMachine(machineId) {
-        const components = await intelligenceRepository.getComponentHealth(machineId);
-        const prediction = await intelligenceRepository.getMachinePredictions(machineId);
-        
-        // Use Decision Engine to process
-        const recommendation = decisionEngine.generateRecommendation(components, prediction);
-        
-        return {
-            machineId,
-            health_score: 85, // Mock aggregate
-            recommendation
-        };
+    calculateMetrics(comp) {
+        const hoursRun = comp.currentHours - comp.installHours;
+        const lifeUsedPercent = Math.min(Math.round((hoursRun / comp.plannedLife) * 100), 100);
+        const remainingHours = Math.max(comp.plannedLife - hoursRun, 0);
+        let riskStatus = 'Healthy';
+        let riskDriver = 'Normal';
+        if (comp.condition >= 5 || lifeUsedPercent >= 95) {
+            riskStatus = 'Critical';
+            riskDriver = comp.condition >= 5 ? 'Poor Condition' : 'End of Life';
+        } else if (comp.condition >= 4 || lifeUsedPercent >= 85) {
+            riskStatus = 'Warning';
+            riskDriver = comp.condition >= 4 ? 'Poor Condition' : 'End of Life';
+        }
+        return { hoursRun, lifeUsedPercent, remainingHours, riskStatus, riskDriver };
+    }
+    processRegister(components) {
+        return components.map(comp => ({ ...comp, intelligence: this.calculateMetrics(comp) }));
     }
 }
-
 module.exports = new IntelligenceService();

@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const roleController = require('../controllers/role.controller');
 const authMiddleware = require('../../../middlewares/auth.middleware');
+const roleValidation = require('../../../validations/role.validation');
 
 // Helper middleware for role-based access
 const authorize = (roles) => (req, res, next) => {
@@ -21,8 +22,8 @@ router.get('/', roleController.getRoles);
 router.get('/:id', roleController.getRole);
 
 // Restricted to Super Admin only
-router.post('/', authorize(['super_admin']), roleController.createRole);
-router.put('/:id', authorize(['super_admin']), roleController.updateRole);
+router.post('/', authorize(['super_admin']), roleValidation, roleController.createRole);
+router.put('/:id', authorize(['super_admin']), roleValidation, roleController.updateRole);
 router.delete('/:id', authorize(['super_admin']), roleController.deleteRole);
 
 module.exports = router;

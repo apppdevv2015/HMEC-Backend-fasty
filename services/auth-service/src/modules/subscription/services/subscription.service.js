@@ -1,25 +1,21 @@
 const nodemailer = require('nodemailer');
 const subscriptionRepository = require('../repositories/subscription.repository');
+const emailUtils = require('../../../utils/email.utils');
+const prisma = require('../../../database/prisma');
+const templateService = require('../../auth/services/template.service');
 
 class SubscriptionService {
-    constructor() {
-        // Debugging logs to verify credentials inside container
-        console.log('[DEBUG-EMAIL] User:', process.env.MAILTRAP_USER);
-        
-        this.transporter = nodemailer.createTransport({
-            host: "sandbox.smtp.mailtrap.io",
-            port: 587,
-            secure: false, // true for 465, false for other ports
-            auth: {
-                user: process.env.MAILTRAP_USER,
-                pass: process.env.MAILTRAP_PASS
-            }
-        });
+    constructor() {}
+
+    async getAllPlans(onlyPublic = false) {
+        return subscriptionRepository.getAllPlans(onlyPublic);
     }
 
-    async getAllPlans() {
-        return subscriptionRepository.getAllPlans();
+    async getActiveSubscriptionWithPlan(companyId) {
+        return subscriptionRepository.getActiveSubscriptionWithPlan(companyId);
     }
+
+
 
     async createPlan(planData) {
         return subscriptionRepository.createPlan(planData);
@@ -33,56 +29,63 @@ class SubscriptionService {
         return subscriptionRepository.deletePlan(id);
     }
 
-    async initiateCheckout(userId, planId, companyId, userEmail) {
+    async initiateCheckout(userId, planId, companyId, userEmail, idempotencyKey) {
         const plan = await subscriptionRepository.getPlanById(planId);
         if (!plan) throw new Error('Plan not found');
+
+        // --- Demo Plan Misuse Prevention ---
+        if (Number(plan.price) === 0) {
+            const history = await subscriptionRepository.getCompanySubscriptionHistory(companyId);
+            const hasHadDemo = history.some(sub => Number(sub.plan.price) === 0);
+            
+            if (hasHadDemo) {
+                throw new Error('DEMO_ALREADY_USED: Your company has already used a demo plan. Please upgrade to a paid plan.');
+            }
+        }
 
         const merchantId = process.env.PAYFAST_MERCHANT_ID || '10004002';
         const merchantKey = process.env.PAYFAST_MERCHANT_KEY || 'q1cd2rdny4a53';
         
-        // Idempotency: Check if a pending subscription already exists for this company and plan
-        let subscription = await subscriptionRepository.getPendingSubscription(companyId, planId);
-
-        if (!subscription) {
-            const validityDays = plan.validity_days || 30;
-            const endDate = new Date();
-            endDate.setDate(endDate.getDate() + validityDays);
-
-            const [newSub] = await subscriptionRepository.createSubscription({
-                company_id: companyId,
-                plan_id: planId,
-                status: 'pending',
-                start_date: new Date(),
-                end_date: endDate
+        let subscription = null;
+        if (idempotencyKey) {
+            subscription = await prisma.subscription.findFirst({
+                where: { idempotencyKey }
             });
-            subscription = newSub;
-        } else {
-            // Update the existing pending subscription's timestamp
-            await subscriptionRepository.updateSubscriptionStatus(subscription.id, 'pending');
         }
 
-        // Handle Free Plans (e.g. Demo)
-        if (Number(plan.price) === 0) {
-            const validityDays = plan.validity_days || 14;
+        if (!subscription) {
+            const validityDays = plan.validityDays || 30;
             const endDate = new Date();
             endDate.setDate(endDate.getDate() + validityDays);
 
-            const [sub] = await subscriptionRepository.createSubscription({
-                company_id: companyId,
-                plan_id: planId,
-                status: 'active', // Direct active for free plans
-                payment_status: 'COMPLETE',
-                start_date: new Date(),
-                end_date: endDate
+            subscription = await subscriptionRepository.createSubscription({
+                companyId: companyId,
+                userId: userId,
+                planId: planId,
+                status: 'pending',
+                subscriptionEndDate: endDate,
+                idempotencyKey: idempotencyKey
             });
+        }
 
-            // Send Email immediately
-            await this.sendConfirmationEmail(userEmail || 'admin@example.com', plan.name, 0);
+        // Handle Free Plans 
+        if (Number(plan.price) === 0) {
+            if (subscription.status === 'active') {
+                return { message: 'Plan already active', skip_payment: true, subscription_id: subscription.id };
+            }
+
+            const validityDays = plan.validityDays || 14;
+            const endDate = new Date();
+            endDate.setDate(endDate.getDate() + validityDays);
+
+            await this.activateSubscription(subscription.id, endDate, 'COMPLETE');
+
+            await this.sendSubscriptionNotifications(userEmail || 'admin@example.com', companyId, plan.planName, 0, endDate.toLocaleDateString(), true);
 
             return {
                 message: 'Free plan activated successfully',
                 skip_payment: true,
-                subscription_id: sub.id
+                subscription_id: subscription.id
             };
         }
 
@@ -90,11 +93,11 @@ class SubscriptionService {
             merchant_id: merchantId,
             merchant_key: merchantKey,
             amount: Number(plan.price).toFixed(2),
-            item_name: `HME Plan: ${plan.name}`,
+            item_name: `HME Plan: ${plan.planName}`,
             m_payment_id: subscription.id,
-            return_url: process.env.PAYFAST_RETURN_URL || `http://localhost:3000/payment/success`,
-            cancel_url: process.env.PAYFAST_CANCEL_URL || `http://localhost:3000/payment/cancel`,
-            notify_url: process.env.PAYFAST_NOTIFY_URL || `http://localhost:4000/api/auth/plans/webhook`,
+            return_url: process.env.FRONTEND_URL || `http://localhost:5173/company-admin/dashboard`,
+            cancel_url: process.env.FRONTEND_URL || `http://localhost:5173/cart`,
+            notify_url: process.env.PAYFAST_NOTIFY_URL || `http://localhost:4000/api/v1/plans/webhook`,
         };
 
         return {
@@ -108,40 +111,85 @@ class SubscriptionService {
     async handleWebhook(data) {
         const { m_payment_id, payment_status, item_name, amount_gross, email_address } = data;
         
+        if (!m_payment_id) return { success: false, error: 'Missing m_payment_id' };
+
         const existingSub = await subscriptionRepository.getSubscriptionById(m_payment_id);
-        if (existingSub && existingSub.status === 'active') {
-            return { success: true };
-        }
+        if (existingSub && existingSub.status === 'active') return { success: true };
 
         if (payment_status === 'COMPLETE') {
-            await subscriptionRepository.updateSubscriptionStatus(m_payment_id, 'active');
-            // Added await here to ensure we catch errors
-            await this.sendConfirmationEmail(email_address || 'admin@example.com', item_name, amount_gross);
+            const plan = await subscriptionRepository.getPlanById(existingSub.planId);
+            const validityDays = plan ? plan.validityDays : 30;
+            const endDate = new Date();
+            endDate.setDate(endDate.getDate() + validityDays);
+
+            await this.activateSubscription(m_payment_id, endDate, 'COMPLETE');
+            
+            const updatedSub = await subscriptionRepository.getSubscriptionById(m_payment_id);
+            const expiryDate = updatedSub.subscriptionEndDate ? new Date(updatedSub.subscriptionEndDate).toLocaleDateString() : 'N/A';
+
+            await this.sendSubscriptionNotifications(email_address || existingSub.user?.email || 'admin@example.com', existingSub.companyId, item_name, amount_gross, expiryDate, false);
         }
         return { success: true };
     }
 
-    async sendConfirmationEmail(userEmail, planName, amount) {
-        const mailOptions = {
-            from: '"HME Intelligence" <no-reply@hme.com>',
-            to: userEmail,
-            subject: 'Subscription Activated! 🚀',
-            html: `
-                <div style="font-family: Arial, sans-serif; color: #333; padding: 20px; border: 1px solid #eee;">
-                    <h2 style="color: #2e7d32;">Welcome to HME Premium!</h2>
-                    <p>Your payment for <b>${planName}</b> was successful.</p>
-                    <p><b>Amount:</b> R ${amount}</p>
-                    <p>Your dashboard is now upgraded. Please log in to your account to see the changes.</p>
-                </div>
-            `
-        };
+    async activateSubscription(subscriptionId, endDate, paymentStatus) {
+        const subscription = await subscriptionRepository.getSubscriptionById(subscriptionId);
+        if (!subscription) throw new Error('Subscription not found');
+
+        await subscriptionRepository.activateSubscription(subscriptionId, endDate, paymentStatus);
+    }
+
+    async getCompanySubscriptionHistory(companyId) {
+        return subscriptionRepository.getCompanySubscriptionHistory(companyId);
+    }
+
+    async getCompanySubscriptions() {
+        return subscriptionRepository.getAllSubscriptions();
+    }
+
+    async sendSubscriptionNotifications(userEmail, companyId, planName, amount, expiryDate, isDemo = false) {
+        const timestamp = new Date().toLocaleString();
+        const dashboardUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
 
         try {
-            const info = await this.transporter.sendMail(mailOptions);
-            console.log('[EMAIL SENT SUCCESS]', info.messageId);
-        } catch (error) {
-            console.error('[EMAIL ERROR]', error);
-            throw error; // Throw so we can see it in logs/response
+            const company = await prisma.company.findUnique({ where: { id: companyId } });
+            const companyName = company ? company.name : 'Your Company';
+
+            // 1. Notify the User (Company Admin)
+            const adminHtml = await templateService.getTemplate('subscription-confirmation', {
+                name: companyName,
+                planName: planName,
+                amount: amount,
+                expiryDate: expiryDate || 'N/A', 
+                dashboardUrl: dashboardUrl
+            });
+
+            await emailUtils.sendEmail({
+                to: userEmail,
+                subject: isDemo ? 'Demo Plan Activated! 🛠️' : 'Subscription Activated! 🚀',
+                html: adminHtml
+            });
+
+            // 2. Notify the System Owner (Super Admin)
+            const superAdminEmail = process.env.SUPER_ADMIN_EMAIL || 'admin@hme.com';
+
+            const alertHtml = await templateService.getTemplate('subscription-alert', {
+                companyName: companyName,
+                adminName: 'Company Admin',
+                planName: planName,
+                type: isDemo ? 'DEMO' : 'PAID',
+                amount: amount,
+                timestamp: timestamp
+            });
+
+            await emailUtils.sendEmail({
+                to: superAdminEmail,
+                subject: isDemo ? '🛠️ New Demo Activation' : '💰 Revenue Alert: Subscription Payment!',
+                html: alertHtml
+            });
+
+        } catch (err) { 
+            console.error('[SUBSCRIPTION NOTIFICATION ERROR]', err); 
         }
     }
 }

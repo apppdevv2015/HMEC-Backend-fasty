@@ -4,8 +4,20 @@ const path = require('path');
 class TemplateService {
     async getTemplate(templateName, data) {
         try {
-            const templatePath = path.join(__dirname, '..', 'templates', 'emails', `${templateName}.html`);
+            // Path corrected to where templates actually are
+            const templatePath = path.join(__dirname, '..', '..', '..', 'templates', 'emails', `${templateName}.html`);
             let content = await fs.readFile(templatePath, 'utf8');
+
+            // Embed Logo as Base64
+            try {
+                const logoPath = path.join(__dirname, '..', '..', '..', 'templates', 'emails', 'logo.png');
+                const logoBuffer = await fs.readFile(logoPath);
+                const logoBase64 = logoBuffer.toString('base64');
+                data.logo = `data:image/png;base64,${logoBase64}`;
+            } catch (logoErr) {
+                console.warn('[TEMPLATE WARNING] Logo not found, skipping embedding');
+                data.logo = ''; 
+            }
 
             // Replace placeholders {{key}} with data[key]
             Object.keys(data).forEach(key => {

@@ -22,7 +22,7 @@ services:
     build:
       context: .
       dockerfile: infra/docker/node.Dockerfile
-    command: npm run migrate
+    command: /bin/sh -c "npx prisma db push --schema=infra/database/prisma/schema.prisma --accept-data-loss && node infra/database/seed-prisma.js"
     environment:
       - DATABASE_URL=postgres://admin:password@postgres:5432/hme_intelligence
     depends_on:

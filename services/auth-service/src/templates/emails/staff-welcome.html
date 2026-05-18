@@ -2,31 +2,53 @@
 <html>
 <head>
     <style>
-        .email-container { font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: auto; border: 1px solid #eee; border-radius: 12px; }
-        .header { background: #2196f3; color: white; padding: 25px; text-align: center; }
-        .content { padding: 30px; }
-        .cred-box { background: #e3f2fd; padding: 20px; border-radius: 8px; margin: 20px 0; }
-        .footer { padding: 20px; text-align: center; font-size: 12px; color: #777; border-top: 1px solid #eee; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #ffffff; margin: 0; padding: 0; color: #333; }
+        .wrapper { background-color: #f9f9f9; padding: 40px 0; }
+        .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; border: 1px solid #e1e1e1; }
+        .header { background: #ffffff; padding: 30px; text-align: center; border-bottom: 1px solid #eee; }
+        .content { padding: 40px; line-height: 1.6; }
+        h1 { color: #111; font-size: 24px; margin-bottom: 15px; }
+        .login-box { background: #fcfcfc; border: 1px solid #eee; border-radius: 8px; padding: 25px; margin: 30px 0; }
+        .login-label { color: #888; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 10px; border-bottom: 1px solid #f0f0f0; padding-bottom: 5px; }
+        .detail-row { margin-bottom: 8px; font-size: 14px; }
+        .label { color: #666; display: inline-block; width: 100px; }
+        .value { color: #111; font-weight: bold; }
+        .button { display: inline-block; padding: 14px 30px; background: #111; color: #ffffff !important; text-decoration: none; border-radius: 4px; font-weight: bold; margin-top: 20px; }
+        .footer { padding: 25px; text-align: center; color: #999; font-size: 11px; border-top: 1px solid #eee; }
+        .signature { margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px; color: #666; font-size: 14px; }
     </style>
 </head>
 <body>
-    <div class="email-container">
-        <div class="header">
-            <h1>Welcome to the Team! 👷‍♂️</h1>
-        </div>
-        <div class="content">
-            <h2>Hello {{name}},</h2>
-            <p>You have been added as a <b>{{role}}</b> to the HME Intelligence System.</p>
-            
-            <div class="cred-box">
-                <p style="margin: 0;"><b>Login Email:</b> {{email}}</p>
-                <p style="margin: 10px 0 0 0;"><b>Temporary Password:</b> <span style="color: #1976d2; font-weight: bold;">{{password}}</span></p>
+    <div class="wrapper">
+        <div class="container">
+            <div class="header">
+                <img src="{{logo}}" alt="HME Logo" style="max-width: 140px;">
             </div>
+            <div class="content">
+                <h1>Welcome to the Team, {{name}}! 👷‍♂️</h1>
+                <p>Hello! You have been added as <b>{{roleName}}</b> to <b>{{companyName}}</b>'s HME Intelligence account.</p>
+                
+                <div class="login-box">
+                    <div class="login-label">Access Credentials</div>
+                    <div class="detail-row"><span class="label">Email:</span> <span class="value">{{email}}</span></div>
+                    <div class="detail-row"><span class="label">Password:</span> <span class="value">{{password}}</span></div>
+                    <div class="detail-row" style="margin-top: 10px;"><span class="label">Company Code:</span> <span class="value" style="background: #111; color: white; padding: 2px 8px; border-radius: 4px;">{{companyCode}}</span></div>
+                </div>
 
-            <p>Please log in and change your password immediately for security.</p>
-        </div>
-        <div class="footer">
-            <p>HME Intelligence - South Africa Fleet Management</p>
+                <p><b>Quick Start:</b> Please log in to your dashboard and change your temporary password immediately for security purposes.</p>
+                
+                <center>
+                    <a href="{{loginUrl}}" class="button">Log In Now</a>
+                </center>
+
+                <div class="signature">
+                    <p>Welcome aboard! If you have any questions, please contact your administrator.</p>
+                    <p style="color: #111; font-weight: bold; margin-bottom: 0;">The HME Support Team</p>
+                </div>
+            </div>
+            <div class="footer">
+                &copy; 2026 HME Component Intelligence System.
+            </div>
         </div>
     </div>
 </body>

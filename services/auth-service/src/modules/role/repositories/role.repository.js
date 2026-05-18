@@ -1,44 +1,45 @@
-const db = require('../../../database');
+const prisma = require('../../../database/prisma');
 
 class RoleRepository {
-    async getAllRoles(page = 1, limit = 10) {
-        const offset = (page - 1) * limit;
-        const roles = await db('roles')
-            .select('id', 'name', 'created_at', 'updated_at')
-            .orderBy('id', 'asc')
-            .limit(limit)
-            .offset(offset);
-        const [{ count }] = await db('roles').count('id as count');
-
-        return {
-            roles,
-            pagination: {
-                total: parseInt(count),
-                page: parseInt(page),
-                limit: parseInt(limit),
-                pages: Math.ceil(count / limit)
-            }
-        };
+    async getAllRoles() {
+        return await prisma.role.findMany({
+            orderBy: { name: 'asc' }
+        });
     }
 
     async getRoleById(id) {
-        return db('roles').where({ id }).first();
+        return await prisma.role.findUnique({
+            where: { id }
+        });
     }
 
     async createRole(roleData) {
-        return db('roles').insert(roleData).returning('*');
+        return await prisma.role.create({
+            data: {
+                name: roleData.name
+            }
+        });
     }
 
     async updateRole(id, roleData) {
-        return db('roles').where({ id }).update(roleData).returning('*');
+        return await prisma.role.update({
+            where: { id },
+            data: {
+                name: roleData.name
+            }
+        });
     }
 
     async deleteRole(id) {
-        return db('roles').where({ id }).del();
+        return await prisma.role.delete({
+            where: { id }
+        });
     }
 
     async findByName(name) {
-        return db('roles').where({ name }).first();
+        return await prisma.role.findUnique({
+            where: { name }
+        });
     }
 }
 

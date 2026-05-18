@@ -1,3 +1,7 @@
+require('dotenv').config();
 const app = require('./app');
 const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => console.log('HME component-intelligence-service running on ' + PORT));
+
+app.listen(PORT, () => {
+    console.log(`HME Component Intelligence Service running on port ${PORT}`);
+});

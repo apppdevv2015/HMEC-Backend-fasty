@@ -1,0 +1,102 @@
+/**
+ * @swagger
+ * tags:
+ *   name: Components
+ *   description: Component lifecycle and monitoring
+ */
+
+/**
+ * @swagger
+ * /api/v1/components:
+ *   post:
+ *     summary: Register a new component
+ *     tags: [Components]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [machineId, category, description, serialNumber]
+ *             properties:
+ *               machineId: { type: string }
+ *               category: { type: string, example: 'Tyre' }
+ *               description: { type: string, example: 'Front Left Tyre' }
+ *               serialNumber: { type: string, example: 'TY-990-001' }
+ *               supplier: { type: string, example: 'CK & IJ Group' }
+ *               installHours: { type: number, example: 800 }
+ *               currentHours: { type: number, example: 4900 }
+ *               plannedLife: { type: number, example: 8000 }
+ *               replacementCost: { type: number, example: 14200 }
+ *               condition: { type: number, example: 3 }
+ *     responses:
+ *       201:
+ *         description: Component registered successfully
+ */
+
+/**
+ * @swagger
+ * /api/v1/components/{id}:
+ *   put:
+ *     summary: Update an existing component (Edit)
+ *     tags: [Components]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               category: { type: string }
+ *               description: { type: string }
+ *               currentHours: { type: number }
+ *               condition: { type: number }
+ *     responses:
+ *       200:
+ *         description: Component updated successfully
+ */
+
+/**
+ * @swagger
+ * /api/v1/components/register:
+ *   get:
+ *     summary: Get component register (table view) with intelligence metrics
+ *     tags: [Components]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: companyId
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: List of components with calculated metrics
+ */
+
+/**
+ * @swagger
+ * /api/v1/components/dashboard-stats:
+ *   get:
+ *     summary: Get component dashboard stats (for cards)
+ *     tags: [Components]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: companyId
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: Dashboard summary statistics
+ */

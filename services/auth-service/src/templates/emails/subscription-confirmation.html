@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #ffffff; margin: 0; padding: 0; color: #333; }
+        .wrapper { background-color: #f9f9f9; padding: 40px 0; }
+        .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; border: 1px solid #e1e1e1; }
+        .header { background: #ffffff; padding: 30px; text-align: center; border-bottom: 1px solid #eee; }
+        .content { padding: 40px; line-height: 1.6; }
+        h1 { color: #111; font-size: 22px; margin-bottom: 20px; }
+        .plan-details { background: #fcfcfc; border: 1px solid #eee; border-radius: 8px; padding: 25px; margin: 30px 0; }
+        .detail-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 14px; }
+        .detail-label { color: #666; width: 150px; display: inline-block; }
+        .detail-value { font-weight: bold; color: #111; }
+        .button { display: inline-block; padding: 14px 30px; background: #111; color: #ffffff !important; text-decoration: none; border-radius: 4px; font-weight: bold; margin-top: 20px; }
+        .footer { padding: 25px; text-align: center; color: #999; font-size: 11px; border-top: 1px solid #eee; }
+        .signature { margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px; color: #666; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class="wrapper">
+        <div class="container">
+            <div class="header">
+                <img src="{{logo}}" alt="HME Logo" style="max-width: 140px; margin-bottom: 5px;">
+                <div style="color: #888; font-size: 9px; letter-spacing: 1px;">COMPONENT INTELLIGENCE SYSTEM</div>
+            </div>
+            <div class="content">
+                <h1>Subscription Activated! 🚀</h1>
+                <p>Hello <b>{{name}}</b>,</p>
+                <p>Your subscription to the <b>HME Intelligence System</b> has been successfully activated. You now have full access to your plan features.</p>
+                
+                <div class="plan-details">
+                    <div class="detail-row"><span class="detail-label">Selected Plan:</span> <span class="detail-value">{{planName}}</span></div>
+                    <div class="detail-row"><span class="detail-label">Amount:</span> <span class="detail-value">R {{amount}}</span></div>
+                    <div class="detail-row"><span class="detail-label">Expiry Date:</span> <span class="detail-value">{{expiryDate}}</span></div>
+                </div>
+
+                <center>
+                    <a href="{{dashboardUrl}}" class="button">Access My Dashboard</a>
+                </center>
+
+                <div class="signature">
+                    <p>Thank you for choosing <b>HME</b>. We look forward to powering your fleet's success.</p>
+                    <p style="color: #111; font-weight: bold; margin-bottom: 0;">The HME Team</p>
+                </div>
+            </div>
+            <div class="footer">
+                &copy; 2026 HME Component Intelligence System. South Africa.
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,23 +1,28 @@
 const express = require('express');
-const { createLogger } = require('../../../packages/shared');
-const intelligenceRoutes = require('./modules/intelligence/routes/intelligence.routes');
-
-const logger = createLogger('intelligence-service');
+const cors = require('cors');
+const setupSwagger = require('./config/swagger');
 const app = express();
-app.use(express.json());
 
-// --- Routes ---
+app.use(cors());
+app.use(express.json());
 
 // Health Check
 app.get('/health', (req, res) => res.json({ status: 'UP', service: 'intelligence-service' }));
 
-// Intelligence Module
-app.use('/', intelligenceRoutes);
-
-// Global Error Handler
-app.use((err, req, res, next) => {
-    logger.error(`Unhandled Error: ${err.message}`);
-    res.status(500).json({ error: 'Internal Server Error' });
+// Request Logger
+app.use((req, res, next) => {
+    console.log(`[INTELLIGENCE-SERVICE] ${req.method} ${req.url}`);
+    next();
 });
+
+// Swagger Setup
+setupSwagger(app);
+
+// Routes
+const componentRoutes = require('./modules/components/routes/component.routes');
+const machineRoutes = require('./modules/machines/routes/machine.routes');
+
+app.use('/api/v1/components', componentRoutes);
+app.use('/api/v1/machines', machineRoutes);
 
 module.exports = app;

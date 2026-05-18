@@ -1,52 +1,42 @@
 const authService = require('../services/auth.service');
+const responseHandler = require('../../../utils/responseHandler');
 
 class AuthController {
-    async login(req, res) {
+    async register(req, res, next) {
+        try {
+            const result = await authService.register(req.body);
+            return responseHandler(res, 201, 'Registration successful', result);
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async login(req, res, next) {
         try {
             const { email, password } = req.body;
             const result = await authService.login(email, password);
-            res.json({ message: 'Login successful', ...result });
-        } catch (err) {
-            res.status(401).json({ error: err.message });
+            return responseHandler(res, 200, 'Login successful', result);
+        } catch (error) {
+            next(error);
         }
     }
 
-    async register(req, res) {
+    async getMe(req, res, next) {
         try {
-            const { company_name, fname, lname, email, password, mobile } = req.body;
-            const result = await authService.registerCompany({ name: company_name, fname, lname, email, password, mobile });
-            res.status(201).json({ message: 'Registration successful', data: result });
-        } catch (err) {
-            res.status(400).json({ error: err.message });
+            return responseHandler(res, 200, 'User profile fetched', req.user);
+        } catch (error) {
+            next(error);
         }
     }
 
-    async logout(req, res) {
+    async getDashboard(req, res, next) {
         try {
-            await authService.logout(req.user.id, req.user.company_id);
-            res.json({ message: 'Logged out successfully' });
-        } catch (err) {
-            res.status(500).json({ error: err.message });
-        }
-    }
-
-    async getActivityLogs(req, res) {
-        try {
-            const page = parseInt(req.query.page) || 1;
-            const limit = parseInt(req.query.limit) || 20;
-            const result = await authService.getActivityLogs(req.user.company_id, true, page, limit);
-            res.json(result);
-        } catch (err) {
-            res.status(500).json({ error: err.message });
-        }
-    }
-
-    async getDashboard(req, res) {
-        try {
-            const stats = await authService.getDashboard(req.user);
-            res.json(stats);
-        } catch (err) {
-            res.status(500).json({ error: err.message });
+            const userService = require('../../user/services/user.service');
+            const stats = await userService.getDashboardStats(req.user.companyId, req.user.role);
+            
+            return responseHandler(res, 200, 'Dashboard data fetched', stats);
+        } catch (error) {
+            next(error);
         }
     }
 }

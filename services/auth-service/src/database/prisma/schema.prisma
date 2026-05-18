@@ -1,0 +1,52 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Company {
+  id                  String   @id @default(uuid())
+  name                String
+  subscriptionStatus  String   @default("active")
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  users               User[]
+}
+
+model Role {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  users     User[]
+}
+
+model User {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  password      String
+  firstName     String
+  lastName      String?
+  mobileNumber  String?
+  isActive      Boolean  @default(true)
+  roleId        String
+  companyId     String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  role          Role     @relation(fields: [roleId], references: [id])
+  company       Company  @relation(fields: [companyId], references: [id])
+}
+
+model Plan {
+  id            String   @id @default(uuid())
+  name          String
+  price         Decimal
+  machineLimit  Int
+  staffLimit    Int
+  validityDays  Int
+  isPublic      Boolean  @default(true)
+  isActive      Boolean  @default(true)
+}

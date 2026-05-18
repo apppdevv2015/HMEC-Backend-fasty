@@ -22,7 +22,10 @@
         "nodemon": "^3.1.14"
     },
     "dependencies": {
-        "knex": "^3.2.9",
-        "pg": "^8.20.0"
+        "@prisma/client": "^5.14.0",
+        "bcryptjs": "^3.0.3",
+        "knex": "^3.2.10",
+        "pg": "^8.20.0",
+        "prisma": "^5.14.0"
     }
 }
