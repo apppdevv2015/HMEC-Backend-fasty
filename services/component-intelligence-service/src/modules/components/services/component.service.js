@@ -67,6 +67,19 @@ class ComponentService {
             totalReplacementCost: components.reduce((sum, c) => sum + Number(c.replacementCost), 0)
         };
     }
+
+    /**
+     * Get all active component categories
+     */
+    async getCategories() {
+        return await componentRepository.getCategories();
+    }
+    /**
+     * Delete an existing component by its ID
+     */
+    async deleteComponent(id) {
+        return await componentRepository.delete(id);
+    }
 }
 
 module.exports = new ComponentService();

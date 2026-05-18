@@ -33,10 +33,19 @@ const setupProxy = (app) => {
     }));
 
     // Machines -> Intelligence Service
-    app.use(`${VERSION}/machines`, createProxyMiddleware({
+    app.use(createProxyMiddleware({
         target: SERVICES.intelligence,
         changeOrigin: true,
+        pathFilter: `${VERSION}/machines`,
         pathRewrite: { [`^${VERSION}/machines`]: '/machines' }
+    }));
+
+    // Components -> Intelligence Service
+    app.use(createProxyMiddleware({
+        target: SERVICES.intelligence,
+        changeOrigin: true,
+        pathFilter: `${VERSION}/components`,
+        pathRewrite: { [`^${VERSION}/components`]: '/components' }
     }));
 
     // Support legacy /api/auth paths

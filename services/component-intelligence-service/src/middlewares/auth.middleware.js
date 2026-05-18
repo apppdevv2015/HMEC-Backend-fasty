@@ -19,7 +19,7 @@ const authMiddleware = (req, res, next) => {
 };
 
 const isAdmin = (req, res, next) => {
-    if (req.user && (req.user.role === 'company_admin' || req.user.role === 'super_admin')) {
+    if (req.user && (req.user.role === 'admin' || req.user.role === 'company_admin' || req.user.role === 'super_admin')) {
         next();
     } else {
         return responseHandler(res, 403, false, 'Access denied. Admin rights required.');

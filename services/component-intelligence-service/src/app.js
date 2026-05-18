@@ -22,7 +22,7 @@ setupSwagger(app);
 const componentRoutes = require('./modules/components/routes/component.routes');
 const machineRoutes = require('./modules/machines/routes/machine.routes');
 
-app.use('/api/v1/components', componentRoutes);
-app.use('/api/v1/machines', machineRoutes);
+app.use('/components', componentRoutes);
+app.use('/machines', machineRoutes);
 
 module.exports = app;

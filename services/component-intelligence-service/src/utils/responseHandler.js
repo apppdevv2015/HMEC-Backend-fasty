@@ -1,1 +1,9 @@
-const responseHandler = (res, statusCode, success, message, data = null) => {\n    return res.status(statusCode).json({\n        success,\n        message,\n        data\n    });\n};\n\nmodule.exports = responseHandler;
+const responseHandler = (res, statusCode, success, message, data = null) => {
+    return res.status(statusCode).json({
+        success,
+        message,
+        data
+    });
+};
+
+module.exports = responseHandler;

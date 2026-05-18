@@ -7,7 +7,7 @@
 
 /**
  * @swagger
- * /api/v1/components/register:
+ * /components/register:
  *   get:
  *     summary: Get component register with calculated metrics
  *     tags: [Component Intelligence]
@@ -25,7 +25,7 @@
 
 /**
  * @swagger
- * /api/v1/components/dashboard-stats:
+ * /components/dashboard-stats:
  *   get:
  *     summary: Get high-level risk and cost analytics
  *     tags: [Component Intelligence]

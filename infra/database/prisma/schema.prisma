@@ -88,17 +88,29 @@ model Machine {
   components   Component[]
 }
 
-model Component {
-  id           String   @id @default(uuid())
-  machineId    String
-  type         String
-  serialNumber String   @unique
-  purchaseCost Decimal
-  targetLife   Int
-  currentHours Int      @default(0)
-  healthIndex  Int      @default(100)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+model ComponentCategory {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
 
-  machine      Machine  @relation(fields: [machineId], references: [id])
+model Component {
+  id              String   @id @default(uuid())
+  machineId       String
+  category        String   // e.g., Tyre, Engine
+  description     String   // e.g., Front Left Tyre
+  serialNumber    String   @unique
+  supplier        String?  // e.g., CK & IJ Group
+  installHours    Int      @default(0)
+  currentHours    Int      @default(0)
+  plannedLife     Int      @default(0) // target life in hrs
+  replacementCost Decimal  @default(0)
+  condition       Int      @default(1) // 1-New, 2-Good, 3-Monitor, 4-Warning, 5-Critical
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  machine         Machine  @relation(fields: [machineId], references: [id])
 }

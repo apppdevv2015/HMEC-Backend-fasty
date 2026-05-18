@@ -11,6 +11,15 @@ class ComponentController {
         }
     }
 
+    async updateComponent(req, res) {
+        try {
+            const component = await componentService.updateComponent(req.params.id, req.body);
+            return responseHandler(res, 200, true, 'Component updated successfully', component);
+        } catch (error) {
+            return responseHandler(res, 400, false, error.message);
+        }
+    }
+
     async getComponentRegister(req, res) {
         try {
             const { companyId } = req.query;
@@ -27,6 +36,23 @@ class ComponentController {
             if (!companyId) throw new Error('companyId is required');
             const stats = await componentService.getDashboardStats(companyId);
             return responseHandler(res, 200, true, 'Dashboard stats fetched successfully', stats);
+        } catch (error) {
+            return responseHandler(res, 400, false, error.message);
+        }
+    }
+
+    async getCategories(req, res) {
+        try {
+            const categories = await componentService.getCategories();
+            return responseHandler(res, 200, true, 'Categories fetched successfully', categories);
+        } catch (error) {
+            return responseHandler(res, 400, false, error.message);
+        }
+    }
+    async deleteComponent(req, res) {
+        try {
+            const component = await componentService.deleteComponent(req.params.id);
+            return responseHandler(res, 200, true, 'Component deleted successfully', component);
         } catch (error) {
             return responseHandler(res, 400, false, error.message);
         }

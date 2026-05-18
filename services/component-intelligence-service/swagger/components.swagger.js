@@ -7,7 +7,30 @@
 
 /**
  * @swagger
- * /api/v1/components:
+ * /components/categories:
+ *   get:
+ *     summary: Get all component categories (for dropdowns)
+ *     tags: [Components]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of categories
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id: { type: string }
+ *                   name: { type: string, example: 'Tyre' }
+ *                   description: { type: string }
+ */
+
+/**
+ * @swagger
+ * /components:
  *   post:
  *     summary: Register a new component
  *     tags: [Components]
@@ -35,10 +58,9 @@
  *       201:
  *         description: Component registered successfully
  */
-
 /**
  * @swagger
- * /api/v1/components/{id}:
+ * /components/{id}:
  *   put:
  *     summary: Update an existing component (Edit)
  *     tags: [Components]
@@ -56,18 +78,36 @@
  *           schema:
  *             type: object
  *             properties:
- *               category: { type: string }
- *               description: { type: string }
- *               currentHours: { type: number }
- *               condition: { type: number }
+ *               category: { type: string, example: 'Tyre' }
+ *               description: { type: string, example: 'Front Left Tyre' }
+ *               serialNumber: { type: string, example: 'TY-990-001' }
+ *               supplier: { type: string, example: 'CK & IJ Group' }
+ *               installHours: { type: number, example: 800 }
+ *               currentHours: { type: number, example: 4900 }
+ *               plannedLife: { type: number, example: 8000 }
+ *               replacementCost: { type: number, example: 14200 }
+ *               condition: { type: number, example: 3 }
  *     responses:
  *       200:
  *         description: Component updated successfully
+ *   delete:
+ *     summary: Delete an existing component
+ *     tags: [Components]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: Component deleted successfully
  */
 
 /**
  * @swagger
- * /api/v1/components/register:
+ * /components/register:
  *   get:
  *     summary: Get component register (table view) with intelligence metrics
  *     tags: [Components]
@@ -85,7 +125,7 @@
 
 /**
  * @swagger
- * /api/v1/components/dashboard-stats:
+ * /components/dashboard-stats:
  *   get:
  *     summary: Get component dashboard stats (for cards)
  *     tags: [Components]

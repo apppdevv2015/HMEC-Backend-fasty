@@ -5,5 +5,7 @@ const { authMiddleware, isAdmin } = require('../../../middlewares/auth.middlewar
 
 router.post('/', authMiddleware, isAdmin, machineController.addMachine);
 router.get('/', authMiddleware, machineController.getMachines);
+router.put('/:id', authMiddleware, isAdmin, machineController.updateMachine);
+router.delete('/:id', authMiddleware, isAdmin, machineController.deleteMachine);
 
 module.exports = router;

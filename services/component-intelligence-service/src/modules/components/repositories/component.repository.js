@@ -40,6 +40,18 @@ class ComponentRepository {
             include: { machine: true }
         });
     }
+
+    async getCategories() {
+        return await prisma.componentCategory.findMany({
+            where: { isActive: true },
+            orderBy: { name: 'asc' }
+        });
+    }
+    async delete(id) {
+        return await prisma.component.delete({
+            where: { id }
+        });
+    }
 }
 
 module.exports = new ComponentRepository();
