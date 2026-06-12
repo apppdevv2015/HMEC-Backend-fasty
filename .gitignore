@@ -10,6 +10,6 @@ Thumbs.db
 
 # Development & Testing
 scratch/
-infra/database/seeds/
-infra/database/seed-*.js
+database/seeds/
+database/seed-*.js
 scripts/create-super-admin.js

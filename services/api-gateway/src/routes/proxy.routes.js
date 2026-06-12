@@ -1,66 +1,61 @@
-const { createProxyMiddleware } = require('http-proxy-middleware');
+const fastifyHttpProxy = require('@fastify/http-proxy');
 
 const SERVICES = {
-    intelligence: process.env.INTELLIGENCE_SERVICE_URL || 'http://localhost:3001',
-    auth: process.env.AUTH_SERVICE_URL || 'http://localhost:3002',
-    fleet: process.env.FLEET_SERVICE_URL || 'http://localhost:3003',
-    ingestion: process.env.INGESTION_SERVICE_URL || 'http://localhost:3004',
-    notifications: process.env.NOTIFICATION_SERVICE_URL || 'http://localhost:3005'
+    intelligence: process.env.INTELLIGENCE_SERVICE_URL,
+    auth: process.env.AUTH_SERVICE_URL,
+    fleet: process.env.FLEET_SERVICE_URL,
+    ingestion: process.env.INGESTION_SERVICE_URL,
+    notifications: process.env.NOTIFICATION_SERVICE_URL
 };
 
-const setupProxy = (app) => {
+const setupProxy = async (fastify) => {
     const VERSION = '/api/v1';
 
-    // 1. Versioned Generic Service Proxies (e.g., /api/v1/auth -> auth-service)
-    Object.entries(SERVICES).forEach(([name, url]) => {
-        app.use(`${VERSION}/${name}`, createProxyMiddleware({
-            target: url,
-            changeOrigin: true,
-            pathRewrite: { [`^${VERSION}/${name}`]: '' },
-            onProxyRes: (proxyRes, req) => {
-                console.log(`[GATEWAY-V1] ${req.method} ${req.url} -> ${proxyRes.statusCode}`);
-            }
-        }));
+    // 1. Support legacy /api/auth paths -> auth-service
+    await fastify.register(fastifyHttpProxy, {
+        upstream: SERVICES.auth,
+        prefix: '/api/auth',
+        rewritePrefix: ''
     });
 
-    // 2. Specialized Unified Routes for V1
+    // 2. Versioned Generic Service Proxies (e.g. /api/v1/auth, /api/v1/intelligence)
+    for (const [name, url] of Object.entries(SERVICES)) {
+        await fastify.register(fastifyHttpProxy, {
+            upstream: url,
+            prefix: `${VERSION}/${name}`,
+            rewritePrefix: ''
+        });
+    }
+
+    // 3. Specialized Unified Routes for V1
     
     // Plans -> Auth Service
-    app.use(`${VERSION}/plans`, createProxyMiddleware({
-        target: SERVICES.auth,
-        changeOrigin: true,
-        pathRewrite: { [`^${VERSION}/plans`]: '/plans' }
-    }));
+    await fastify.register(fastifyHttpProxy, {
+        upstream: SERVICES.auth,
+        prefix: `${VERSION}/plans`,
+        rewritePrefix: '/plans'
+    });
 
     // Machines -> Intelligence Service
-    app.use(createProxyMiddleware({
-        target: SERVICES.intelligence,
-        changeOrigin: true,
-        pathFilter: `${VERSION}/machines`,
-        pathRewrite: { [`^${VERSION}/machines`]: '/machines' }
-    }));
+    await fastify.register(fastifyHttpProxy, {
+        upstream: SERVICES.intelligence,
+        prefix: `${VERSION}/machines`,
+        rewritePrefix: '/machines'
+    });
 
     // Components -> Intelligence Service
-    app.use(createProxyMiddleware({
-        target: SERVICES.intelligence,
-        changeOrigin: true,
-        pathFilter: `${VERSION}/components`,
-        pathRewrite: { [`^${VERSION}/components`]: '/components' }
-    }));
+    await fastify.register(fastifyHttpProxy, {
+        upstream: SERVICES.intelligence,
+        prefix: `${VERSION}/components`,
+        rewritePrefix: '/components'
+    });
 
-    // Support legacy /api/auth paths
-    app.use('/api/auth', createProxyMiddleware({
-        target: SERVICES.auth,
-        changeOrigin: true,
-        pathRewrite: { '^/api/auth': '' }
-    }));
-
-    // New API v1 Auth Route
-    app.use(`${VERSION}/auth`, createProxyMiddleware({
-        target: SERVICES.auth,
-        changeOrigin: true,
-        pathRewrite: { [`^${VERSION}/auth`]: '' }
-    }));
+    // Maintenance -> Intelligence Service
+    await fastify.register(fastifyHttpProxy, {
+        upstream: SERVICES.intelligence,
+        prefix: `${VERSION}/maintenance`,
+        rewritePrefix: '/maintenance'
+    });
 };
 
 module.exports = setupProxy;

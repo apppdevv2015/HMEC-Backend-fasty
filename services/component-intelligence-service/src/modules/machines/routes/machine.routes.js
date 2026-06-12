@@ -1,11 +1,25 @@
-const express = require('express');
-const router = express.Router();
 const machineController = require('../controllers/machine.controller');
+const machineValidation = require('../../../validations/machine.validation');
 const { authMiddleware, isAdmin } = require('../../../middlewares/auth.middleware');
+const toPreHandler = require('../../../utils/toPreHandler');
 
-router.post('/', authMiddleware, isAdmin, machineController.addMachine);
-router.get('/', authMiddleware, machineController.getMachines);
-router.put('/:id', authMiddleware, isAdmin, machineController.updateMachine);
-router.delete('/:id', authMiddleware, isAdmin, machineController.deleteMachine);
+async function machineRoutes(fastify, options) {
+    fastify.post('/', { 
+        preHandler: [toPreHandler(authMiddleware), toPreHandler(isAdmin), toPreHandler(machineValidation)] 
+    }, machineController.addMachine);
+    
+    fastify.get('/', { 
+        preHandler: toPreHandler(authMiddleware) 
+    }, machineController.getMachines);
+    
+    fastify.put('/:id', { 
+        preHandler: [toPreHandler(authMiddleware), toPreHandler(isAdmin), toPreHandler(machineValidation)] 
+    }, machineController.updateMachine);
+    
+    fastify.delete('/:id', { 
+        preHandler: [toPreHandler(authMiddleware), toPreHandler(isAdmin)] 
+    }, machineController.deleteMachine);
+}
 
-module.exports = router;
+module.exports = machineRoutes;
+

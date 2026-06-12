@@ -1,0 +1,4 @@
+version: '3.8'
+
+services:
+  # Add observability (Prometheus, Grafana, Loki) service configurations here

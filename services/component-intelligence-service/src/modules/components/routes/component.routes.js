@@ -1,28 +1,44 @@
-const express = require('express');
-const router = express.Router();
 const componentController = require('../controllers/component.controller');
 const intelligenceController = require('../../intelligence/controllers/intelligence.controller');
-const componentValidation = require('../../../validations/component.validation');
+const { componentValidation, inspectValidation } = require('../../../validations/component.validation');
 const { authMiddleware, isAdmin } = require('../../../middlewares/auth.middleware');
+const toPreHandler = require('../../../utils/toPreHandler');
 
-// Get all component categories
-router.get('/categories', authMiddleware, componentController.getCategories);
+async function componentRoutes(fastify, options) {
+    // Get all component categories
+    fastify.get('/categories', { preHandler: toPreHandler(authMiddleware) }, componentController.getCategories);
 
-// Register a new component - Admin Only
-router.post('/', authMiddleware, isAdmin, componentValidation, componentController.addComponent);
+    // Get all components for a machine or company
+    fastify.get('/', { preHandler: toPreHandler(authMiddleware) }, componentController.getComponents);
 
-// Update a component - Admin Only
-router.put('/:id', authMiddleware, isAdmin, componentValidation, componentController.updateComponent);
+    // Register a new component - Admin Only
+    fastify.post('/', { 
+        preHandler: [toPreHandler(authMiddleware), toPreHandler(isAdmin), toPreHandler(componentValidation)] 
+    }, componentController.addComponent);
 
-// Delete a component - Admin Only
-router.delete('/:id', authMiddleware, isAdmin, componentController.deleteComponent);
+    // Update a component - Admin Only
+    fastify.put('/:id', { 
+        preHandler: [toPreHandler(authMiddleware), toPreHandler(isAdmin), toPreHandler(componentValidation)] 
+    }, componentController.updateComponent);
 
-// --- Intelligence Engine Endpoints ---
+    // Update component operational metrics (Engineers/Inspectors) - Tenant Restricted
+    fastify.put('/:id/inspect', { 
+        preHandler: [toPreHandler(authMiddleware), toPreHandler(inspectValidation)] 
+    }, componentController.inspectComponent);
 
-// Get full component register (with intelligence metrics)
-router.get('/register', authMiddleware, intelligenceController.getRegister);
+    // Delete a component - Admin Only
+    fastify.delete('/:id', { 
+        preHandler: [toPreHandler(authMiddleware), toPreHandler(isAdmin)] 
+    }, componentController.deleteComponent);
 
-// Get dashboard stats (for analytics cards)
-router.get('/dashboard-stats', authMiddleware, intelligenceController.getDashboardStats);
+    // --- Intelligence Engine Endpoints ---
 
-module.exports = router;
+    // Get full component register (with intelligence metrics)
+    fastify.get('/register', { preHandler: toPreHandler(authMiddleware) }, intelligenceController.getRegister);
+
+    // Get dashboard stats (for analytics cards)
+    fastify.get('/dashboard-stats', { preHandler: toPreHandler(authMiddleware) }, intelligenceController.getDashboardStats);
+}
+
+module.exports = componentRoutes;
+

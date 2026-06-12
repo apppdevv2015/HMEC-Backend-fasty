@@ -15,6 +15,7 @@ model Company {
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
   users               User[]
+  notifications       Notification[]
 }
 
 model Role {
@@ -50,3 +51,44 @@ model Plan {
   isPublic      Boolean  @default(true)
   isActive      Boolean  @default(true)
 }
+
+model Log {
+  id            String   @id @default(uuid())
+  level         String
+  message       String   @db.Text
+  service       String
+  module        String?
+  action        String?
+  requestId     String?  @map("request_id")
+  correlationId String?  @map("correlation_id")
+  userId        String?  @map("user_id")
+  userRole      String?  @map("user_role")
+  companyId     String?  @map("company_id")
+  error         String?  @db.Text
+  errorCode     String?  @map("error_code")
+  stack         String?  @db.Text
+  status        Int?
+  method        String?
+  url           String?
+  duration      Int?
+  ipAddress     String?  @map("ip_address")
+  userAgent     String?  @map("user_agent")
+  metadata      Json?
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@map("logs")
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  companyId String   @map("company_id")
+  message   String   @db.Text
+  type      String
+  isRead    Boolean  @default(false) @map("is_read")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+

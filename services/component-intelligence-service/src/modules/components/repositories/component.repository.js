@@ -26,6 +26,14 @@ class ComponentRepository {
         });
     }
 
+    async findByMachineId(machineId) {
+        return await prisma.component.findMany({
+            where: { machineId },
+            include: { machine: true },
+            orderBy: { createdAt: 'desc' }
+        });
+    }
+
     async findById(id) {
         return await prisma.component.findUnique({
             where: { id },

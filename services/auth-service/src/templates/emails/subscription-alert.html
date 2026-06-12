@@ -1,47 +1,252 @@
+```html
 <!DOCTYPE html>
 <html>
 <head>
-    <style>
-        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #ffffff; margin: 0; padding: 0; color: #333; }
-        .wrapper { background-color: #f9f9f9; padding: 40px 0; }
-        .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; border: 1px solid #e1e1e1; }
-        .header { background: #ffffff; padding: 25px; text-align: center; border-bottom: 1px solid #eee; }
-        .content { padding: 40px; color: #2d3748; }
-        .revenue-badge { display: inline-block; background: #f0fff4; color: #276749; padding: 4px 12px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-bottom: 20px; text-transform: uppercase; border: 1px solid #c6f6d5; }
-        .data-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        .data-table td { padding: 12px 0; border-bottom: 1px solid #f0f0f0; font-size: 14px; }
-        .label { color: #888; width: 150px; }
-        .value { color: #111; font-weight: bold; }
-        .footer { padding: 20px; text-align: center; font-size: 11px; color: #bbb; background: #fafafa; border-top: 1px solid #eee; }
-    </style>
+    <meta charset="UTF-8">
+    <title>Subscription Payment Received</title>
 </head>
-<body>
-    <div class="wrapper">
-        <div class="container">
-            <div class="header">
-                <img src="{{logo}}" alt="HME Logo" style="max-width: 120px;">
-            </div>
-            <div class="content">
-                <div class="revenue-badge">Revenue Alert</div>
-                <h1 style="font-size: 20px; margin-top: 0; color: #111;">Subscription Payment Received! 💰</h1>
-                <p style="color: #666; font-size: 14px;">A company has successfully activated a plan:</p>
-                
-                <table class="data-table">
-                    <tr><td class="label">Company</td><td class="value">{{companyName}}</td></tr>
-                    <tr><td class="label">Plan Name</td><td class="value">{{planName}}</td></tr>
-                    <tr><td class="label">Amount</td><td class="value">R {{amount}}</td></tr>
-                    <tr><td class="label">Type</td><td class="value">{{type}}</td></tr>
-                    <tr><td class="label">Time</td><td class="value">{{timestamp}}</td></tr>
+
+<body style="margin:0; padding:0; background:#f4f7fb; font-family:'Segoe UI', Arial, sans-serif;">
+
+    <table width="100%" cellpadding="0" cellspacing="0"
+        style="background:#f4f7fb; padding:40px 20px;">
+
+        <tr>
+            <td align="center">
+
+                <!-- Main Container -->
+                <table width="600" cellpadding="0" cellspacing="0"
+                    style="background:#ffffff;
+                    border-radius:18px;
+                    overflow:hidden;
+                    border-top:8px solid #3437e8;
+                    box-shadow:0 10px 30px rgba(0,0,0,0.08);">
+
+                    <!-- Header -->
+                    <tr>
+                        <td style="background:#3437e8;
+                            padding:30px 40px;">
+
+                            <table width="100%" cellpadding="0" cellspacing="0">
+                                <tr>
+
+                                    <!-- Logo -->
+                                    <td align="left"
+                                        valign="top"
+                                        style="width:90px;">
+
+                                        <img src="{{logo}}" alt="HME Logo"
+                                            style="display:block;
+                                            width:60px;
+                                            height:auto;
+                                            background:#ffffff;
+                                            padding:6px;
+                                            border-radius:10px;">
+                                    </td>
+
+                                    <!-- Title -->
+                                    <td align="left"
+                                        style="padding-left:16px;">
+
+                                        <h1 style="margin:0;
+                                            color:#ffffff;
+                                            font-size:28px;
+                                            font-weight:700;">
+
+                                            Subscription Payment Received 💰
+                                        </h1>
+
+                                        <p style="margin:8px 0 0;
+                                            color:#dbe3ff;
+                                            font-size:14px;
+                                            line-height:1.6;">
+
+                                            A company has successfully activated a subscription plan
+                                        </p>
+
+                                    </td>
+
+                                </tr>
+                            </table>
+
+                        </td>
+                    </tr>
+
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding:40px;">
+
+                            <!-- Badge -->
+                            <div style="display:inline-block;
+                                background:#eef0ff;
+                                color:#3437e8;
+                                border:1px solid #cfd4ff;
+                                padding:8px 16px;
+                                border-radius:30px;
+                                font-size:12px;
+                                font-weight:600;
+                                margin-bottom:25px;">
+
+                                💳 Revenue Alert
+                            </div>
+
+                            <p style="font-size:15px;
+                                color:#374151;
+                                margin-top:0;">
+
+                                Hello Admin,
+                            </p>
+
+                            <p style="font-size:15px;
+                                color:#6b7280;
+                                line-height:1.8;">
+
+                                A company has successfully completed a subscription
+                                payment and activated a plan. Below are the transaction details:
+                            </p>
+
+                            <!-- Details Card -->
+                            <table width="100%" cellpadding="0" cellspacing="0"
+                                style="background:#f8f9ff;
+                                border:1px solid #dbe1ff;
+                                border-radius:14px;
+                                margin-top:25px;
+                                padding:25px;">
+
+                                <tr>
+                                    <td style="padding:14px 0;
+                                        color:#6b7280;
+                                        width:180px;">
+
+                                        Company Name
+                                    </td>
+
+                                    <td style="padding:14px 0;
+                                        color:#111827;
+                                        font-weight:600;">
+
+                                        {{companyName}}
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td style="padding:14px 0;
+                                        color:#6b7280;">
+
+                                        Plan Name
+                                    </td>
+
+                                    <td style="padding:14px 0;
+                                        color:#111827;
+                                        font-weight:600;">
+
+                                        {{planName}}
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td style="padding:14px 0;
+                                        color:#6b7280;">
+
+                                        Amount Paid
+                                    </td>
+
+                                    <td style="padding:14px 0;
+                                        color:#16a34a;
+                                        font-weight:700;
+                                        font-size:16px;">
+
+                                        R {{amount}}
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td style="padding:14px 0;
+                                        color:#6b7280;">
+
+                                        Subscription Type
+                                    </td>
+
+                                    <td style="padding:14px 0;
+                                        color:#111827;
+                                        font-weight:600;">
+
+                                        {{type}}
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td style="padding:14px 0;
+                                        color:#6b7280;">
+
+                                        Timestamp
+                                    </td>
+
+                                    <td style="padding:14px 0;
+                                        color:#111827;
+                                        font-weight:600;">
+
+                                        {{timestamp}}
+                                    </td>
+                                </tr>
+
+                            </table>
+
+                            <!-- Note Box -->
+                            <div style="margin-top:30px;
+                                padding:18px;
+                                background:#eef0ff;
+                                border-left:4px solid #3437e8;
+                                border-radius:10px;">
+
+                                <p style="margin:0;
+                                    font-size:13px;
+                                    color:#4b5563;
+                                    line-height:1.7;">
+
+                                    This is an automated transaction notification
+                                    generated by the
+                                    <strong>HME Revenue Monitoring System</strong>.
+
+                                </p>
+
+                            </div>
+
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background:#fafbff;
+                            text-align:center;
+                            padding:25px;
+                            border-top:1px solid #e5e7eb;">
+
+                            <p style="margin:0;
+                                color:#3437e8;
+                                font-size:14px;
+                                font-weight:700;">
+
+                                HME Intelligence Administration Panel
+                            </p>
+
+                            <p style="margin-top:8px;
+                                color:#94a3b8;
+                                font-size:12px;">
+
+                                Smart Monitoring • Machine Intelligence • Fleet Management
+                            </p>
+
+                        </td>
+                    </tr>
+
                 </table>
 
-                <div style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 15px;">
-                    <p style="color: #111; font-weight: bold; font-size: 14px;">HME Revenue Monitoring</p>
-                </div>
-            </div>
-            <div class="footer">
-                Automated Transaction Report
-            </div>
-        </div>
-    </div>
+            </td>
+        </tr>
+
+    </table>
+
 </body>
 </html>
+```

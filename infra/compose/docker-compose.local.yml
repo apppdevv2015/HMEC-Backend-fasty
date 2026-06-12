@@ -1,1 +1,94 @@
 version: '3.8'
+
+services:
+  # Redis Cache Service (since native Redis is not running on Windows)
+  redis:
+    image: redis:7-alpine
+    container_name: hme-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Migration Runner (Runs once and exits)
+  migration-runner:
+    build:
+      context: ../..
+      dockerfile: infra/docker/migration-runner.Dockerfile
+    command: /bin/sh -c "npx prisma db push --schema=database/prisma/schema.prisma --accept-data-loss && node database/seeds/seed.js"
+    environment:
+      - DATABASE_URL=postgres://postgres:admin@host.docker.internal:5432/hme_intelligence
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  # API Gateway
+  api-gateway:
+    build:
+      context: ../..
+      dockerfile: infra/docker/api-gateway.Dockerfile
+    command: npm start --workspace=services/api-gateway
+    ports:
+      - "4000:4000"
+    volumes:
+      - ../../logs/api-gateway:/app/logs
+    environment:
+      - DATABASE_URL=postgres://postgres:admin@host.docker.internal:5432/hme_intelligence
+      - REDIS_URL=redis://redis:6379
+      - PORT=4000
+      - INTELLIGENCE_SERVICE_URL=http://intelligence-service:3001
+      - AUTH_SERVICE_URL=http://auth-service:3002
+    depends_on:
+      redis:
+        condition: service_healthy
+      migration-runner:
+        condition: service_completed_successfully
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  # Component Intelligence Service
+  intelligence-service:
+    build:
+      context: ../..
+      dockerfile: infra/docker/component-intelligence-service.Dockerfile
+    command: npm start --workspace=services/component-intelligence-service
+    ports:
+      - "3001:3001"
+    volumes:
+      - ../../logs/intelligence-service:/app/logs
+    environment:
+      - DATABASE_URL=postgres://postgres:admin@host.docker.internal:5432/hme_intelligence
+      - PORT=3001
+    depends_on:
+      migration-runner:
+        condition: service_completed_successfully
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  # Auth Service
+  auth-service:
+    build:
+      context: ../..
+      dockerfile: infra/docker/auth-service.Dockerfile
+    command: npm start --workspace=services/auth-service
+    ports:
+      - "3002:3002"
+    volumes:
+      - ../../logs/auth-service:/app/logs
+    environment:
+      - DATABASE_URL=postgres://postgres:admin@host.docker.internal:5432/hme_intelligence
+      - PORT=3002
+    env_file:
+      - ../../services/auth-service/.env
+    depends_on:
+      migration-runner:
+        condition: service_completed_successfully
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+volumes:
+  redisdata:

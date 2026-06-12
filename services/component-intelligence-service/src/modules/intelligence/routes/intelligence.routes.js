@@ -1,9 +1,37 @@
-const express = require('express');
-const router = express.Router();
 const intelligenceController = require('../controllers/intelligence.controller');
-const { authMiddleware } = require('../../../middlewares/auth.middleware');
+const intelligenceValidation = require('../../../validations/intelligence.validation');
+const machineController = require('../../machines/controllers/machine.controller');
+const machineValidation = require('../../../validations/machine.validation');
+const { authMiddleware, isAdmin } = require('../../../middlewares/auth.middleware');
+const toPreHandler = require('../../../utils/toPreHandler');
 
-router.get('/register', authMiddleware, intelligenceController.getRegister);
-router.get('/dashboard-stats', authMiddleware, intelligenceController.getDashboardStats);
+async function intelligenceRoutes(fastify, options) {
+    fastify.get('/register', { 
+        preHandler: [toPreHandler(authMiddleware), toPreHandler(intelligenceValidation)] 
+    }, intelligenceController.getRegister);
+    
+    fastify.get('/dashboard-stats', { 
+        preHandler: [toPreHandler(authMiddleware), toPreHandler(intelligenceValidation)] 
+    }, intelligenceController.getDashboardStats);
 
-module.exports = router;
+    fastify.get('/fleet-heatmap', { 
+        preHandler: [toPreHandler(authMiddleware), toPreHandler(intelligenceValidation)] 
+    }, intelligenceController.getFleetHeatMap);
+
+    // Fleet Heat Map CRUD routes (interacting with Machines)
+    fastify.post('/fleet-heatmap', {
+        preHandler: [toPreHandler(authMiddleware), toPreHandler(isAdmin), toPreHandler(machineValidation)]
+    }, machineController.addMachine);
+
+    fastify.put('/fleet-heatmap/:id', {
+        preHandler: [toPreHandler(authMiddleware), toPreHandler(isAdmin), toPreHandler(machineValidation)]
+    }, machineController.updateMachine);
+
+    fastify.delete('/fleet-heatmap/:id', {
+        preHandler: [toPreHandler(authMiddleware), toPreHandler(isAdmin)]
+    }, machineController.deleteMachine);
+}
+
+module.exports = intelligenceRoutes;
+
+

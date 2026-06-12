@@ -1,6 +1,7 @@
 const path = require('path');
-const swaggerUi = require('swagger-ui-express');
 const swaggerJsdoc = require('swagger-jsdoc');
+
+const GATEWAY_URL = process.env.GATEWAY_URL;
 
 const swaggerOptions = {
     definition: {
@@ -11,8 +12,8 @@ const swaggerOptions = {
             description: 'Centralized Documentation for all HME Microservices',
         },
         servers: [
-            { url: 'http://localhost:4000/api/v1', description: 'Production API (v1)' },
-            { url: 'http://localhost:4000', description: 'Local Gateway (Legacy/Root)' }
+            { url: `${GATEWAY_URL}/api/v1`, description: 'Gateway API (v1)' },
+            { url: GATEWAY_URL, description: 'Gateway Root' }
         ],
         components: {
             securitySchemes: {
@@ -35,8 +36,25 @@ const swaggerOptions = {
 
 const swaggerDocs = swaggerJsdoc(swaggerOptions);
 
-const setupSwagger = (app) => {
-    app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
+const setupSwagger = async (fastify) => {
+    await fastify.register(require('@fastify/swagger'), {
+        openapi: swaggerDocs,
+        transform: ({ schema, url }) => {
+            // Hide all dynamically scanned proxy and internal routes from this gateway instance.
+            // This is because they are already fully documented via swagger-jsdoc from the microservices.
+            return {
+                schema: {
+                    ...schema,
+                    hide: true
+                },
+                url
+            };
+        }
+    });
+
+    await fastify.register(require('@fastify/swagger-ui'), {
+        routePrefix: '/api-docs'
+    });
 };
 
 module.exports = setupSwagger;

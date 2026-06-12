@@ -105,38 +105,4 @@
  *         description: Component deleted successfully
  */
 
-/**
- * @swagger
- * /components/register:
- *   get:
- *     summary: Get component register (table view) with intelligence metrics
- *     tags: [Components]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: query
- *         name: companyId
- *         required: true
- *         schema: { type: string }
- *     responses:
- *       200:
- *         description: List of components with calculated metrics
- */
 
-/**
- * @swagger
- * /components/dashboard-stats:
- *   get:
- *     summary: Get component dashboard stats (for cards)
- *     tags: [Components]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: query
- *         name: companyId
- *         required: true
- *         schema: { type: string }
- *     responses:
- *       200:
- *         description: Dashboard summary statistics
- */

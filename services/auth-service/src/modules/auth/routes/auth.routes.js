@@ -1,18 +1,24 @@
-const express = require('express');
-const router = express.Router();
 const authController = require('../controllers/auth.controller');
-const loginValidation = require('../../../validations/login.validation');
-const registerValidation = require('../../../validations/register.validation');
+const loginValidation = require('../validators/login.validation');
+const registerValidation = require('../validators/register.validation');
 const authMiddleware = require('../../../middlewares/auth.middleware');
+const toPreHandler = require('../../../utils/toPreHandler');
 
-router.post('/register', registerValidation, authController.register);
-router.post('/login', loginValidation, authController.login);
-router.get('/me', authMiddleware, authController.getMe);
+async function authRoutes(fastify, options) {
+    fastify.post('/register', { preHandler: toPreHandler(registerValidation) }, authController.register);
+    fastify.post('/login', { preHandler: toPreHandler(loginValidation) }, authController.login);
+    fastify.get('/me', { preHandler: authMiddleware }, authController.getMe);
 
-const roleMiddleware = (roles) => (req, res, next) => {
-    if (!roles.includes(req.user.role)) return res.status(403).json({ error: 'Access denied' });
-    next();
-};
-router.get('/company/dashboard', authMiddleware, roleMiddleware(['admin', 'super_admin']), authController.getDashboard);
+    // Custom role preHandler hook
+    const roleMiddleware = (roles) => async (request, reply) => {
+        if (!roles.includes(request.user.role)) {
+            reply.status(403).send({ error: 'Access denied' });
+        }
+    };
 
-module.exports = router;
+    fastify.get('/company/dashboard', { 
+        preHandler: [authMiddleware, roleMiddleware(['admin', 'super_admin'])] 
+    }, authController.getDashboard);
+}
+
+module.exports = authRoutes;

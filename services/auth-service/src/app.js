@@ -1,60 +1,70 @@
-const express = require('express');
+const Fastify = require('fastify');
 const db = require('./database/prisma');
 const jwt = require('jsonwebtoken');
 const JWT_SECRET = process.env.JWT_SECRET || 'hme-secret-key-2026';
+
+// Routes Imports
 const authRoutes = require('./modules/auth/routes/auth.routes');
-const setupSwagger = require('./config/swagger');
 const planRoutes = require('./modules/subscription/routes/subscription.routes');
 const userRoutes = require('./modules/user/routes/user.routes');
 const roleRoutes = require('./modules/role/routes/role.routes');
+const notificationRoutes = require('./modules/notification/routes/notification.routes');
 
-const authMiddleware = require('./middlewares/auth.middleware');
+// Middleware Imports
 const errorHandler = require('./middlewares/errorHandler');
-const authController = require('./modules/auth/controllers/auth.controller');
+const setupSwagger = require('./config/swagger');
 
+function buildApp(opts = {}) {
+    // 1. Initialize Fastify Instance with built-in Logger
+    const fastify = Fastify(opts);
 
-const app = express();
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+    // Register Form-Urlencoded Content Type Parser
+    const querystring = require('querystring');
+    fastify.addContentTypeParser('application/x-www-form-urlencoded', { parseAs: 'string' }, (req, body, done) => {
+        try {
+            done(null, querystring.parse(body));
+        } catch (err) {
+            done(err);
+        }
+    });
 
-// Setup Swagger
-setupSwagger(app);
+    // 2. Register Sensible utilities & CORS support
+    fastify.register(require('@fastify/sensible'));
+    fastify.register(require('@fastify/cors'), {
+        origin: true, // Allow cross-origin requests
+        credentials: true
+    });
 
+    // 3. Setup Swagger APIs Documentation
+    setupSwagger(fastify);
 
-// Request Logger
-app.use((req, res, next) => {
-    console.log(`[AUTH-SERVICE] ${req.method} ${req.url}`);
-    next();
-});
+    // 4. Global Request Logger Hook (onRequest)
+    fastify.addHook('onRequest', async (request, reply) => {
+        console.log(`[AUTH-SERVICE] ${request.method} ${request.url}`);
+    });
 
-// --- Routes ---
+    // 5. Health Check Route
+    fastify.get('/health', async (request, reply) => {
+        return { status: 'UP', service: 'auth-service' };
+    });
 
-// Health Check
-app.get('/health', (req, res) => res.json({ status: 'UP', service: 'auth-service' }));
+    // 6. Register Fastify Route Plugins (with respective prefixes)
+    fastify.register(authRoutes);
+    fastify.register(userRoutes);
+    fastify.register(roleRoutes, { prefix: '/roles' });
+    fastify.register(notificationRoutes, { prefix: '/notifications' });
 
-// Auth Module (Login, Register)
-app.use('/', authRoutes);
+    // Plans & PayFast (Mount at multiple prefixes for gateway rewrites compatibility)
+    fastify.register(planRoutes, { prefix: '/api/plans' });
+    fastify.register(planRoutes, { prefix: '/plans' });
+    fastify.register(planRoutes, { prefix: '/subscriptions' });
 
-// User & Role Management (Protected)
-app.use('/', userRoutes);
-app.use('/roles', roleRoutes);
+    // 7. Register Global Error Handler
+    fastify.setErrorHandler(errorHandler);
 
+    return fastify;
+}
 
-// Dashboard (Protected)
-const roleMiddleware = (roles) => (req, res, next) => {
-    if (!roles.includes(req.user.role)) return res.status(403).json({ error: 'Access denied' });
-    next();
-};
-// Dashboard moved to auth.routes.js
+module.exports = buildApp;
 
-// Plans & PayFast (Universal Mounting)
-app.use('/api/plans', planRoutes);
-app.use('/plans', planRoutes);
-app.use('/subscriptions', planRoutes);
-app.use('/', planRoutes); // Mount at root as fallback for gateway rewrites
-
-// Error Handling
-app.use(errorHandler);
-
-module.exports = app;
 

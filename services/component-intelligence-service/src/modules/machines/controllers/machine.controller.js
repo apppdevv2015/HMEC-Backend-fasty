@@ -4,6 +4,9 @@ const responseHandler = require('../../../utils/responseHandler');
 class MachineController {
     async addMachine(req, res) {
         try {
+            // Securely bind the logged-in user's companyId to the machine data
+            req.body.companyId = req.user.companyId;
+            
             const machine = await machineService.addMachine(req.body);
             return responseHandler(res, 201, true, 'Machine registered successfully', machine);
         } catch (error) {

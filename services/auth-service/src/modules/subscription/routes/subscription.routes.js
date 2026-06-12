@@ -1,30 +1,40 @@
-const express = require('express');
-const router = express.Router();
 const subscriptionController = require('../controllers/subscription.controller');
 const authMiddleware = require('../../../middlewares/auth.middleware');
-const planValidation = require('../../../validations/plan.validation');
+const planValidation = require('../validators/plan.validation');
+const toPreHandler = require('../../../utils/toPreHandler');
 
-const roleMiddleware = (roles) => (req, res, next) => {
-    if (!roles.includes(req.user.role)) return res.status(403).json({ error: 'Access denied' });
-    next();
-};
+async function subscriptionRoutes(fastify, options) {
+    const roleMiddleware = (roles) => async (request, reply) => {
+        if (!roles.includes(request.user.role)) {
+            reply.status(403).send({ error: 'Access denied' });
+        }
+    };
 
-// --- Public Routes ---
-router.get('/', subscriptionController.getAllPlans);
-router.get('/plans', subscriptionController.getAllPlans); // Alias for frontend compatibility
+    // --- Public Routes ---
+    fastify.get('/', subscriptionController.getAllPlans);
 
-// --- Protected Routes (Admin/Any logged in user) ---
-router.get('/active', authMiddleware, subscriptionController.getActiveSubscription);
-router.get('/subscriptions', authMiddleware, subscriptionController.getCompanySubscriptions);
-router.post('/checkout', authMiddleware, subscriptionController.checkout);
-router.post('/webhook', subscriptionController.webhook); 
+    // --- Protected Routes ---
+    fastify.get('/active', { preHandler: authMiddleware }, subscriptionController.getActiveSubscription);
+    fastify.get('/subscriptions', { preHandler: authMiddleware }, subscriptionController.getCompanySubscriptions);
+    fastify.post('/checkout', { preHandler: authMiddleware }, subscriptionController.checkout);
+    fastify.post('/webhook', subscriptionController.webhook); 
 
-// --- Super Admin Routes (Plan Management) ---
-router.get('/admin/subscriptions', authMiddleware, roleMiddleware(['super_admin']), subscriptionController.getCompanySubscriptions);
-router.post('/', authMiddleware, roleMiddleware(['super_admin']), planValidation, subscriptionController.createPlan);
-router.put('/:id', authMiddleware, roleMiddleware(['super_admin']), planValidation, subscriptionController.updatePlan);
-router.delete('/:id', authMiddleware, roleMiddleware(['super_admin']), subscriptionController.deletePlan);
+    // --- Super Admin Routes ---
+    fastify.get('/admin/subscriptions', { 
+        preHandler: [authMiddleware, roleMiddleware(['super_admin'])] 
+    }, subscriptionController.getCompanySubscriptions);
+    
+    fastify.post('/', { 
+        preHandler: [authMiddleware, roleMiddleware(['super_admin']), toPreHandler(planValidation)] 
+    }, subscriptionController.createPlan);
+    
+    fastify.put('/:id', { 
+        preHandler: [authMiddleware, roleMiddleware(['super_admin']), toPreHandler(planValidation)] 
+    }, subscriptionController.updatePlan);
+    
+    fastify.delete('/:id', { 
+        preHandler: [authMiddleware, roleMiddleware(['super_admin'])] 
+    }, subscriptionController.deletePlan);
+}
 
-
-module.exports = router;
-
+module.exports = subscriptionRoutes;

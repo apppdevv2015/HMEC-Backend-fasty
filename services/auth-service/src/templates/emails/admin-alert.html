@@ -1,48 +1,265 @@
+```html
 <!DOCTYPE html>
 <html>
 <head>
-    <style>
-        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #ffffff; margin: 0; padding: 0; color: #333; }
-        .wrapper { background-color: #f9f9f9; padding: 40px 0; }
-        .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; border: 1px solid #e1e1e1; }
-        .header { background: #ffffff; padding: 25px; text-align: center; border-bottom: 1px solid #eee; }
-        .content { padding: 40px; color: #2d3748; }
-        .alert-badge { display: inline-block; background: #f1f1f1; color: #111; padding: 4px 12px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-bottom: 20px; text-transform: uppercase; border: 1px solid #ddd; }
-        .data-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        .data-table td { padding: 12px 0; border-bottom: 1px solid #f0f0f0; font-size: 14px; }
-        .label { color: #888; width: 150px; }
-        .value { color: #111; font-weight: bold; }
-        .footer { padding: 20px; text-align: center; font-size: 11px; color: #bbb; background: #fafafa; border-top: 1px solid #eee; }
-    </style>
+    <meta charset="UTF-8">
+    <title>New Company Registration</title>
 </head>
-<body>
-    <div class="wrapper">
-        <div class="container">
-            <div class="header">
-                <img src="{{logo}}" alt="HME Logo" style="max-width: 120px;">
-            </div>
-            <div class="content">
-                <div class="alert-badge">Operational Alert</div>
-                <h1 style="font-size: 20px; margin-top: 0; color: #111;">A new company has joined!</h1>
-                <p style="color: #666; font-size: 14px;">Registration details are provided below:</p>
-                
-                <table class="data-table">
-                    <tr><td class="label">Company Name</td><td class="value">{{companyName}}</td></tr>
-                    <tr><td class="label">Admin Name</td><td class="value">{{adminName}}</td></tr>
-                    <tr><td class="label">Email</td><td class="value">{{email}}</td></tr>
-                    <tr><td class="label">Mobile</td><td class="value">{{mobile}}</td></tr>
-                    <tr><td class="label">Time</td><td class="value">{{timestamp}}</td></tr>
+
+<body style="margin:0; padding:0; background:#f4f7fb; font-family:'Segoe UI', Arial, sans-serif;">
+
+    <table width="100%" cellpadding="0" cellspacing="0"
+        style="background:#f4f7fb; padding:40px 20px;">
+
+        <tr>
+            <td align="center">
+
+                <!-- Main Container -->
+                <table width="600" cellpadding="0" cellspacing="0"
+                    style="background:#ffffff;
+                    border-radius:18px;
+                    overflow:hidden;
+                    border-top:8px solid #3437e8;
+                    box-shadow:0 10px 30px rgba(0,0,0,0.08);">
+
+                    <!-- Header -->
+                   ```html id="3u0j7q"
+<!-- Header -->
+<tr>
+    <td style="background:#3437e8;
+        padding:35px 40px;">
+
+        <table width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+
+                <!-- Left Side Logo -->
+                <td align="left" style="vertical-align:middle; width:120px;">
+
+                    <img src="{{logo}}" alt="HME Logo"
+                        style="max-width:90px;
+                        background:#ffffff;
+                        padding:10px;
+                        border-radius:12px;
+                        box-shadow:0 4px 12px rgba(0,0,0,0.15);">
+
+                </td>
+
+                <!-- Right Side Text -->
+                <td align="left" style="padding-left:20px;">
+
+                    <h1 style="margin:0;
+                        color:#ffffff;
+                        font-size:28px;
+                        font-weight:700;
+                        line-height:1.3;">
+
+                        New Company Joined
+                    </h1>
+
+                    <p style="margin:8px 0 0;
+                        color:#dbe3ff;
+                        font-size:14px;
+                        line-height:1.7;">
+
+                        A new company has successfully registered in the
+                        HME Monitoring System
+                    </p>
+
+                </td>
+
+            </tr>
+        </table>
+
+    </td>
+</tr>
+```
+
+
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding:40px;">
+
+                            <!-- Alert Badge -->
+                            <div style="display:inline-block;
+                                background:#eef0ff;
+                                color:#3437e8;
+                                border:1px solid #cfd4ff;
+                                padding:8px 16px;
+                                border-radius:30px;
+                                font-size:12px;
+                                font-weight:600;
+                                margin-bottom:25px;">
+
+                                🚀 New Registration Alert
+                            </div>
+
+                            <p style="font-size:15px;
+                                color:#374151;
+                                margin-top:0;
+                                font-weight:500;">
+
+                                Hello Admin,
+                            </p>
+
+                            <p style="font-size:15px;
+                                color:#6b7280;
+                                line-height:1.8;">
+
+                                A new company has been successfully registered on
+                                the platform. Below are the registration details:
+                            </p>
+
+                            <!-- Details Card -->
+                            <table width="100%" cellpadding="0" cellspacing="0"
+                                style="background:#f8f9ff;
+                                border:1px solid #dbe1ff;
+                                border-radius:14px;
+                                margin-top:25px;
+                                padding:25px;">
+
+                                <tr>
+                                    <td style="padding:14px 0;
+                                        color:#6b7280;
+                                        width:180px;
+                                        font-size:14px;">
+
+                                        Company Name
+                                    </td>
+
+                                    <td style="padding:14px 0;
+                                        color:#111827;
+                                        font-weight:600;
+                                        font-size:14px;">
+
+                                        {{companyName}}
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td style="padding:14px 0;
+                                        color:#6b7280;
+                                        font-size:14px;">
+
+                                        Admin Name
+                                    </td>
+
+                                    <td style="padding:14px 0;
+                                        color:#111827;
+                                        font-weight:600;
+                                        font-size:14px;">
+
+                                        {{adminName}}
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td style="padding:14px 0;
+                                        color:#6b7280;
+                                        font-size:14px;">
+
+                                        Email Address
+                                    </td>
+
+                                    <td style="padding:14px 0;
+                                        color:#111827;
+                                        font-weight:600;
+                                        font-size:14px;">
+
+                                        {{email}}
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td style="padding:14px 0;
+                                        color:#6b7280;
+                                        font-size:14px;">
+
+                                        Mobile Number
+                                    </td>
+
+                                    <td style="padding:14px 0;
+                                        color:#111827;
+                                        font-weight:600;
+                                        font-size:14px;">
+
+                                        {{mobile}}
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td style="padding:14px 0;
+                                        color:#6b7280;
+                                        font-size:14px;">
+
+                                        Registration Time
+                                    </td>
+
+                                    <td style="padding:14px 0;
+                                        color:#111827;
+                                        font-weight:600;
+                                        font-size:14px;">
+
+                                        {{timestamp}}
+                                    </td>
+                                </tr>
+
+                            </table>
+
+                            <!-- Notification Box -->
+                            <div style="margin-top:30px;
+                                padding:18px;
+                                background:#eef0ff;
+                                border-left:4px solid #3437e8;
+                                border-radius:10px;">
+
+                                <p style="margin:0;
+                                    font-size:13px;
+                                    color:#4b5563;
+                                    line-height:1.7;">
+
+                                    This is an automated notification generated by
+                                    the <strong>HME Monitoring System</strong>.
+                                    Please do not reply to this email.
+
+                                </p>
+
+                            </div>
+
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background:#fafbff;
+                            text-align:center;
+                            padding:25px;
+                            border-top:1px solid #e5e7eb;">
+
+                            <p style="margin:0;
+                                color:#3437e8;
+                                font-size:14px;
+                                font-weight:700;">
+
+                                HME Intelligence Administration Panel
+                            </p>
+
+                            <p style="margin-top:8px;
+                                color:#94a3b8;
+                                font-size:12px;">
+
+                                Smart Monitoring • Machine Intelligence • Fleet Management
+                            </p>
+
+                        </td>
+                    </tr>
+
                 </table>
 
-                <div style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 15px;">
-                    <p style="color: #999; font-size: 12px;">This is an automated system notification.</p>
-                    <p style="color: #111; font-weight: bold; font-size: 14px;">HME Monitoring System</p>
-                </div>
-            </div>
-            <div class="footer">
-                HME Intelligence Administration Panel
-            </div>
-        </div>
-    </div>
+            </td>
+        </tr>
+
+    </table>
+
 </body>
 </html>
+```

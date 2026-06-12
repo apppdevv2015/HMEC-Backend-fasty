@@ -2,20 +2,17 @@
     "private": true,
     "workspaces": [
         "services/*",
-        "packages/*"
+        "shared"
     ],
     "name": "HME-Intelligence-System",
     "scripts": {
-        "dev": "concurrently \"npm run dev --workspace=services/api-gateway\" \"npm run dev --workspace=services/component-intelligence-service\"",
+        "dev": "concurrently \"npm run dev --workspace=services/api-gateway\" \"npm run dev --workspace=services/component-intelligence-service\" \"npm run dev --workspace=services/auth-service\"",
         "dev:all": "concurrently \"npm run dev --workspace=services/api-gateway\" \"npm run dev --workspace=services/component-intelligence-service\" \"npm run dev --workspace=services/auth-service\" \"npm run dev --workspace=services/data-ingestion-service\" \"npm run dev --workspace=services/fleet-intelligence-service\" \"npm run dev --workspace=services/notification-service\"",
-        "start": "docker-compose up --build",
-        "infra": "docker-compose up postgres redis -d",
-        "migrate": "knex migrate:latest",
-        "migrate:rollback": "knex migrate:rollback",
-        "migrate:create": "node -e \"const fs=require('fs'); const d=new Date(); const date=`${String(d.getDate()).padStart(2,'0')}-${String(d.getMonth()+1).padStart(2,'0')}-${d.getFullYear()}`; const name=process.env.npm_config_name || 'migration'; const filename=`./infra/database/migrations/${date}_${name}.js`; fs.writeFileSync(filename, 'exports.up = function(knex) {\\n\\n};\\n\\nexports.down = function(knex) {\\n\\n};'); console.log('Created:', filename);\"",
-        "seed": "node infra/database/seed-admin.js",
-        "seed:intel": "node infra/database/seed-intelligence.js",
-        "setup": "npm run migrate && npm run seed && npm run seed:intel"
+        "start": "docker compose -f infra/compose/docker-compose.local.yml up --build",
+        "infra": "docker compose -f infra/compose/docker-compose.local.yml up postgres redis -d",
+        "db:push": "npx prisma db push --schema=database/prisma/schema.prisma",
+        "seed": "node database/seeds/seed.js",
+        "setup": "npx prisma generate --schema=database/prisma/schema.prisma && npm run db:push -- --force-reset && npm run seed"
     },
     "devDependencies": {
         "concurrently": "^9.2.1",
@@ -24,8 +21,8 @@
     "dependencies": {
         "@prisma/client": "^5.22.0",
         "bcryptjs": "^3.0.3",
-        "knex": "^3.2.10",
         "pg": "^8.20.0",
-        "prisma": "^5.14.0"
+        "prisma": "^5.14.0",
+        "redis": "^6.0.0"
     }
 }

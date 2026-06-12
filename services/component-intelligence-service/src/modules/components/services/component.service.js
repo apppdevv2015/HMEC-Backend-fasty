@@ -1,4 +1,5 @@
 const componentRepository = require('../repositories/component.repository');
+const intelligenceService = require('../../intelligence/services/intelligence.service');
 
 class ComponentService {
     /**
@@ -15,35 +16,7 @@ class ComponentService {
      */
     async getComponentRegister(companyId) {
         const components = await componentRepository.findAll(companyId);
-        
-        return components.map(comp => {
-            const hoursRun = comp.currentHours - comp.installHours;
-            const lifeUsedPercent = Math.min(Math.round((hoursRun / comp.plannedLife) * 100), 100);
-            const remainingHours = Math.max(comp.plannedLife - hoursRun, 0);
-
-            // Intelligence Logic: Risk Assessment
-            let riskStatus = 'Healthy';
-            let riskDriver = 'Normal';
-
-            if (comp.condition >= 5 || lifeUsedPercent >= 95) {
-                riskStatus = 'Critical';
-                riskDriver = comp.condition >= 5 ? 'Poor Condition' : 'End of Life';
-            } else if (comp.condition >= 4 || lifeUsedPercent >= 85) {
-                riskStatus = 'Warning';
-                riskDriver = comp.condition >= 4 ? 'Poor Condition' : 'End of Life';
-            }
-
-            return {
-                ...comp,
-                intelligence: {
-                    hoursRun,
-                    lifeUsedPercent,
-                    remainingHours,
-                    riskStatus,
-                    riskDriver
-                }
-            };
-        });
+        return intelligenceService.processRegister(components);
     }
 
     /**
@@ -75,10 +48,47 @@ class ComponentService {
         return await componentRepository.getCategories();
     }
     /**
+     * Inspect component - restricted to staff/engineers belonging to the same company
+     */
+    async inspectComponent(id, data, companyId, role) {
+        // 1. Fetch component with machine details
+        const component = await componentRepository.findById(id);
+        if (!component) {
+            throw new Error('Component not found');
+        }
+
+        // 2. Multi-tenant isolation guardrail: Check if component belongs to the engineer's company
+        // Super Admins can bypass this check
+        if (role !== 'super_admin' && component.machine.companyId !== companyId) {
+            throw new Error('Access denied: You are not authorized to inspect this component.');
+        }
+
+        // 3. Perform update (only operational fields currentHours and condition allowed)
+        const updateData = {
+            currentHours: data.currentHours,
+            condition: data.condition
+        };
+
+        return await componentRepository.update(id, updateData);
+    }
+
+    /**
      * Delete an existing component by its ID
      */
     async deleteComponent(id) {
         return await componentRepository.delete(id);
+    }
+
+    /**
+     * Fetch components filtered by machineId or companyId with intelligence metrics
+     */
+    async getComponents(query, companyId) {
+        if (query.machineId) {
+            const components = await componentRepository.findByMachineId(query.machineId);
+            return intelligenceService.processRegister(components);
+        }
+        const components = await componentRepository.findAll(companyId);
+        return intelligenceService.processRegister(components);
     }
 }
 

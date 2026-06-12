@@ -2,7 +2,9 @@ const prisma = require('../../../database/prisma');
 
 class UserRepository {
     async getAllUsers(companyId, isSuperAdmin, currentUserId, page = 1, limit = 10, search = '', filters = {}) {
-        const skip = (page - 1) * limit;
+        const parsedPage = parseInt(page) || 1;
+        const parsedLimit = parseInt(limit) || 10;
+        const skip = (parsedPage - 1) * parsedLimit;
         
         const where = {
             AND: [
@@ -39,7 +41,7 @@ class UserRepository {
                 },
                 orderBy: { createdAt: 'desc' },
                 skip,
-                take: limit
+                take: parsedLimit
             }),
             prisma.user.count({ where })
         ]);
@@ -48,9 +50,9 @@ class UserRepository {
             users,
             pagination: {
                 total,
-                page: parseInt(page),
-                limit: parseInt(limit),
-                pages: Math.ceil(total / limit)
+                page: parsedPage,
+                limit: parsedLimit,
+                pages: Math.ceil(total / parsedLimit)
             }
         };
     }

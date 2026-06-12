@@ -1,5 +1,4 @@
 const path = require('path');
-const swaggerUi = require('swagger-ui-express');
 const swaggerJsdoc = require('swagger-jsdoc');
 
 const swaggerOptions = {
@@ -33,8 +32,15 @@ const swaggerOptions = {
 
 const swaggerDocs = swaggerJsdoc(swaggerOptions);
 
-const setupSwagger = (app) => {
-    app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
+const setupSwagger = async (fastify) => {
+    await fastify.register(require('@fastify/swagger'), {
+        openapi: swaggerDocs
+    });
+
+    await fastify.register(require('@fastify/swagger-ui'), {
+        routePrefix: '/api-docs'
+    });
 };
 
 module.exports = setupSwagger;
+

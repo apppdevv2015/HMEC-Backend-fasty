@@ -1,17 +1,19 @@
 const jwt = require('jsonwebtoken');
 const JWT_SECRET = process.env.JWT_SECRET || 'hme-secret-key-2026';
 
-const authMiddleware = (req, res, next) => {
-    const authHeader = req.headers.authorization;
-    if (!authHeader) return res.status(401).json({ error: 'No token provided' });
+const authMiddleware = async (request, reply) => {
+    const authHeader = request.headers.authorization;
+    if (!authHeader) {
+        reply.status(401).send({ error: 'No token provided' });
+        return;
+    }
 
     const token = authHeader.split(' ')[1];
     try {
         const decoded = jwt.verify(token, JWT_SECRET);
-        req.user = decoded;
-        next();
+        request.user = decoded;
     } catch (err) {
-        res.status(401).json({ error: 'Invalid token' });
+        reply.status(401).send({ error: 'Invalid token' });
     }
 };
 

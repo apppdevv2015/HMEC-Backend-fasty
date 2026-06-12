@@ -1,12 +1,12 @@
 const responseHandler = require('../utils/responseHandler');
 
-const errorHandler = (err, req, res, next) => {
-    console.error(`[ERROR] ${err.stack}`);
+const errorHandler = (error, request, reply) => {
+    console.error(`[ERROR] ${error.stack}`);
 
-    const statusCode = err.statusCode || 500;
-    const message = err.message || 'Internal Server Error';
+    const statusCode = error.statusCode || error.status || 500;
+    const message = error.message || 'Internal Server Error';
 
-    return responseHandler(res, statusCode, message, null, err);
+    return responseHandler(reply, statusCode, message, null, error);
 };
 
 module.exports = errorHandler;

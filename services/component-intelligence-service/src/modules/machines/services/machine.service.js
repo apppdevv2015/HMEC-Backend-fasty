@@ -1,4 +1,26 @@
 const machineRepository = require('../repositories/machine.repository');
+const { createClient } = require('redis');
+const prisma = require('../../../database/prismaClient');
+
+async function publishRedisAlert(channel, payload) {
+    const redisUrl = process.env.REDIS_URL || 'redis://redis:6379';
+    const client = createClient({ 
+        url: redisUrl,
+        RESP: 2 
+    });
+    client.on('error', (err) => console.error('[Redis Error]', err));
+    try {
+        await client.connect();
+        await client.publish(channel, JSON.stringify(payload));
+        console.log(`[REDIS-PUB] Published alert to ${channel}`);
+    } catch (error) {
+        console.error('Failed to publish alert to Redis:', error);
+    } finally {
+        try {
+            await client.disconnect();
+        } catch (e) {}
+    }
+}
 
 class MachineService {
     async addMachine(data) {
@@ -21,17 +43,50 @@ class MachineService {
             name: data.name,
             model: data.model,
             serialNumber: data.serialNumber,
-            companyId: data.companyId
+            companyId: data.companyId,
+            site: data.equipmentType || data.site || null,
+            costPerHourTarget: data.costPerHourTarget || null,
+            costPerTonTarget: data.costPerTonTarget || null
         };
-        return await machineRepository.create(dbData);
+        const machine = await machineRepository.create(dbData);
+
+        // --- Save Notification to Database ---
+        let savedDbAlert;
+        try {
+            savedDbAlert = await prisma.notification.create({
+                data: {
+                    companyId: machine.companyId,
+                    message: `🚚 [FLEET ALERT] New Machine "${machine.name}" (${machine.model}) has been successfully added to site "${machine.site || 'N/A'}".`,
+                    type: 'fleet',
+                    isRead: false
+                }
+            });
+        } catch (dbErr) {
+            console.error('[DB-NOTIFICATION-ERROR] Failed to save machine alert to database:', dbErr.message);
+        }
+
+        // --- Real-time WebSocket Alert ---
+        const alertPayload = {
+            id: savedDbAlert ? savedDbAlert.id : 'alert-' + Date.now(),
+            severity: 'INFO',
+            component: 'Fleet Manager',
+            message: `🚚 [FLEET ALERT] New Machine "${machine.name}" (${machine.model}) has been successfully added to site "${machine.site || 'N/A'}".`,
+            timestamp: new Date().toISOString()
+        };
+        publishRedisAlert('role:Admin:alerts', alertPayload);
+        publishRedisAlert('alerts:global', alertPayload);
+
+        return mapMachineResponse(machine);
     }
 
     async getMachines(companyId) {
-        return await machineRepository.findAll(companyId);
+        const machines = await machineRepository.findAll(companyId);
+        return machines.map(mapMachineResponse);
     }
 
     async getMachineById(id) {
-        return await machineRepository.findById(id);
+        const machine = await machineRepository.findById(id);
+        return mapMachineResponse(machine);
     }
 
     async updateMachine(id, data) {
@@ -39,13 +94,26 @@ class MachineService {
         if (data.name !== undefined) dbData.name = data.name;
         if (data.model !== undefined) dbData.model = data.model;
         if (data.serialNumber !== undefined) dbData.serialNumber = data.serialNumber;
+        if (data.equipmentType !== undefined) dbData.site = data.equipmentType;
+        if (data.site !== undefined) dbData.site = data.site;
+        if (data.costPerHourTarget !== undefined) dbData.costPerHourTarget = data.costPerHourTarget;
+        if (data.costPerTonTarget !== undefined) dbData.costPerTonTarget = data.costPerTonTarget;
         
-        return await machineRepository.update(id, dbData);
+        const machine = await machineRepository.update(id, dbData);
+        return mapMachineResponse(machine);
     }
 
     async deleteMachine(id) {
         return await machineRepository.delete(id);
     }
 }
+
+const mapMachineResponse = (machine) => {
+    if (!machine) return null;
+    return {
+        ...machine,
+        equipmentType: machine.site || 'N/A'
+    };
+};
 
 module.exports = new MachineService();

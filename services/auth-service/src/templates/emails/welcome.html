@@ -1,54 +1,267 @@
+
 <!DOCTYPE html>
 <html>
 <head>
-    <style>
-        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #ffffff; margin: 0; padding: 0; color: #333; }
-        .wrapper { background-color: #f9f9f9; padding: 40px 0; }
-        .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; border: 1px solid #e1e1e1; }
-        .header { background: #ffffff; padding: 30px; text-align: center; border-bottom: 1px solid #eee; }
-        .content { padding: 40px; line-height: 1.6; }
-        h1 { color: #111; font-size: 24px; margin-bottom: 10px; }
-        .company-code-box { background: #fcfcfc; border: 1px dashed #ccc; border-radius: 8px; padding: 25px; text-align: center; margin: 30px 0; }
-        .code-label { color: #888; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 5px; }
-        .code-value { color: #111; font-size: 32px; font-weight: bold; letter-spacing: 4px; }
-        .button { display: inline-block; padding: 14px 30px; background: #111; color: #ffffff !important; text-decoration: none; border-radius: 4px; font-weight: bold; margin-top: 20px; }
-        .footer { padding: 25px; text-align: center; color: #999; font-size: 11px; border-top: 1px solid #eee; }
-        .signature { margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px; color: #666; font-size: 14px; }
-    </style>
+    <meta charset="UTF-8">
+    <title>Welcome to HME</title>
 </head>
-<body>
-    <div class="wrapper">
-        <div class="container">
-            <div class="header">
-                <!-- Backend automatically embeds logo.png here via {{logo}} -->
-                <img src="{{logo}}" alt="HME Logo" style="max-width: 140px; margin-bottom: 5px;">
-                <div style="color: #888; font-size: 9px; letter-spacing: 1px;">COMPONENT INTELLIGENCE SYSTEM</div>
-            </div>
-            <div class="content">
-                <h1>Welcome to HME, {{name}}! 🌍</h1>
-                <p>Your company registration for <b>HME Intelligence</b> is successful. You now have access to our component monitoring and analysis tools.</p>
-                
-                <div class="company-code-box">
-                    <div class="code-label">YOUR UNIQUE COMPANY CODE</div>
-                    <div class="code-value">{{companyCode}}</div>
-                </div>
 
-                <p><b>Next Steps:</b> You can now choose a plan to begin monitoring your assets. Use the button below to view our subscription plans and get started.</p>
-                
-                <center>
-                    <a href="{{plansUrl}}" class="button" style="background: #2563eb;">Choose Your Plan</a>
-                    <p style="margin-top: 15px; font-size: 13px;">Or <a href="{{loginUrl}}" style="color: #2563eb;">Login to Dashboard</a> using your email and the code above.</p>
-                </center>
+<body style="margin:0; padding:0; background:#f4f7fb; font-family:'Segoe UI', Arial, sans-serif;">
 
-                <div class="signature">
-                    <p>Thank you for choosing <b>HME Component Intelligence System</b>. We look forward to helping you optimize your fleet performance.</p>
-                    <p style="color: #111; font-weight: bold; margin-bottom: 0;">The HME Support Team</p>
-                </div>
-            </div>
-            <div class="footer">
-                &copy; 2026 HME Component Intelligence System. South Africa.
-            </div>
-        </div>
-    </div>
+    <table width="100%" cellpadding="0" cellspacing="0"
+        style="background:#f4f7fb; padding:40px 20px;">
+
+        <tr>
+            <td align="center">
+
+                <!-- Main Container -->
+                <table width="600" cellpadding="0" cellspacing="0"
+                    style="background:#ffffff;
+                    border-radius:18px;
+                    overflow:hidden;
+                    border-top:8px solid #3437e8;
+                    box-shadow:0 10px 30px rgba(0,0,0,0.08);">
+
+                    <!-- Header -->
+                    <tr>
+                        <td style="background:#3437e8;
+                            padding:30px 40px;">
+
+                            <table width="100%" cellpadding="0" cellspacing="0">
+                                <tr>
+
+                                    <!-- Logo -->
+                                    <td align="left"
+                                        valign="top"
+                                        style="width:90px;">
+
+                                        <img src="{{logo}}" alt="HME Logo"
+                                            style="display:block;
+                                            width:60px;
+                                            height:auto;
+                                            background:#ffffff;
+                                            padding:6px;
+                                            border-radius:10px;">
+                                    </td>
+
+                                    <!-- Title -->
+                                    <td align="left"
+                                        style="padding-left:16px;">
+
+                                        <h1 style="margin:0;
+                                            color:#ffffff;
+                                            font-size:28px;
+                                            font-weight:700;">
+
+                                            Welcome to HME 🌍
+                                        </h1>
+
+                                        <p style="margin:8px 0 0;
+                                            color:#dbe3ff;
+                                            font-size:14px;
+                                            line-height:1.6;">
+
+                                            Your company registration has been completed successfully
+                                        </p>
+
+                                    </td>
+
+                                </tr>
+                            </table>
+
+                        </td>
+                    </tr>
+
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding:40px;">
+
+                            <!-- Badge -->
+                            <div style="display:inline-block;
+                                background:#eef0ff;
+                                color:#3437e8;
+                                border:1px solid #cfd4ff;
+                                padding:8px 16px;
+                                border-radius:30px;
+                                font-size:12px;
+                                font-weight:600;
+                                margin-bottom:25px;">
+
+                                🎉 Company Registration Successful
+                            </div>
+
+                            <p style="font-size:15px;
+                                color:#374151;
+                                margin-top:0;">
+
+                                Hello <strong>{{name}}</strong>,
+                            </p>
+
+                            <p style="font-size:15px;
+                                color:#6b7280;
+                                line-height:1.8;">
+
+                                Your company registration for
+                                <strong>HME Intelligence</strong>
+                                has been completed successfully.
+                                You now have access to our component monitoring
+                                and analysis tools.
+                            </p>
+
+                            <!-- Company Code Card -->
+                            <table width="100%" cellpadding="0" cellspacing="0"
+                                style="background:#f8f9ff;
+                                border:1px solid #dbe1ff;
+                                border-radius:14px;
+                                margin-top:25px;
+                                padding:30px;
+                                text-align:center;">
+
+                                <tr>
+                                    <td>
+
+                                        <div style="font-size:12px;
+                                            color:#6b7280;
+                                            letter-spacing:1px;
+                                            text-transform:uppercase;
+                                            margin-bottom:10px;
+                                            font-weight:600;">
+
+                                            Your Unique Company Code
+                                        </div>
+
+                                        <div style="display:inline-block;
+                                            background:#3437e8;
+                                            color:#ffffff;
+                                            padding:14px 30px;
+                                            border-radius:12px;
+                                            font-size:30px;
+                                            font-weight:700;
+                                            letter-spacing:4px;">
+
+                                            {{companyCode}}
+                                        </div>
+
+                                    </td>
+                                </tr>
+
+                            </table>
+
+                            <!-- Note Box -->
+                            <div style="margin-top:25px;
+                                padding:18px;
+                                background:#eef0ff;
+                                border-left:4px solid #3437e8;
+                                border-radius:10px;">
+
+                                <p style="margin:0;
+                                    font-size:13px;
+                                    color:#4b5563;
+                                    line-height:1.7;">
+
+                                    <strong>Next Steps:</strong>
+                                    You can now choose a subscription plan
+                                    and begin monitoring your assets using
+                                    the HME Intelligence platform.
+
+                                </p>
+
+                            </div>
+
+                            <!-- Buttons -->
+                            <div style="text-align:center;
+                                margin-top:35px;">
+
+                                <a href="{{plansUrl}}"
+                                    style="display:inline-block;
+                                    background:#3437e8;
+                                    color:#ffffff;
+                                    text-decoration:none;
+                                    padding:14px 34px;
+                                    border-radius:10px;
+                                    font-weight:600;
+                                    font-size:14px;
+                                    margin-right:10px;">
+
+                                    Choose Your Plan
+                                </a>
+
+                                <a href="{{loginUrl}}"
+                                    style="display:inline-block;
+                                    background:#eef0ff;
+                                    color:#3437e8;
+                                    text-decoration:none;
+                                    padding:14px 34px;
+                                    border-radius:10px;
+                                    font-weight:600;
+                                    font-size:14px;
+                                    border:1px solid #cfd4ff;">
+
+                                    Login to Dashboard
+                                </a>
+
+                            </div>
+
+                            <!-- Signature -->
+                            <div style="margin-top:35px;
+                                border-top:1px solid #e5e7eb;
+                                padding-top:20px;">
+
+                                <p style="font-size:14px;
+                                    color:#6b7280;
+                                    line-height:1.7;">
+
+                                    Thank you for choosing
+                                    <strong>HME Component Intelligence System</strong>.
+                                    We look forward to helping you optimize
+                                    your fleet performance.
+
+                                </p>
+
+                                <p style="color:#111827;
+                                    font-weight:700;
+                                    margin-bottom:0;">
+
+                                    The HME Support Team
+                                </p>
+
+                            </div>
+
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background:#fafbff;
+                            text-align:center;
+                            padding:25px;
+                            border-top:1px solid #e5e7eb;">
+
+                            <p style="margin:0;
+                                color:#3437e8;
+                                font-size:14px;
+                                font-weight:700;">
+
+                                HME Intelligence Administration Panel
+                            </p>
+
+                            <p style="margin-top:8px;
+                                color:#94a3b8;
+                                font-size:12px;">
+
+                                Smart Monitoring • Machine Intelligence • Fleet Management
+                            </p>
+
+                        </td>
+                    </tr>
+
+                </table>
+
+            </td>
+        </tr>
+
+    </table>
+
 </body>
 </html>
+

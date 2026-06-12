@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HME WebSocket Real-time Alerts Tester</title>
+    <style>
+        :root {
+            --bg-color: #0d1117;
+            --card-bg: #161b22;
+            --border-color: #30363d;
+            --text-color: #c9d1d9;
+            --text-muted: #8b949e;
+            --primary: #58a6ff;
+            --success: #2ea44f;
+            --error: #f85149;
+            --warning: #db6d28;
+            --accent: #ab7df6;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        header h1 {
+            margin: 0 0 10px 0;
+            color: #ffffff;
+            font-size: 2rem;
+            font-weight: 600;
+            background: linear-gradient(45deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        header p {
+            margin: 0;
+            color: var(--text-muted);
+            font-size: 1rem;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        input, select {
+            background-color: var(--bg-color);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 10px 14px;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.15);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            border-radius: 6px;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: all 0.2s ease-in-out;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-connect {
+            background-color: var(--success);
+            color: #ffffff;
+        }
+
+        .btn-connect:hover {
+            background-color: #2c974b;
+        }
+
+        .btn-disconnect {
+            background-color: var(--error);
+            color: #ffffff;
+        }
+
+        .btn-disconnect:hover {
+            background-color: #da3633;
+        }
+
+        .btn-secondary {
+            background-color: #21262d;
+            color: var(--text-color);
+            border-color: var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background-color: #30363d;
+            border-color: #8b949e;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .status-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: #21262d;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px 20px;
+            margin-bottom: 20px;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: var(--text-muted);
+            box-shadow: 0 0 8px var(--text-muted);
+        }
+
+        .status-dot.connected {
+            background-color: var(--success);
+            box-shadow: 0 0 10px var(--success);
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.disconnected {
+            background-color: var(--error);
+            box-shadow: 0 0 10px var(--error);
+        }
+
+        .status-dot.connecting {
+            background-color: var(--warning);
+            box-shadow: 0 0 10px var(--warning);
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.4; }
+            50% { opacity: 1; }
+            100% { opacity: 0.4; }
+        }
+
+        .console-card {
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+        }
+
+        .console-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .console {
+            background-color: #010409;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 16px;
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            height: 350px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .log-entry {
+            border-left: 3px solid transparent;
+            padding-left: 8px;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .log-info { border-color: var(--primary); color: #8b949e; }
+        .log-success { border-color: var(--success); color: #56d364; }
+        .log-error { border-color: var(--error); color: #ff7b72; }
+        .log-warning { border-color: var(--warning); color: #f0883e; }
+        .log-sent { border-color: var(--accent); color: #d3b3f9; }
+        .log-received { border-color: #f2cd60; color: #f2cd60; }
+
+        .timestamp {
+            color: #484f58;
+            margin-right: 8px;
+            font-size: 0.75rem;
+        }
+
+        .instructions {
+            background-color: rgba(56, 139, 253, 0.1);
+            border: 1px solid rgba(56, 139, 253, 0.4);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 20px;
+            color: #c9d1d9;
+        }
+
+        .instructions h3 {
+            margin: 0 0 8px 0;
+            color: var(--primary);
+            font-size: 1rem;
+        }
+
+        .instructions ol {
+            margin: 0;
+            padding-left: 20px;
+            font-size: 0.9rem;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .instructions code {
+            background-color: rgba(110, 118, 129, 0.4);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>HME WebSocket Alerts Tester</h1>
+        <p>Test real-time connection and push alerts subscription for API Gateway</p>
+    </header>
+
+    <div class="instructions">
+        <h3>Prerequisites & Guide</h3>
+        <ol>
+            <li>Make sure the backend is running! Start it with: <code>npm run dev</code> or <code>npm run dev:all</code></li>
+            <li>Make sure Redis is running! (By default on port <code>6379</code>). You can run <code>npm run infra</code> or <code>docker-compose up redis -d</code> to launch Redis.</li>
+            <li>Adjust settings below and click <strong>Connect</strong>.</li>
+            <li>Send a heartbeat check using the <strong>Send Ping</strong> button.</li>
+            <li>Publish a test alert to Redis to see it instantly pushed to this client!</li>
+        </ol>
+    </div>
+
+    <div class="card">
+        <div class="form-grid">
+            <div class="form-group full-width">
+                <label for="wsUrl">WebSocket Gateway URL</label>
+                <input type="text" id="wsUrl" value="ws://127.0.0.1:4000/ws/alerts" placeholder="ws://127.0.0.1:4000/ws/alerts">
+            </div>
+            
+            <div class="form-group">
+                <label for="userId">User ID (Debug Parameter)</label>
+                <input type="text" id="userId" value="debug-user-99" placeholder="e.g. debug-user-99">
+            </div>
+
+            <div class="form-group">
+                <label for="userRole">Role Name (Debug Parameter)</label>
+                <select id="userRole">
+                    <option value="User">User</option>
+                    <option value="Admin" selected>Admin</option>
+                    <option value="Operator">Operator</option>
+                    <option value="Manager">Manager</option>
+                </select>
+            </div>
+
+            <div class="form-group full-width">
+                <label for="jwtToken">JWT Authorization Token (Optional - overrides User ID/Role if provided)</label>
+                <input type="text" id="jwtToken" value="" placeholder="Optional. Paste JWT token here">
+            </div>
+        </div>
+
+        <div class="btn-group">
+            <button id="btnConnect" class="btn-connect" onclick="connectWS()">
+                Connect
+            </button>
+            <button id="btnDisconnect" class="btn-disconnect" onclick="disconnectWS()" disabled>
+                Disconnect
+            </button>
+            <button id="btnPing" class="btn-secondary" onclick="sendPing()" disabled>
+                Send Ping
+            </button>
+        </div>
+    </div>
+
+    <div class="status-bar">
+        <div class="status-indicator">
+            <div id="statusDot" class="status-dot"></div>
+            <span id="statusText">DISCONNECTED</span>
+        </div>
+        <div id="latencyDisplay" style="font-size: 0.85rem; color: var(--text-muted);">
+            Latency: --ms
+        </div>
+    </div>
+
+    <div class="card console-card">
+        <div class="console-header">
+            <label>Real-Time Message Console</label>
+            <button class="btn-secondary" style="padding: 4px 10px; font-size: 0.75rem;" onclick="clearLogs()">Clear Console</button>
+        </div>
+        <div id="consoleLog" class="console">
+            <div class="log-entry log-info"><span class="timestamp">[System]</span>Console initialized. Ready to connect.</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let socket = null;
+    let pingStartTime = null;
+
+    const wsUrlInput = document.getElementById('wsUrl');
+    const userIdInput = document.getElementById('userId');
+    const userRoleInput = document.getElementById('userRole');
+    const jwtTokenInput = document.getElementById('jwtToken');
+
+    const btnConnect = document.getElementById('btnConnect');
+    const btnDisconnect = document.getElementById('btnDisconnect');
+    const btnPing = document.getElementById('btnPing');
+
+    const statusDot = document.getElementById('statusDot');
+    const statusText = document.getElementById('statusText');
+    const latencyDisplay = document.getElementById('latencyDisplay');
+    const consoleLog = document.getElementById('consoleLog');
+
+    function log(message, type = 'info') {
+        const time = new Date().toLocaleTimeString();
+        const entry = document.createElement('div');
+        entry.className = `log-entry log-${type}`;
+        
+        let displayMessage = typeof message === 'object' ? JSON.stringify(message, null, 2) : message;
+        entry.innerHTML = `<span class="timestamp">[${time}]</span>${displayMessage}`;
+        
+        consoleLog.appendChild(entry);
+        consoleLog.scrollTop = consoleLog.scrollHeight;
+    }
+
+    function clearLogs() {
+        consoleLog.innerHTML = `<div class="log-entry log-info"><span class="timestamp">[System]</span>Console cleared.</div>`;
+    }
+
+    function updateStatus(state) {
+        statusDot.className = 'status-dot';
+        if (state === 'CONNECTED') {
+            statusDot.classList.add('connected');
+            statusText.innerText = 'CONNECTED';
+            statusText.style.color = 'var(--success)';
+            btnConnect.disabled = true;
+            btnDisconnect.disabled = false;
+            btnPing.disabled = false;
+        } else if (state === 'CONNECTING') {
+            statusDot.classList.add('connecting');
+            statusText.innerText = 'CONNECTING';
+            statusText.style.color = 'var(--warning)';
+            btnConnect.disabled = true;
+            btnDisconnect.disabled = false;
+            btnPing.disabled = true;
+        } else {
+            statusDot.classList.add('disconnected');
+            statusText.innerText = 'DISCONNECTED';
+            statusText.style.color = 'var(--error)';
+            btnConnect.disabled = false;
+            btnDisconnect.disabled = true;
+            btnPing.disabled = true;
+            latencyDisplay.innerText = 'Latency: --ms';
+        }
+    }
+
+    function connectWS() {
+        let baseUrl = wsUrlInput.value.trim();
+        if (!baseUrl) {
+            log('Error: Please enter a valid WebSocket URL', 'error');
+            return;
+        }
+
+        const queryParams = [];
+        const token = jwtTokenInput.value.trim();
+        const userId = userIdInput.value.trim();
+        const role = userRoleInput.value;
+
+        if (token) {
+            queryParams.push(`token=${encodeURIComponent(token)}`);
+        } else {
+            if (userId) queryParams.push(`userId=${encodeURIComponent(userId)}`);
+            if (role) queryParams.push(`role=${encodeURIComponent(role)}`);
+        }
+
+        const finalUrl = queryParams.length > 0 ? `${baseUrl}?${queryParams.join('&')}` : baseUrl;
+
+        log(`Connecting to WebSocket: ${baseUrl}...`, 'info');
+        updateStatus('CONNECTING');
+
+        try {
+            socket = new WebSocket(finalUrl);
+
+            socket.onopen = (event) => {
+                log('WebSocket handshake established successfully.', 'success');
+                updateStatus('CONNECTED');
+            };
+
+            socket.onmessage = (event) => {
+                const rawData = event.data;
+
+                if (rawData === 'pong') {
+                    if (pingStartTime) {
+                        const latency = Date.now() - pingStartTime;
+                        latencyDisplay.innerText = `Latency: ${latency}ms`;
+                        log(`Pong received (heartbeat latency: ${latency}ms)`, 'success');
+                        pingStartTime = null;
+                    } else {
+                        log('Pong received (server heartbeat)', 'received');
+                    }
+                    return;
+                }
+
+                try {
+                    const parsed = JSON.parse(rawData);
+                    if (parsed.type === 'CONNECTED') {
+                        log(`Server Connected Confirmation: ${parsed.message}`, 'success');
+                        log(parsed, 'info');
+                    } else if (parsed.type === 'ALERT') {
+                        log(`📢 REAL-TIME ALERT received on channel: ${parsed.channel}`, 'warning');
+                        log(parsed.data, 'received');
+                    } else if (parsed.type === 'ERROR') {
+                        log(`❌ Server Error: ${parsed.message}`, 'error');
+                    } else {
+                        log(parsed, 'received');
+                    }
+                } catch (e) {
+                    log(`Raw Message: ${rawData}`, 'received');
+                }
+            };
+
+            socket.onerror = (error) => {
+                log('WebSocket Error encountered.', 'error');
+                console.error('Socket Error:', error);
+            };
+
+            socket.onclose = (event) => {
+                log(`WebSocket connection closed. Code: ${event.code}, Reason: ${event.reason || 'None provided'}`, 'info');
+                updateStatus('DISCONNECTED');
+                socket = null;
+            };
+
+        } catch (err) {
+            log(`Failed to create WebSocket client: ${err.message}`, 'error');
+            updateStatus('DISCONNECTED');
+        }
+    }
+
+    function disconnectWS() {
+        if (socket) {
+            log('Disconnecting from WebSocket...', 'info');
+            socket.close(1000, 'User click disconnect');
+        }
+    }
+
+    function sendPing() {
+        if (socket && socket.readyState === WebSocket.OPEN) {
+            log('Sending "ping" heartbeat to server...', 'sent');
+            pingStartTime = Date.now();
+            socket.send('ping');
+        } else {
+            log('Cannot ping: Socket is not open.', 'error');
+        }
+    }
+</script>
+</body>
+</html>

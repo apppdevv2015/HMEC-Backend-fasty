@@ -1,0 +1,233 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Company {
+  id                 String           @id @default(uuid())
+  companyCode        String           @unique
+  name               String           @unique
+  subscriptionStatus String           @default("active")
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  users              User[]
+  maintenanceLogs    MaintenanceLog[]
+  notifications      Notification[]
+  recommendations    Recommendation[]
+  subscriptions      Subscription[]
+}
+
+model Role {
+  id    String @id @default(uuid())
+  name  String @unique
+  users User[]
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  password     String
+  firstName    String
+  lastName     String?
+  mobileNumber String?
+  isActive     Boolean  @default(true)
+  roleId       String
+  companyId    String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  company      Company  @relation(fields: [companyId], references: [id])
+  role         Role     @relation(fields: [roleId], references: [id])
+}
+
+model SubscriptionPlan {
+  id            String         @id @default(uuid())
+  planName      String         @unique
+  price         Decimal
+  machineLimit  Int
+  staffLimit    Int
+  validityDays  Int
+  isPublic      Boolean        @default(true)
+  isActive      Boolean        @default(true)
+  subscriptions Subscription[]
+
+  @@map("subscription_plans")
+}
+
+model Subscription {
+  id                    String           @id @default(uuid())
+  companyId             String
+  userId                String?
+  planId                String
+  status                String           @default("pending")
+  paymentStatus         String           @default("PENDING")
+  idempotencyKey        String?          @unique
+  subscriptionStartDate DateTime         @default(now())
+  subscriptionEndDate   DateTime?
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+  company               Company          @relation(fields: [companyId], references: [id])
+  plan                  SubscriptionPlan @relation(fields: [planId], references: [id])
+
+  @@map("subscriptions")
+}
+
+model Machine {
+  id                String           @id @default(uuid())
+  name              String
+  model             String
+  serialNumber      String           @unique
+  companyId         String
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  site              String?
+  status            String?          @default("Healthy")
+  costPerHourTarget Decimal?         @map("cost_per_hour_target") @db.Decimal(10, 2)
+  costPerTonTarget  Decimal?         @map("cost_per_ton_target") @db.Decimal(10, 2)
+  components        Component[]
+  maintenanceLogs   MaintenanceLog[]
+  recommendations   Recommendation[]
+}
+
+model ComponentCategory {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Component {
+  id                 String              @id @default(uuid())
+  machineId          String
+  category           String
+  description        String
+  serialNumber       String              @unique
+  supplier           String?
+  installHours       Int                 @default(0)
+  currentHours       Int                 @default(0)
+  plannedLife        Int                 @default(0)
+  replacementCost    Decimal             @default(0)
+  condition          Int                 @default(1)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  installDate        DateTime?           @map("install_date")
+  expectedLifeHours  Int?                @map("expected_life_hours")
+  currentLifeHours   Int                 @default(0) @map("current_life_hours")
+  purchasePrice      Decimal?            @map("purchase_price") @db.Decimal(15, 2)
+  machine            Machine             @relation(fields: [machineId], references: [id])
+  componentCosts     ComponentCost[]
+  failurePredictions FailurePrediction[]
+  maintenanceLogs    MaintenanceLog[]
+  recommendations    Recommendation[]
+}
+
+model ComponentCost {
+  id          String    @id @default(uuid())
+  componentId String    @map("component_id")
+  costType    String    @map("cost_type")
+  amount      Decimal   @db.Decimal(15, 2)
+  currency    String    @default("USD")
+  date        DateTime
+  notes       String?
+  createdAt   DateTime  @default(now()) @map("created_at")
+  component   Component @relation(fields: [componentId], references: [id], onDelete: Cascade)
+
+  @@map("component_costs")
+}
+
+model Recommendation {
+  id                 String     @id @default(uuid())
+  companyId          String     @map("company_id")
+  machineId          String?    @map("machine_id")
+  componentId        String?    @map("component_id")
+  actionType         String     @map("action_type")
+  recommendationText String     @map("recommendation_text")
+  rationale          String?
+  estimatedSaving    Decimal    @map("estimated_saving") @db.Decimal(15, 2)
+  priority           String
+  status             String     @default("pending")
+  createdAt          DateTime   @default(now()) @map("created_at")
+  company            Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  component          Component? @relation(fields: [componentId], references: [id])
+  machine            Machine?   @relation(fields: [machineId], references: [id])
+
+  @@map("recommendations")
+}
+
+model FailurePrediction {
+  id                          String    @id @default(uuid())
+  componentId                 String    @map("component_id")
+  predictedRemainingLifeHours Int       @map("predicted_remaining_life_hours")
+  predictedFailureDate        DateTime  @map("predicted_failure_date")
+  confidenceScore             Int       @map("confidence_score")
+  factors                     Json
+  calculatedAt                DateTime  @default(now()) @map("calculated_at")
+  component                   Component @relation(fields: [componentId], references: [id], onDelete: Cascade)
+
+  @@map("failure_predictions")
+}
+
+model MaintenanceLog {
+  id          String     @id @default(uuid())
+  companyId   String     @map("company_id")
+  machineId   String     @map("machine_id")
+  componentId String?    @map("component_id")
+  technician  String
+  date        DateTime   @default(now())
+  work        String
+  cost        Decimal    @db.Decimal(15, 2)
+  downtime    String
+  status      String     @default("Open")
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+  company     Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  component   Component? @relation(fields: [componentId], references: [id])
+  machine     Machine    @relation(fields: [machineId], references: [id], onDelete: Cascade)
+
+  @@map("maintenance_logs")
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  companyId String   @map("company_id")
+  message   String
+  type      String
+  isRead    Boolean  @default(false) @map("is_read")
+  createdAt DateTime @default(now()) @map("created_at")
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+model Log {
+  id            String   @id @default(uuid())
+  level         String
+  message       String
+  service       String
+  module        String?
+  action        String?
+  requestId     String?  @map("request_id")
+  correlationId String?  @map("correlation_id")
+  userId        String?  @map("user_id")
+  userRole      String?  @map("user_role")
+  companyId     String?  @map("company_id")
+  error         String?
+  errorCode     String?  @map("error_code")
+  stack         String?
+  status        Int?
+  method        String?
+  url           String?
+  duration      Int?
+  ipAddress     String?  @map("ip_address")
+  userAgent     String?  @map("user_agent")
+  metadata      Json?
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@map("logs")
+}

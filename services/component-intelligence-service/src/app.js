@@ -1,28 +1,42 @@
-const express = require('express');
-const cors = require('cors');
+const Fastify = require('fastify');
+const cors = require('@fastify/cors');
 const setupSwagger = require('./config/swagger');
-const app = express();
-
-app.use(cors());
-app.use(express.json());
-
-// Health Check
-app.get('/health', (req, res) => res.json({ status: 'UP', service: 'intelligence-service' }));
-
-// Request Logger
-app.use((req, res, next) => {
-    console.log(`[INTELLIGENCE-SERVICE] ${req.method} ${req.url}`);
-    next();
-});
-
-// Swagger Setup
-setupSwagger(app);
 
 // Routes
 const componentRoutes = require('./modules/components/routes/component.routes');
 const machineRoutes = require('./modules/machines/routes/machine.routes');
+const maintenanceRoutes = require('./modules/maintenance/routes/maintenance.routes');
+const intelligenceRoutes = require('./modules/intelligence/routes/intelligence.routes');
 
-app.use('/components', componentRoutes);
-app.use('/machines', machineRoutes);
+function buildApp(options = {}) {
+    const app = Fastify(options);
 
-module.exports = app;
+    // Register CORS
+    app.register(cors, {
+        origin: '*'
+    });
+
+    // Request Logger hook
+    app.addHook('onRequest', async (request, reply) => {
+        console.log(`[INTELLIGENCE-SERVICE] ${request.method} ${request.url}`);
+    });
+
+    // Swagger Setup
+    setupSwagger(app);
+
+    // Health Check
+    app.get('/health', async (request, reply) => {
+        return { status: 'UP', service: 'intelligence-service' };
+    });
+
+    // Register Routes
+    app.register(componentRoutes, { prefix: '/components' });
+    app.register(machineRoutes, { prefix: '/machines' });
+    app.register(maintenanceRoutes, { prefix: '/maintenance' });
+    app.register(intelligenceRoutes, { prefix: '/' });
+
+    return app;
+}
+
+module.exports = buildApp;
+

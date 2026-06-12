@@ -22,7 +22,7 @@
         <div class="details">
             <div><span class="label">Plan:</span> HME Plan: premium</div>
             <div><span class="label">Amount:</span> R 300.00</div>
-            <div><span class="label">Payment ID:</span> efc901c9-98dd-4da4-b9fb-fcdb8233c9ed</div>
+            <div><span class="label">Payment ID:</span> 47fcf5e8-5189-4729-91fb-0bf88cae85f1</div>
         </div>
 
         <form action="https://sandbox.payfast.co.za/eng/process" method="post">
@@ -30,10 +30,10 @@
             <input type="hidden" name="merchant_key" value="q1cd2rdny4a53">
             <input type="hidden" name="amount" value="300.00">
             <input type="hidden" name="item_name" value="HME Plan: premium">
-            <input type="hidden" name="m_payment_id" value="efc901c9-98dd-4da4-b9fb-fcdb8233c9ed">
+            <input type="hidden" name="m_payment_id" value="47fcf5e8-5189-4729-91fb-0bf88cae85f1">
             <input type="hidden" name="return_url" value="http://localhost:5173/company-admin/dashboard">
             <input type="hidden" name="cancel_url" value="http://localhost:5173/cart">
-            <input type="hidden" name="notify_url" value="https://unpaid-rambling-creasing.ngrok-free.dev/api/plans/webhook">
+            <input type="hidden" name="notify_url" value="https://unpaid-rambling-creasing.ngrok-free.dev/api/v1/plans/webhook">
             
             <button type="submit" class="btn">Pay Now (Sandbox)</button>
         </form>

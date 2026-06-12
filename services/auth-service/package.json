@@ -4,18 +4,28 @@
     "version": "1.0.0",
     "scripts": {
         "start": "node src/main.js",
-        "dev": "nodemon src/main.js"
+        "dev": "nodemon src/main.js",
+        "db:bootstrap": "node src/scripts/bootstrap-db.js",
+        "migration:create": "node src/scripts/create-migration.js",
+        "migrate:deploy": "node src/scripts/prisma-cli.js migrate deploy",
+        "migrate:status": "node src/scripts/prisma-cli.js migrate status"
     },
     "prisma": {
         "schema": "src/database/prisma/schema.prisma"
     },
     "dependencies": {
+        "@fastify/cors": "^8.0.0",
+        "@fastify/sensible": "^5.0.0",
+        "@fastify/swagger": "^8.14.0",
+        "@fastify/swagger-ui": "^3.0.0",
         "@prisma/client": "^5.14.0",
         "bcryptjs": "^2.4.3",
-        "express": "^4.19.2",
+        "fastify": "^4.26.2",
         "jsonwebtoken": "^9.0.2",
+        "module-alias": "^2.3.4",
         "nodemailer": "^6.9.13",
-        "pg": "^8.11.5"
+        "pg": "^8.11.5",
+        "swagger-jsdoc": "^6.2.8"
     },
     "devDependencies": {
         "prisma": "^5.14.0"

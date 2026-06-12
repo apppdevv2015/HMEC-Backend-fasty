@@ -1,0 +1,8 @@
+# Loki configuration placeholder
+auth_enabled: false
+
+server:
+  http_listen_port: 3100
+  grpc_listen_port: 9096
+
+# Add remaining Loki configurations here

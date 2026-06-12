@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Afternoon Progress Report</title>
+</head>
+
+<body style="margin:0; padding:0; background:#f4f7fb; font-family:'Segoe UI', Arial, sans-serif;">
+
+    <table width="100%" cellpadding="0" cellspacing="0"
+        style="background:#f4f7fb; padding:40px 20px;">
+
+        <tr>
+            <td align="center">
+
+                <!-- Main Container -->
+                <table width="650" cellpadding="0" cellspacing="0"
+                    style="background:#ffffff;
+                    border-radius:18px;
+                    overflow:hidden;
+                    border-top:8px solid #0f766e;
+                    box-shadow:0 10px 30px rgba(0,0,0,0.08);">
+
+                    <!-- Header -->
+                    <tr>
+                        <td style="background:#0f766e;
+                            padding:30px 40px;">
+
+                            <table width="100%" cellpadding="0" cellspacing="0">
+                                <tr>
+
+                                    <!-- Logo -->
+                                    <td align="left"
+                                        valign="top"
+                                        style="width:90px;">
+
+                                        <img src="{{logo}}" alt="HME Logo"
+                                            style="display:block;
+                                            width:60px;
+                                            height:auto;
+                                            background:#ffffff;
+                                            padding:6px;
+                                            border-radius:10px;">
+                                    </td>
+
+                                    <!-- Title -->
+                                    <td align="left"
+                                        style="padding-left:16px;">
+
+                                        <h1 style="margin:0;
+                                            color:#ffffff;
+                                            font-size:26px;
+                                            font-weight:700;">
+                                            Afternoon Progress Report ☀️
+                                        </h1>
+
+                                        <p style="margin:8px 0 0;
+                                            color:#ccfbfe;
+                                            font-size:14px;
+                                            line-height:1.6;">
+                                            Daily development progress, fleet updates & email configurations
+                                        </p>
+
+                                    </td>
+
+                                </tr>
+                            </table>
+
+                        </td>
+                    </tr>
+
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding:40px;">
+
+                            <!-- Date Badge -->
+                            <div style="display:inline-block;
+                                background:#f0fdfa;
+                                color:#0f766e;
+                                border:1px solid #99f6e4;
+                                padding:8px 16px;
+                                border-radius:30px;
+                                font-size:12px;
+                                font-weight:600;
+                                margin-bottom:25px;">
+                                📅 Report Timestamp: {{timestamp}}
+                            </div>
+
+                            <p style="font-size:15px;
+                                color:#374151;
+                                margin-top:0;
+                                font-weight:500;">
+                                Hi Team,
+                            </p>
+
+                            <p style="font-size:15px;
+                                color:#6b7280;
+                                line-height:1.8;">
+                                Here is the summary of the work completed during the morning shift and early afternoon today for the **HME Component Intelligence & Fleet Management System**.
+                            </p>
+
+                            <!-- Tasks Completed Section -->
+                            <div style="margin-top:35px;
+                                font-size:18px;
+                                font-weight:700;
+                                color:#111827;
+                                border-left:4px solid #0f766e;
+                                padding-left:12px;">
+                                Completed Tasks & Updates
+                            </div>
+
+                            <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:15px;">
+                                
+                                <!-- Task 1: Fleet Module -->
+                                <tr>
+                                    <td style="padding:15px; background:#f8fafc; border-radius:10px; border:1px solid #e2e8f0; margin-bottom:12px; display:block;">
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td valign="top" style="font-size:18px; line-height:1; width:28px; color:#0f766e;">✅</td>
+                                                <td>
+                                                    <strong style="color:#0f766e; font-size:15px;">Fleet Module Functionality</strong>
+                                                    <p style="margin:5px 0 0; font-size:13px; color:#475569; line-height:1.6;">
+                                                        Integrated key components for real-time fleet diagnostic metrics and telemetry visualization. Added background status monitoring to check for critical fleet alert flags.
+                                                    </p>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+
+                                <!-- Task 2: History Section -->
+                                <tr>
+                                    <td style="padding:15px; background:#f8fafc; border-radius:10px; border:1px solid #e2e8f0; margin-bottom:12px; display:block;">
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td valign="top" style="font-size:18px; line-height:1; width:28px; color:#0f766e;">✅</td>
+                                                <td>
+                                                    <strong style="color:#0f766e; font-size:15px;">Developed History Section in Report Page</strong>
+                                                    <p style="margin:5px 0 0; font-size:13px; color:#475569; line-height:1.6;">
+                                                        Created the dedicated historical view for analytical reports. Operators can now query and audit previous machine logs, fleet breakdowns, and system overrides directly in the user interface.
+                                                    </p>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+
+                                <!-- Task 3: Email Integration -->
+                                <tr>
+                                    <td style="padding:15px; background:#f8fafc; border-radius:10px; border:1px solid #e2e8f0; display:block;">
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td valign="top" style="font-size:18px; line-height:1; width:28px; color:#0f766e;">✅</td>
+                                                <td>
+                                                    <strong style="color:#0f766e; font-size:15px;">Email Notification Templates & Utilities</strong>
+                                                    <p style="margin:5px 0 0; font-size:13px; color:#475569; line-height:1.6;">
+                                                        Configured Mailtrap/SMTP transporters and setup dynamic HTML templating logic (via Handlebars/Regex placeholders) for robust, background-queued automated notification system alerts.
+                                                    </p>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+
+                            </table>
+
+                            <!-- Fleet Diagnostics & Status Highlights -->
+                            <div style="margin-top:40px;
+                                font-size:18px;
+                                font-weight:700;
+                                color:#111827;
+                                border-left:4px solid #0f766e;
+                                padding-left:12px;">
+                                Fleet Module Status Overview
+                            </div>
+
+                            <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:20px;">
+                                <tr>
+                                    <!-- Metric 1 -->
+                                    <td width="50%" style="padding-right:10px;">
+                                        <table width="100%" style="background:#f0fdfa; border:1px solid #99f6e4; border-radius:12px; padding:15px; text-align:center;">
+                                            <tr>
+                                                <td>
+                                                    <div style="font-size:24px; font-weight:700; color:#0f766e;">{{activeFleetCount}}</div>
+                                                    <div style="font-size:12px; color:#475569; margin-top:5px; text-transform:uppercase; font-weight:600;">Active Fleet Vehicles</div>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                    <!-- Metric 2 -->
+                                    <td width="50%" style="padding-left:10px;">
+                                        <table width="100%" style="background:#f0fdfa; border:1px solid #99f6e4; border-radius:12px; padding:15px; text-align:center;">
+                                            <tr>
+                                                <td>
+                                                    <div style="font-size:24px; font-weight:700; color:#0f766e;">{{alertsCount}}</div>
+                                                    <div style="font-size:12px; color:#475569; margin-top:5px; text-transform:uppercase; font-weight:600;">Resolved Critical Alerts</div>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Note -->
+                            <div style="margin-top:35px;
+                                padding:18px;
+                                background:#f1f5f9;
+                                border-left:4px solid #475569;
+                                border-radius:10px;">
+                                <p style="margin:0;
+                                    font-size:13px;
+                                    color:#475569;
+                                    line-height:1.7;">
+                                    <strong>Status:</strong> All features listed above are successfully integrated, compiled, and built locally within the Docker architecture.
+                                </p>
+                            </div>
+
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background:#fafbff;
+                            text-align:center;
+                            padding:25px;
+                            border-top:1px solid #e2e8f0;">
+
+                            <p style="margin:0;
+                                color:#0f766e;
+                                font-size:14px;
+                                font-weight:700;">
+                                HME Intelligence & Fleet Control Panel
+                            </p>
+
+                            <p style="margin-top:8px;
+                                color:#94a3b8;
+                                font-size:12px;">
+                                Smart Fleet Analytics • Real-Time Monitoring • Automated Alerts
+                            </p>
+
+                        </td>
+                    </tr>
+
+                </table>
+
+            </td>
+        </tr>
+
+    </table>
+
+</body>
+</html>

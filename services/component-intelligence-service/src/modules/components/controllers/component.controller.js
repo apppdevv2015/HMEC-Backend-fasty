@@ -49,10 +49,33 @@ class ComponentController {
             return responseHandler(res, 400, false, error.message);
         }
     }
+    async inspectComponent(req, res) {
+        try {
+            const userCompanyId = req.user.companyId;
+            const userRole = req.user.role;
+            const componentId = req.params.id;
+            
+            const component = await componentService.inspectComponent(componentId, req.body, userCompanyId, userRole);
+            return responseHandler(res, 200, true, 'Component inspected successfully', component);
+        } catch (error) {
+            return responseHandler(res, 400, false, error.message);
+        }
+    }
+
     async deleteComponent(req, res) {
         try {
             const component = await componentService.deleteComponent(req.params.id);
             return responseHandler(res, 200, true, 'Component deleted successfully', component);
+        } catch (error) {
+            return responseHandler(res, 400, false, error.message);
+        }
+    }
+
+    async getComponents(req, res) {
+        try {
+            const companyId = req.user.companyId;
+            const components = await componentService.getComponents(req.query, companyId);
+            return responseHandler(res, 200, true, 'Components fetched successfully', components);
         } catch (error) {
             return responseHandler(res, 400, false, error.message);
         }

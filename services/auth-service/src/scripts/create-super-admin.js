@@ -2,13 +2,10 @@
  * Script to create a Super Admin manually
  * Usage: node services/auth-service/src/scripts/create-super-admin.js <email> <password>
  */
-const knex = require('knex');
 const bcrypt = require('bcryptjs');
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '../../.env') });
-const knexConfig = require('../../../../knexfile');
-
-const db = knex(knexConfig.development);
+const prisma = require('../database/prisma');
 
 async function createSuperAdmin() {
     const args = process.argv.slice(2);
@@ -21,34 +18,49 @@ async function createSuperAdmin() {
 
     try {
         console.log(`Checking roles...`);
-        const role = await db('roles').where({ name: 'super_admin' }).first();
+        const role = await prisma.role.findUnique({
+            where: { name: 'super_admin' }
+        });
+        
         if (!role) {
-            console.error('super_admin role not found in DB. Run migrations first.');
+            console.error('super_admin role not found in DB. Run seeds first.');
             process.exit(1);
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
         
-        // Super Admins usually don't belong to a specific company, or belong to a 'System' company
-        let company = await db('companies').where({ name: 'HME System' }).first();
+        // Super Admins usually belong to a 'HME Systems' company
+        let company = await prisma.company.findUnique({
+            where: { name: 'HME Systems' }
+        });
+
         if (!company) {
-            [company] = await db('companies').insert({ name: 'HME System' }).returning('*');
+            company = await prisma.company.create({
+                data: {
+                    name: 'HME Systems',
+                    companyCode: 'HME-000001',
+                    subscriptionStatus: 'active'
+                }
+            });
         }
 
-        await db('users').insert({
-            first_name: 'Super',
-            last_name: 'Admin',
-            email,
-            password_hash: hashedPassword,
-            role_id: role.id,
-            company_id: company.id
+        await prisma.user.create({
+            data: {
+                firstName: 'Super',
+                lastName: 'Admin',
+                email,
+                password: hashedPassword,
+                roleId: role.id,
+                companyId: company.id,
+                isActive: true
+            }
         });
 
         console.log(`Successfully created Super Admin: ${email}`);
     } catch (err) {
         console.error('Error creating Super Admin:', err.message);
     } finally {
-        await db.destroy();
+        await prisma.$disconnect();
     }
 }
 

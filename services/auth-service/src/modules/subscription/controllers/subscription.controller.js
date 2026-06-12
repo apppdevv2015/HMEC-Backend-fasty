@@ -2,7 +2,7 @@ const subscriptionService = require('../services/subscription.service');
 const responseHandler = require('../../../utils/responseHandler');
 
 class SubscriptionController {
-    async getAllPlans(req, res, next) {
+    async getAllPlans(req, res) {
         try {
             let showAll = false;
             const authHeader = req.headers.authorization;
@@ -21,11 +21,11 @@ class SubscriptionController {
             const plans = await subscriptionService.getAllPlans(!showAll);
             return responseHandler(res, 200, 'Plans fetched successfully', plans);
         } catch (error) {
-            next(error);
+            throw error;
         }
     }
 
-    async createPlan(req, res, next) {
+    async createPlan(req, res) {
         try {
             const { plan_name, machine_limit, staff_limit, price, features, validity_days, is_public, is_active } = req.body;
             const plan = await subscriptionService.createPlan({ 
@@ -40,11 +40,11 @@ class SubscriptionController {
             });
             return responseHandler(res, 201, 'Plan created successfully', plan);
         } catch (error) {
-            next(error);
+            throw error;
         }
     }
 
-    async updatePlan(req, res, next) {
+    async updatePlan(req, res) {
         try {
             const { plan_name, machine_limit, staff_limit, price, features, validity_days, is_public, is_active } = req.body;
             const dataToUpdate = {};
@@ -60,20 +60,20 @@ class SubscriptionController {
             const plan = await subscriptionService.updatePlan(req.params.id, dataToUpdate);
             return responseHandler(res, 200, 'Plan updated successfully', plan);
         } catch (error) {
-            next(error);
+            throw error;
         }
     }
 
-    async deletePlan(req, res, next) {
+    async deletePlan(req, res) {
         try {
             await subscriptionService.deletePlan(req.params.id);
             return responseHandler(res, 200, 'Plan deleted successfully');
         } catch (error) {
-            next(error);
+            throw error;
         }
     }
 
-    async checkout(req, res, next) {
+    async checkout(req, res) {
         try {
             const { plan_id, idempotency_key } = req.body;
             const checkoutData = await subscriptionService.initiateCheckout(
@@ -85,37 +85,38 @@ class SubscriptionController {
             );
             return responseHandler(res, 200, 'Checkout initiated successfully', checkoutData);
         } catch (error) {
-            next(error);
+            throw error;
         }
     }
 
-    async webhook(req, res, next) {
+    async webhook(req, res) {
         try {
             await subscriptionService.handleWebhook(req.body);
-            res.sendStatus(200);
+            res.status(200).send();
         } catch (error) {
             console.error('[PAYFAST WEBHOOK ERROR]', error);
-            res.sendStatus(500);
+            res.status(500).send();
         }
     }
 
-    async getCompanySubscriptions(req, res, next) {
+    async getCompanySubscriptions(req, res) {
         try {
             const subscriptions = await subscriptionService.getCompanySubscriptionHistory(req.user.companyId);
             return responseHandler(res, 200, 'Subscriptions fetched successfully', subscriptions);
         } catch (error) {
-            next(error);
+            throw error;
         }
     }
 
-    async getActiveSubscription(req, res, next) {
+    async getActiveSubscription(req, res) {
         try {
             const subscription = await subscriptionService.getActiveSubscriptionWithPlan(req.user.companyId);
             return responseHandler(res, 200, 'Active subscription fetched successfully', subscription);
         } catch (error) {
-            next(error);
+            throw error;
         }
     }
 }
 
 module.exports = new SubscriptionController();
+

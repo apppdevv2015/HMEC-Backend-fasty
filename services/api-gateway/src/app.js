@@ -1,26 +1,56 @@
-const express = require('express');
-const cors = require('cors');
+const fastify = require('fastify');
+const cors = require('@fastify/cors');
 const setupSwagger = require('./swagger/config');
 const setupProxy = require('./routes/proxy.routes');
-const app = express();
+const setupWebsocket = require('./routes/websocket.routes');
 
-app.use(cors());
+function buildApp(options = {}) {
+    const app = fastify({
+        logger: false,
+        ...options
+    });
 
-// Setup Unified Swagger Docs
-setupSwagger(app);
+    // Register CORS
+    app.register(cors, {
+        origin: '*', // Adjust this for production security
+        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+    });
 
-// Request Logger
-app.use((req, res, next) => {
-    console.log(`[GATEWAY] ${req.method} ${req.url}`);
-    next();
-});
+    // Register Redis
+    app.register(require('@fastify/redis'), {
+        url: process.env.REDIS_URL,
+        closeClient: true
+    });
 
-// Gateway Health Check
-app.get('/health', (req, res) => {
-    res.json({ status: 'UP', service: 'hme-api-gateway' });
-});
+    // Register WebSocket support
+    app.register(require('@fastify/websocket'), {
+        options: { maxPayload: 1048576 } // 1MB max payload
+    });
 
-// Setup All Proxy Routes
-setupProxy(app);
+    // Request Logger hook
+    app.addHook('onRequest', (request, reply, done) => {
+        console.log(`[GATEWAY] ${request.method} ${request.url}`);
+        done();
+    });
 
-module.exports = app;
+    app.addHook('onResponse', (request, reply, done) => {
+        console.log(`[GATEWAY] ${request.method} ${request.url} -> ${reply.statusCode}`);
+        done();
+    });
+
+    // Gateway Health Check
+    app.get('/health', async (request, reply) => {
+        return { status: 'UP', service: 'hme-api-gateway' };
+    });
+
+    // Bootstrap Swagger, Proxy, and WebSocket routes
+    app.register(async (instance) => {
+        await setupSwagger(instance);
+        await setupProxy(instance);
+        await setupWebsocket(instance);
+    });
+
+    return app;
+}
+
+module.exports = buildApp;
