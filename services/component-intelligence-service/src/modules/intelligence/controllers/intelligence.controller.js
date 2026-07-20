@@ -1,6 +1,7 @@
 const componentService = require('../../components/services/component.service');
 const intelligenceService = require('../services/intelligence.service');
 const responseHandler = require('../../../utils/responseHandler');
+const { HTTP_STATUS } = responseHandler;
 
 class IntelligenceController {
     async getRegister(req, res) {
@@ -8,9 +9,9 @@ class IntelligenceController {
             const { companyId } = req.query;
             const components = await componentService.getComponentRegister(companyId);
             const processed = intelligenceService.processRegister(components);
-            return responseHandler(res, 200, true, 'Intelligence register fetched', processed);
+            return responseHandler(res, HTTP_STATUS.OK, true, 'Intelligence register fetched', processed);
         } catch (error) {
-            return responseHandler(res, 400, false, error.message);
+            return responseHandler(res, HTTP_STATUS.BAD_REQUEST, false, error.message);
         }
     }
 
@@ -18,9 +19,9 @@ class IntelligenceController {
         try {
             const { companyId } = req.query;
             const stats = await componentService.getDashboardStats(companyId);
-            return responseHandler(res, 200, true, 'Dashboard stats fetched', stats);
+            return responseHandler(res, HTTP_STATUS.OK, true, 'Dashboard stats fetched', stats);
         } catch (error) {
-            return responseHandler(res, 400, false, error.message);
+            return responseHandler(res, HTTP_STATUS.BAD_REQUEST, false, error.message);
         }
     }
 
@@ -28,9 +29,19 @@ class IntelligenceController {
         try {
             const { companyId } = req.query;
             const data = await intelligenceService.getFleetHeatMap(companyId);
-            return responseHandler(res, 200, true, 'Fleet heatmap data fetched successfully', data);
+            return responseHandler(res, HTTP_STATUS.OK, true, 'Fleet heatmap data fetched successfully', data);
         } catch (error) {
-            return responseHandler(res, 400, false, error.message);
+            return responseHandler(res, HTTP_STATUS.BAD_REQUEST, false, error.message);
+        }
+    }
+
+    async getFleetMonitoring(req, res) {
+        try {
+            const { companyId } = req.query;
+            const data = await intelligenceService.getFleetMonitoring(companyId);
+            return responseHandler(res, HTTP_STATUS.OK, true, 'Fleet monitoring data fetched successfully', data);
+        } catch (error) {
+            return responseHandler(res, HTTP_STATUS.BAD_REQUEST, false, error.message);
         }
     }
 }

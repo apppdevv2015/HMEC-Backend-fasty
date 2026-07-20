@@ -1,5 +1,6 @@
 const subscriptionService = require('../services/subscription.service');
 const responseHandler = require('../../../utils/responseHandler');
+const { HTTP_STATUS } = responseHandler;
 
 class SubscriptionController {
     async getAllPlans(req, res) {
@@ -19,7 +20,13 @@ class SubscriptionController {
             }
 
             const plans = await subscriptionService.getAllPlans(!showAll);
-            return responseHandler(res, 200, 'Plans fetched successfully', plans);
+            let message = 'Plans fetched successfully';
+            if (plans.length === 0) {
+                message = showAll 
+                    ? 'No plans found. Please create a plan first.' 
+                    : 'No active plans are currently available.';
+            }
+            return responseHandler(res, HTTP_STATUS.OK, message, plans);
         } catch (error) {
             throw error;
         }
@@ -38,7 +45,7 @@ class SubscriptionController {
                 isPublic: is_public ?? true,
                 isActive: is_active ?? false
             });
-            return responseHandler(res, 201, 'Plan created successfully', plan);
+            return responseHandler(res, HTTP_STATUS.CREATED, 'Plan created successfully', plan);
         } catch (error) {
             throw error;
         }
@@ -58,7 +65,7 @@ class SubscriptionController {
             if (is_active !== undefined) dataToUpdate.isActive = is_active;
 
             const plan = await subscriptionService.updatePlan(req.params.id, dataToUpdate);
-            return responseHandler(res, 200, 'Plan updated successfully', plan);
+            return responseHandler(res, HTTP_STATUS.OK, 'Plan updated successfully', plan);
         } catch (error) {
             throw error;
         }
@@ -67,7 +74,7 @@ class SubscriptionController {
     async deletePlan(req, res) {
         try {
             await subscriptionService.deletePlan(req.params.id);
-            return responseHandler(res, 200, 'Plan deleted successfully');
+            return responseHandler(res, HTTP_STATUS.OK, 'Plan deleted successfully');
         } catch (error) {
             throw error;
         }
@@ -83,7 +90,7 @@ class SubscriptionController {
                 req.user.email,
                 idempotency_key
             );
-            return responseHandler(res, 200, 'Checkout initiated successfully', checkoutData);
+            return responseHandler(res, HTTP_STATUS.OK, 'Checkout initiated successfully', checkoutData);
         } catch (error) {
             throw error;
         }
@@ -92,17 +99,32 @@ class SubscriptionController {
     async webhook(req, res) {
         try {
             await subscriptionService.handleWebhook(req.body);
-            res.status(200).send();
+            res.status(HTTP_STATUS.OK).send();
         } catch (error) {
             console.error('[PAYFAST WEBHOOK ERROR]', error);
-            res.status(500).send();
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).send();
         }
     }
 
     async getCompanySubscriptions(req, res) {
         try {
             const subscriptions = await subscriptionService.getCompanySubscriptionHistory(req.user.companyId);
-            return responseHandler(res, 200, 'Subscriptions fetched successfully', subscriptions);
+            const message = subscriptions.length > 0 
+                ? 'Subscriptions fetched successfully' 
+                : 'No subscriptions found for this company.';
+            return responseHandler(res, HTTP_STATUS.OK, message, subscriptions);
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async getAllSubscriptions(req, res) {
+        try {
+            const subscriptions = await subscriptionService.getCompanySubscriptions();
+            const message = subscriptions.length > 0 
+                ? 'Subscriptions fetched successfully' 
+                : 'No subscriptions found in the system.';
+            return responseHandler(res, HTTP_STATUS.OK, message, subscriptions);
         } catch (error) {
             throw error;
         }
@@ -111,7 +133,10 @@ class SubscriptionController {
     async getActiveSubscription(req, res) {
         try {
             const subscription = await subscriptionService.getActiveSubscriptionWithPlan(req.user.companyId);
-            return responseHandler(res, 200, 'Active subscription fetched successfully', subscription);
+            const message = subscription 
+                ? 'Active subscription fetched successfully' 
+                : 'No active subscription found for this company.';
+            return responseHandler(res, HTTP_STATUS.OK, message, subscription);
         } catch (error) {
             throw error;
         }

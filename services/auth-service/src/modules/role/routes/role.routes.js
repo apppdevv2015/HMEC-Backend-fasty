@@ -1,7 +1,6 @@
 const roleController = require('../controllers/role.controller');
 const authMiddleware = require('../../../middlewares/auth.middleware');
 const roleValidation = require('../validators/role.validation');
-const toPreHandler = require('../../../utils/toPreHandler');
 
 async function roleRoutes(fastify, options) {
     // Helper preHandler hook for role-based access
@@ -22,11 +21,11 @@ async function roleRoutes(fastify, options) {
 
     // Restricted to Super Admin only
     fastify.post('/', { 
-        preHandler: [authorize(['super_admin']), toPreHandler(roleValidation)] 
+        preHandler: [authorize(['super_admin']), roleValidation] 
     }, roleController.createRole);
     
     fastify.put('/:id', { 
-        preHandler: [authorize(['super_admin']), toPreHandler(roleValidation)] 
+        preHandler: [authorize(['super_admin']), roleValidation] 
     }, roleController.updateRole);
     
     fastify.delete('/:id', { 

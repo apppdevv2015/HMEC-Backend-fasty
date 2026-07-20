@@ -1,22 +1,22 @@
-const loginValidation = (req, res, next) => {
-    const { email, password } = req.body;
+const loginValidation = async (request, reply) => {
+    const { email, password } = request.body;
 
     if (!email || !password) {
-        return res.status(400).json({
+        reply.code(400).send({
             success: false,
             message: "Email and password are required"
         });
+        return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-        return res.status(400).json({
+        reply.code(400).send({
             success: false,
             message: "Invalid email format"
         });
+        return;
     }
-
-    next();
 };
 
 module.exports = loginValidation;

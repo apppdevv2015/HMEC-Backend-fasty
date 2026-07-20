@@ -9,7 +9,7 @@
         "dev": "concurrently \"npm run dev --workspace=services/api-gateway\" \"npm run dev --workspace=services/component-intelligence-service\" \"npm run dev --workspace=services/auth-service\"",
         "dev:all": "concurrently \"npm run dev --workspace=services/api-gateway\" \"npm run dev --workspace=services/component-intelligence-service\" \"npm run dev --workspace=services/auth-service\" \"npm run dev --workspace=services/data-ingestion-service\" \"npm run dev --workspace=services/fleet-intelligence-service\" \"npm run dev --workspace=services/notification-service\"",
         "start": "docker compose -f infra/compose/docker-compose.local.yml up --build",
-        "infra": "docker compose -f infra/compose/docker-compose.local.yml up postgres redis -d",
+        "infra": "docker compose -f infra/compose/docker-compose.infra.yml up -d",
         "db:push": "npx prisma db push --schema=database/prisma/schema.prisma",
         "seed": "node database/seeds/seed.js",
         "setup": "npx prisma generate --schema=database/prisma/schema.prisma && npm run db:push -- --force-reset && npm run seed"

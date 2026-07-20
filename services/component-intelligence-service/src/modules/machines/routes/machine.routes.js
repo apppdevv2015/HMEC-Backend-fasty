@@ -1,23 +1,22 @@
 const machineController = require('../controllers/machine.controller');
 const machineValidation = require('../../../validations/machine.validation');
 const { authMiddleware, isAdmin } = require('../../../middlewares/auth.middleware');
-const toPreHandler = require('../../../utils/toPreHandler');
 
 async function machineRoutes(fastify, options) {
     fastify.post('/', { 
-        preHandler: [toPreHandler(authMiddleware), toPreHandler(isAdmin), toPreHandler(machineValidation)] 
+        preHandler: [authMiddleware, isAdmin, machineValidation] 
     }, machineController.addMachine);
     
     fastify.get('/', { 
-        preHandler: toPreHandler(authMiddleware) 
+        preHandler: authMiddleware 
     }, machineController.getMachines);
     
     fastify.put('/:id', { 
-        preHandler: [toPreHandler(authMiddleware), toPreHandler(isAdmin), toPreHandler(machineValidation)] 
+        preHandler: [authMiddleware, isAdmin, machineValidation] 
     }, machineController.updateMachine);
     
     fastify.delete('/:id', { 
-        preHandler: [toPreHandler(authMiddleware), toPreHandler(isAdmin)] 
+        preHandler: [authMiddleware, isAdmin] 
     }, machineController.deleteMachine);
 }
 

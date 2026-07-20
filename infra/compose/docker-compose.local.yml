@@ -1,4 +1,5 @@
 version: '3.8'
+name: hme-intelligence
 
 services:
   # Redis Cache Service (since native Redis is not running on Windows)
@@ -63,6 +64,7 @@ services:
     environment:
       - DATABASE_URL=postgres://postgres:admin@host.docker.internal:5432/hme_intelligence
       - PORT=3001
+      - REDIS_URL=redis://redis:6379
     depends_on:
       migration-runner:
         condition: service_completed_successfully
@@ -82,6 +84,7 @@ services:
     environment:
       - DATABASE_URL=postgres://postgres:admin@host.docker.internal:5432/hme_intelligence
       - PORT=3002
+      - REDIS_URL=redis://redis:6379
     env_file:
       - ../../services/auth-service/.env
     depends_on:
