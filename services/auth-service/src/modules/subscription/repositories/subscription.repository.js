@@ -14,6 +14,13 @@ class SubscriptionRepository {
         });
     }
 
+    async getPlanByName(planName) {
+        return await prisma.subscriptionPlan.findUnique({
+            where: { planName }
+        });
+    }
+
+
     async getActiveSubscription(companyId) {
         return await prisma.subscription.findFirst({
             where: {

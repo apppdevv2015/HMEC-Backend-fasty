@@ -2,7 +2,7 @@ const bcrypt = require('bcryptjs');
 const prisma = require('../database/prisma');
 
 async function ensureRoles() {
-  const roles = ['super_admin', 'admin', 'engineer', 'planner', 'viewer'];
+  const roles = ['super_admin', 'sub_super_admin', 'admin', 'sub_admin', 'engineer', 'planner', 'viewer'];
 
   await prisma.$transaction(async (tx) => {
     // Advisory lock using HME namespace

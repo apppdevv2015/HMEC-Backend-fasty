@@ -58,8 +58,8 @@ class ComponentService {
         }
 
         // 2. Multi-tenant isolation guardrail: Check if component belongs to the engineer's company
-        // Super Admins can bypass this check
-        if (role !== 'super_admin' && component.machine.companyId !== companyId) {
+        // Super Admins and Sub Super Admins can bypass this check
+        if (role !== 'super_admin' && role !== 'sub_super_admin' && component.machine.companyId !== companyId) {
             throw new Error('Access denied: You are not authorized to inspect this component.');
         }
 

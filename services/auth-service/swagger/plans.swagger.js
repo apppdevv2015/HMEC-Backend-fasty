@@ -88,7 +88,7 @@
  * @swagger
  * /plans/admin/subscriptions:
  *   get:
- *     summary: List all company subscriptions (Super Admin Only)
+ *     summary: List all company subscriptions (Super Admin & Sub Super Admin Only)
  *     tags: [Plans]
  *     responses:
  *       200:

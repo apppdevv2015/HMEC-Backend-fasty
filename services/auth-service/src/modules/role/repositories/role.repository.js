@@ -31,6 +31,15 @@ class RoleRepository {
     }
 
     async deleteRole(id) {
+        const usersCount = await prisma.user.count({
+            where: { roleId: id }
+        });
+        if (usersCount > 0) {
+            const error = new Error(`Cannot delete this role because ${usersCount} user(s) are assigned to it. Please reassign the users first.`);
+            error.statusCode = 400;
+            throw error;
+        }
+
         return await prisma.role.delete({
             where: { id }
         });

@@ -36,11 +36,11 @@ const machineSchema = z.object({
 // For update (PUT), make all fields optional
 const machineUpdateSchema = machineSchema.partial();
 
-const machineValidation = (req, res, next) => {
+const machineValidation = async (request, reply) => {
     // POST requires all fields, PUT allows partial
-    const schema = req.method === 'POST' ? machineSchema : machineUpdateSchema;
+    const schema = request.method === 'POST' ? machineSchema : machineUpdateSchema;
     
-    const result = schema.safeParse(req.body);
+    const result = schema.safeParse(request.body);
     
     if (!result.success) {
         // Extract validation issues
@@ -50,16 +50,16 @@ const machineValidation = (req, res, next) => {
             errorDetails[path] = issue.message;
         });
         
-        return res.status(400).json({
+        reply.code(400).send({
             success: false,
             message: "Validation failed",
             errors: errorDetails
         });
+        return;
     }
     
-    // Assign validated/sanitized data back to req.body
-    req.body = result.data;
-    next();
+    // Assign validated/sanitized data back to request.body
+    request.body = result.data;
 };
 
 module.exports = machineValidation;

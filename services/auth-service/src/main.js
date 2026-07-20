@@ -12,5 +12,6 @@ const start = async () => {
     }
 };
 
+// Trigger restart - swagger updated v8
 start();
 

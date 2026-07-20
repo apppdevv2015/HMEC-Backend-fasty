@@ -1,4 +1,6 @@
 const notificationService = require('../services/notification.service');
+const responseHandler = require('../../../utils/responseHandler');
+const { HTTP_STATUS } = responseHandler;
 
 const getNotifications = async (request, reply) => {
     try {
@@ -6,11 +8,7 @@ const getNotifications = async (request, reply) => {
         const limit = request.query.limit ? parseInt(request.query.limit) : 15;
 
         if (!companyId) {
-            return reply.code(400).send({
-                success: false,
-                message: 'Company ID is required',
-                error: 'Bad Request'
-            });
+            return responseHandler(reply, HTTP_STATUS.BAD_REQUEST, 'Company ID is required');
         }
 
         const list = await notificationService.getNotifications(companyId, limit);
@@ -25,17 +23,9 @@ const getNotifications = async (request, reply) => {
             type: item.type
         }));
 
-        return reply.code(200).send({
-            success: true,
-            data: formattedList,
-            error: null
-        });
+        return responseHandler(reply, HTTP_STATUS.OK, formattedList);
     } catch (error) {
-        return reply.code(500).send({
-            success: false,
-            message: error.message,
-            error: 'Internal Server Error'
-        });
+        return responseHandler(reply, HTTP_STATUS.INTERNAL_SERVER_ERROR, error);
     }
 };
 
@@ -43,17 +33,9 @@ const markAsRead = async (request, reply) => {
     try {
         const { id } = request.params;
         const result = await notificationService.markAsRead(id);
-        return reply.code(200).send({
-            success: true,
-            data: result,
-            error: null
-        });
+        return responseHandler(reply, HTTP_STATUS.OK, result);
     } catch (error) {
-        return reply.code(500).send({
-            success: false,
-            message: error.message,
-            error: 'Internal Server Error'
-        });
+        return responseHandler(reply, HTTP_STATUS.INTERNAL_SERVER_ERROR, error);
     }
 };
 
@@ -61,24 +43,12 @@ const markAllAsRead = async (request, reply) => {
     try {
         const companyId = request.user?.companyId || request.body?.companyId || request.query.companyId;
         if (!companyId) {
-            return reply.code(400).send({
-                success: false,
-                message: 'Company ID is required',
-                error: 'Bad Request'
-            });
+            return responseHandler(reply, HTTP_STATUS.BAD_REQUEST, 'Company ID is required');
         }
         await notificationService.markAllAsRead(companyId);
-        return reply.code(200).send({
-            success: true,
-            message: 'All notifications marked as read',
-            error: null
-        });
+        return responseHandler(reply, HTTP_STATUS.OK, 'All notifications marked as read');
     } catch (error) {
-        return reply.code(500).send({
-            success: false,
-            message: error.message,
-            error: 'Internal Server Error'
-        });
+        return responseHandler(reply, HTTP_STATUS.INTERNAL_SERVER_ERROR, error);
     }
 };
 
@@ -100,3 +70,4 @@ module.exports = {
     markAsRead,
     markAllAsRead
 };
+

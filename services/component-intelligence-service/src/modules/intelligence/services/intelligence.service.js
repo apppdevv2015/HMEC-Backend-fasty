@@ -267,6 +267,239 @@ class IntelligenceService {
             fleetData
         };
     }
+
+    /**
+     * Fetch and compile fleet monitoring statistics, category tabs, and detailed rows
+     */
+    async getFleetMonitoring(companyId) {
+        const prisma = require('../../../database/prismaClient');
+
+        // 1. Fetch all machines with components
+        const machines = await prisma.machine.findMany({
+            where: { companyId },
+            include: { components: true }
+        });
+
+        // 2. Define category helper functions
+        const getMachineType = (model) => {
+            if (!model) return 'OTHER';
+            const m = model.toUpperCase();
+            if (m.includes('DOZER') || m.includes('D8') || m.includes('D10') || m.includes('D11') || m.includes('D6')) return 'DOZER';
+            if (m.includes('DRILL') || m.includes('DR') || m.includes('MD')) return 'DRILL';
+            if (m.includes('EXCAVATOR') || m.includes('EX') || m.includes('SHOVEL') || m.includes('FEL') || m.includes('990') || m.includes('992') || m.includes('994') || m.includes('LOADER')) {
+                return 'EXCAVATOR';
+            }
+            if (m.includes('TRUCK') || m.includes('777') || m.includes('785') || m.includes('793') || m.includes('HT')) return 'HT';
+            if (m.includes('GRADER') || m.includes('GD') || m.includes('16M') || m.includes('14M')) return 'GRADER';
+            return 'OTHER';
+        };
+
+        const getMachineDisplayType = (model) => {
+            const type = getMachineType(model);
+            if (type === 'DOZER') return 'Dozer';
+            if (type === 'DRILL') return 'Drill';
+            if (type === 'GRADER') return 'Grader';
+            if (type === 'HT') return 'HT';
+            if (type === 'EXCAVATOR') {
+                const m = model.toUpperCase();
+                if (m.includes('990') || m.includes('LOADER') || m.includes('FEL')) return 'FEL';
+                if (m.includes('EX') || m.includes('EXCAVATOR')) return 'Excavator';
+                return 'FEL';
+            }
+            return 'Other';
+        };
+
+        const getComponentSlot = (category) => {
+            if (!category) return null;
+            const cat = category.toLowerCase();
+            if (cat.includes('tyre') || cat.includes('track') || cat.includes('wheel')) return 'tyre';
+            if (cat.includes('engine') || cat.includes('motor') || cat.includes('turbo') || cat.includes('powertrain')) return 'engine';
+            if (cat.includes('hydraulic') || cat.includes('pump') || cat.includes('cylinder') || cat.includes('steering') || cat.includes('hoist') || cat.includes('blade')) return 'hydraulic';
+            if (cat.includes('transmission') || cat.includes('gearbox') || cat.includes('drive') || cat.includes('trans') || cat.includes('swing') || cat.includes('rotary')) return 'transmission';
+            return null;
+        };
+
+        // 3. Process each machine
+        const fleetData = machines.map(machine => {
+            const componentsBySlot = {
+                tyre: [],
+                engine: [],
+                hydraulic: [],
+                transmission: []
+            };
+
+            // Categorize machine's components into slots
+            machine.components.forEach(comp => {
+                const slot = getComponentSlot(comp.category);
+                if (slot) {
+                    const metrics = this.calculateMetrics(comp);
+                    const lifeLeftPercent = 100 - metrics.lifeUsedPercent;
+                    componentsBySlot[slot].push({
+                        status: metrics.riskStatus === 'Critical' ? 'crit' : (metrics.riskStatus === 'Warning' || metrics.riskStatus === 'Monitor' ? 'warn' : 'ok'),
+                        label: comp.description.toUpperCase(),
+                        life: `${lifeLeftPercent}% life left`,
+                        lifeLeftPercent
+                    });
+                }
+            });
+
+            // Map each slot to its worst-case component or default to 'none'
+            const slots = ['tyre', 'engine', 'hydraulic', 'transmission'];
+            const slotDetails = {};
+            slots.forEach(slot => {
+                const list = componentsBySlot[slot];
+                if (list.length === 0) {
+                    slotDetails[slot] = {
+                        status: 'none',
+                        label: slot.toUpperCase(),
+                        life: 'No data',
+                        health: 100
+                    };
+                } else {
+                    // Sort by lifeLeftPercent ascending to pick the lowest (worst) health
+                    list.sort((a, b) => a.lifeLeftPercent - b.lifeLeftPercent);
+                    slotDetails[slot] = {
+                        status: list[0].status,
+                        label: list[0].label,
+                        life: list[0].life,
+                        health: list[0].lifeLeftPercent
+                    };
+                }
+            });
+
+            // Calculate overall health percentage as average of components
+            let healthPercent = 100;
+            let componentHealths = [];
+            let hoursRun = 0;
+            let compHours = [];
+            machine.components.forEach(comp => {
+                const metrics = this.calculateMetrics(comp);
+                componentHealths.push(100 - metrics.lifeUsedPercent);
+                const currentHrs = Number(comp.expectedLifeHours ? (comp.currentLifeHours ?? 0) : (comp.currentHours ?? 0));
+                compHours.push(currentHrs);
+            });
+            if (componentHealths.length > 0) {
+                const sum = componentHealths.reduce((s, h) => s + h, 0);
+                healthPercent = Math.round(sum / componentHealths.length);
+            }
+            if (compHours.length > 0) {
+                hoursRun = Math.max(...compHours);
+            }
+
+            // Calculate overall risk
+            let risk = 'Healthy';
+            const isOffline = machine.status?.toLowerCase() === 'offline';
+            
+            if (isOffline) {
+                risk = 'Offline';
+            } else {
+                const statuses = Object.values(slotDetails).map(s => s.status);
+                if (statuses.includes('crit')) {
+                    risk = 'Critical';
+                } else if (statuses.includes('warn')) {
+                    risk = 'Warning';
+                }
+            }
+
+            return {
+                id: machine.name,
+                dbId: machine.id,
+                name: machine.name,
+                model: machine.model,
+                serialNumber: machine.serialNumber,
+                location: machine.site || 'Main Mine Site',
+                fleet: machine.serialNumber,
+                type: getMachineDisplayType(machine.model),
+                rawType: getMachineType(machine.model),
+                costPerHourTarget: machine.costPerHourTarget ? Number(machine.costPerHourTarget) : null,
+                costPerTonTarget: machine.costPerTonTarget ? Number(machine.costPerTonTarget) : null,
+                tyre: slotDetails.tyre,
+                engine: slotDetails.engine,
+                hydraulic: slotDetails.hydraulic,
+                transmission: slotDetails.transmission,
+                risk,
+                status: risk,
+                healthPercent,
+                hoursRun,
+                updatedAt: machine.updatedAt
+            };
+
+        });
+
+        // 4. Calculate Summary Stats
+        const totalMachines = fleetData.length;
+        const criticalCount = fleetData.filter(m => m.status === 'Critical').length;
+        const warningCount = fleetData.filter(m => m.status === 'Warning').length;
+        const healthyCount = fleetData.filter(m => m.status === 'Healthy').length;
+        const offlineCount = fleetData.filter(m => m.status === 'Offline').length;
+
+        let averageFleetHealth = 100;
+        if (totalMachines > 0) {
+            const sumHealth = fleetData.reduce((sum, m) => sum + m.healthPercent, 0);
+            averageFleetHealth = Math.round(sumHealth / totalMachines);
+        }
+
+        // 5. Aggregate category counts for tabs
+        const typeCounts = {
+            DOZER: 0,
+            DRILL: 0,
+            EXCAVATOR: 0,
+            HT: 0,
+            GRADER: 0
+        };
+        fleetData.forEach(m => {
+            if (typeCounts[m.rawType] !== undefined) {
+                typeCounts[m.rawType]++;
+            }
+        });
+
+        const categories = [
+            { name: 'All Equipment', count: totalMachines, active: true },
+            { name: 'Dozers', count: typeCounts.DOZER, active: false },
+            { name: 'Drills', count: typeCounts.DRILL, active: false },
+            { name: 'Excavators / Shovels / FEL', count: typeCounts.EXCAVATOR, active: false },
+            { name: 'Trucks', count: typeCounts.HT, active: false },
+            { name: 'Graders', count: typeCounts.GRADER, active: false }
+        ];
+
+        // 6. Aggregate summary cards
+        const summaryCardTemplates = [
+            { rawType: 'DOZER', name: 'Dozers', color: 'text-orange-500', bg: 'bg-orange-50/50' },
+            { rawType: 'DRILL', name: 'Drills', color: 'text-blue-500', bg: 'bg-blue-50/50' },
+            { rawType: 'EXCAVATOR', name: 'Excavators / Shovels / FEL', color: 'text-orange-400', bg: 'bg-orange-50/30' },
+            { rawType: 'HT', name: 'Haul Trucks', color: 'text-red-500', bg: 'bg-red-50/50' },
+            { rawType: 'GRADER', name: 'Graders', color: 'text-teal-500', bg: 'bg-teal-50/50' }
+        ];
+
+        const summaryCards = summaryCardTemplates.map(tpl => {
+            const machinesOfType = fleetData.filter(m => m.rawType === tpl.rawType);
+            return {
+                type: tpl.rawType,
+                name: tpl.name,
+                total: machinesOfType.length,
+                crit: machinesOfType.filter(m => m.status === 'Critical').length,
+                warn: machinesOfType.filter(m => m.status === 'Warning').length,
+                ok: machinesOfType.filter(m => m.status === 'Healthy').length,
+                offline: machinesOfType.filter(m => m.status === 'Offline').length,
+                color: tpl.color,
+                bg: tpl.bg
+            };
+        });
+
+        return {
+            stats: {
+                totalMachines,
+                critical: criticalCount,
+                warning: warningCount,
+                healthy: healthyCount,
+                offline: offlineCount,
+                averageFleetHealth
+            },
+            categories,
+            summaryCards,
+            fleetData
+        };
+    }
 }
 
 module.exports = new IntelligenceService();

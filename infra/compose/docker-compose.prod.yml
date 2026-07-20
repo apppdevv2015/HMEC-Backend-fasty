@@ -1,4 +1,64 @@
 version: '3.8'
+name: hme-intelligence-prod
 
 services:
-  # Add production service configurations here
+  # Migration Runner (Runs database updates before starting services)
+  migration-runner:
+    build:
+      context: ../..
+      dockerfile: infra/docker/migration-runner.Dockerfile
+    restart: on-failure
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+
+  # API Gateway
+  api-gateway:
+    build:
+      context: ../..
+      dockerfile: infra/docker/api-gateway.Dockerfile
+    ports:
+      - "4000:4000"
+    restart: always
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL}
+      - PORT=4000
+      - INTELLIGENCE_SERVICE_URL=http://intelligence-service:3001
+      - AUTH_SERVICE_URL=http://auth-service:3002
+    depends_on:
+      migration-runner:
+        condition: service_completed_successfully
+
+  # Component Intelligence Service
+  intelligence-service:
+    build:
+      context: ../..
+      dockerfile: infra/docker/component-intelligence-service.Dockerfile
+    ports:
+      - "3001:3001"
+    restart: always
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - PORT=3001
+      - REDIS_URL=${REDIS_URL}
+    depends_on:
+      migration-runner:
+        condition: service_completed_successfully
+
+  # Auth Service
+  auth-service:
+    build:
+      context: ../..
+      dockerfile: infra/docker/auth-service.Dockerfile
+    ports:
+      - "3002:3002"
+    restart: always
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - PORT=3002
+      - REDIS_URL=${REDIS_URL}
+    env_file:
+      - ../../services/auth-service/.env.production
+    depends_on:
+      migration-runner:
+        condition: service_completed_successfully

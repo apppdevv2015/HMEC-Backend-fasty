@@ -1,23 +1,23 @@
-const roleValidation = (req, res, next) => {
-    const { name } = req.body;
+const roleValidation = async (request, reply) => {
+    const { name } = request.body;
 
-    if (req.method === 'POST') {
+    if (request.method === 'POST') {
         if (!name) {
-            return res.status(400).json({
+            reply.code(400).send({
                 success: false,
                 message: "Role name is required"
             });
+            return;
         }
     }
 
     if (name && name.length < 2) {
-        return res.status(400).json({
+        reply.code(400).send({
             success: false,
             message: "Role name must be at least 2 characters long"
         });
+        return;
     }
-
-    next();
 };
 
 module.exports = roleValidation;

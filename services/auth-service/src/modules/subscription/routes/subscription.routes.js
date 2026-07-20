@@ -1,7 +1,6 @@
 const subscriptionController = require('../controllers/subscription.controller');
 const authMiddleware = require('../../../middlewares/auth.middleware');
 const planValidation = require('../validators/plan.validation');
-const toPreHandler = require('../../../utils/toPreHandler');
 
 async function subscriptionRoutes(fastify, options) {
     const roleMiddleware = (roles) => async (request, reply) => {
@@ -21,15 +20,15 @@ async function subscriptionRoutes(fastify, options) {
 
     // --- Super Admin Routes ---
     fastify.get('/admin/subscriptions', { 
-        preHandler: [authMiddleware, roleMiddleware(['super_admin'])] 
-    }, subscriptionController.getCompanySubscriptions);
+        preHandler: [authMiddleware, roleMiddleware(['super_admin', 'sub_super_admin'])] 
+    }, subscriptionController.getAllSubscriptions);
     
     fastify.post('/', { 
-        preHandler: [authMiddleware, roleMiddleware(['super_admin']), toPreHandler(planValidation)] 
+        preHandler: [authMiddleware, roleMiddleware(['super_admin']), planValidation] 
     }, subscriptionController.createPlan);
     
     fastify.put('/:id', { 
-        preHandler: [authMiddleware, roleMiddleware(['super_admin']), toPreHandler(planValidation)] 
+        preHandler: [authMiddleware, roleMiddleware(['super_admin']), planValidation] 
     }, subscriptionController.updatePlan);
     
     fastify.delete('/:id', { 

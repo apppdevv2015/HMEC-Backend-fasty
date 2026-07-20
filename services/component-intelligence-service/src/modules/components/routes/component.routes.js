@@ -2,42 +2,41 @@ const componentController = require('../controllers/component.controller');
 const intelligenceController = require('../../intelligence/controllers/intelligence.controller');
 const { componentValidation, inspectValidation } = require('../../../validations/component.validation');
 const { authMiddleware, isAdmin } = require('../../../middlewares/auth.middleware');
-const toPreHandler = require('../../../utils/toPreHandler');
 
 async function componentRoutes(fastify, options) {
     // Get all component categories
-    fastify.get('/categories', { preHandler: toPreHandler(authMiddleware) }, componentController.getCategories);
+    fastify.get('/categories', { preHandler: authMiddleware }, componentController.getCategories);
 
     // Get all components for a machine or company
-    fastify.get('/', { preHandler: toPreHandler(authMiddleware) }, componentController.getComponents);
+    fastify.get('/', { preHandler: authMiddleware }, componentController.getComponents);
 
     // Register a new component - Admin Only
     fastify.post('/', { 
-        preHandler: [toPreHandler(authMiddleware), toPreHandler(isAdmin), toPreHandler(componentValidation)] 
+        preHandler: [authMiddleware, isAdmin, componentValidation] 
     }, componentController.addComponent);
 
     // Update a component - Admin Only
     fastify.put('/:id', { 
-        preHandler: [toPreHandler(authMiddleware), toPreHandler(isAdmin), toPreHandler(componentValidation)] 
+        preHandler: [authMiddleware, isAdmin, componentValidation] 
     }, componentController.updateComponent);
 
     // Update component operational metrics (Engineers/Inspectors) - Tenant Restricted
     fastify.put('/:id/inspect', { 
-        preHandler: [toPreHandler(authMiddleware), toPreHandler(inspectValidation)] 
+        preHandler: [authMiddleware, inspectValidation] 
     }, componentController.inspectComponent);
 
     // Delete a component - Admin Only
     fastify.delete('/:id', { 
-        preHandler: [toPreHandler(authMiddleware), toPreHandler(isAdmin)] 
+        preHandler: [authMiddleware, isAdmin] 
     }, componentController.deleteComponent);
 
     // --- Intelligence Engine Endpoints ---
 
     // Get full component register (with intelligence metrics)
-    fastify.get('/register', { preHandler: toPreHandler(authMiddleware) }, intelligenceController.getRegister);
+    fastify.get('/register', { preHandler: authMiddleware }, intelligenceController.getRegister);
 
     // Get dashboard stats (for analytics cards)
-    fastify.get('/dashboard-stats', { preHandler: toPreHandler(authMiddleware) }, intelligenceController.getDashboardStats);
+    fastify.get('/dashboard-stats', { preHandler: authMiddleware }, intelligenceController.getDashboardStats);
 }
 
 module.exports = componentRoutes;

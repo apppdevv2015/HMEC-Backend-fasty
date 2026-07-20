@@ -1,6 +1,6 @@
 require('dotenv').config();
 const buildApp = require('./app');
-const PORT = process.env.PORT || 4000;
+const PORT = process.env.PORT;
 const HOST = '0.0.0.0';
 
 const app = buildApp();
@@ -15,4 +15,6 @@ const start = async () => {
     }
 };
 
+// Trigger restart to reload JWT_SECRET and Swagger configurations
 start();
+// trigger gateway reload v11

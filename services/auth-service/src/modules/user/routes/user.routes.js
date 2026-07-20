@@ -1,7 +1,6 @@
 const userController = require('../controllers/user.controller');
 const authMiddleware = require('../../../middlewares/auth.middleware');
-const userValidation = require('../validators/user.validation');
-const toPreHandler = require('../../../utils/toPreHandler');
+const { userValidation, subSuperAdminValidation } = require('../validators/user.validation');
 
 async function userRoutes(fastify, options) {
     // Users CRUD
@@ -9,14 +8,31 @@ async function userRoutes(fastify, options) {
     fastify.get('/users/:id', { preHandler: authMiddleware }, userController.getUser);
     
     fastify.post('/users', { 
-        preHandler: [authMiddleware, toPreHandler(userValidation)] 
+        preHandler: [authMiddleware, userValidation] 
     }, userController.createUser);
     
+    fastify.post('/users/sub-super-admin', {
+        preHandler: [authMiddleware, subSuperAdminValidation]
+    }, userController.createSubSuperAdmin);
+
+    fastify.post('/users/sub-admin', {
+        preHandler: [
+            authMiddleware,
+            async (request, reply) => {
+                request.body = request.body || {};
+                request.body.role_name = 'sub_admin';
+            },
+            userValidation
+        ]
+    }, userController.createSubAdmin);
+    
     fastify.put('/users/:id', { 
-        preHandler: [authMiddleware, toPreHandler(userValidation)] 
+        preHandler: [authMiddleware, userValidation] 
     }, userController.updateUser);
     
     fastify.delete('/users/:id', { preHandler: authMiddleware }, userController.deleteUser);
+
+    fastify.get('/users/company/:companyId/staff', { preHandler: authMiddleware }, userController.getCompanyStaff);
 
     // Super Admin Management Routes
     fastify.get('/users/super-admin/companies', { preHandler: authMiddleware }, userController.getCompanySummaries);

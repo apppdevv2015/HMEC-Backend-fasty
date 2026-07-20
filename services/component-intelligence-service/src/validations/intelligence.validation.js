@@ -7,12 +7,12 @@ const querySchema = z.object({
     }).trim().uuid("companyId must be a valid UUID")
 });
 
-const intelligenceValidation = (req, res, next) => {
-    if (!req.query.companyId && req.user && req.user.companyId) {
-        req.query.companyId = req.user.companyId;
+const intelligenceValidation = async (request, reply) => {
+    if (!request.query.companyId && request.user && request.user.companyId) {
+        request.query.companyId = request.user.companyId;
     }
     
-    const result = querySchema.safeParse(req.query);
+    const result = querySchema.safeParse(request.query);
     
     if (!result.success) {
         const errorDetails = {};
@@ -21,16 +21,16 @@ const intelligenceValidation = (req, res, next) => {
             errorDetails[path] = issue.message;
         });
         
-        return res.status(400).json({
+        reply.code(400).send({
             success: false,
             message: "Validation failed",
             errors: errorDetails
         });
+        return;
     }
     
-    // Replace req.query with sanitized/parsed values
-    req.query = result.data;
-    next();
+    // Replace request.query with sanitized/parsed values
+    request.query = result.data;
 };
 
 module.exports = intelligenceValidation;

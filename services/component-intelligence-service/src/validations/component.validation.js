@@ -61,11 +61,11 @@ const componentSchema = z.object({
 // For update (PUT), we make all fields optional, but validate them if they are present
 const componentUpdateSchema = componentSchema.partial();
 
-const componentValidation = (req, res, next) => {
+const componentValidation = async (request, reply) => {
     // Choose schema based on HTTP method (POST requires all, PUT allows partial)
-    const schema = req.method === 'POST' ? componentSchema : componentUpdateSchema;
+    const schema = request.method === 'POST' ? componentSchema : componentUpdateSchema;
     
-    const result = schema.safeParse(req.body);
+    const result = schema.safeParse(request.body);
     
     if (!result.success) {
         // Extract validation error messages in a clean structured format
@@ -75,16 +75,16 @@ const componentValidation = (req, res, next) => {
             errorDetails[path] = issue.message;
         });
         
-        return res.status(400).json({
+        reply.code(400).send({
             success: false,
             message: "Validation failed",
             errors: errorDetails
         });
+        return;
     }
     
-    // Assign validated and sanitized data back to req.body (casting and default-handling complete)
-    req.body = result.data;
-    next();
+    // Assign validated and sanitized data back to request.body (casting and default-handling complete)
+    request.body = result.data;
 };
 
 // Zod Schema for engineer inspection updates
@@ -106,8 +106,8 @@ const inspectSchema = z.object({
     )
 });
 
-const inspectValidation = (req, res, next) => {
-    const result = inspectSchema.safeParse(req.body);
+const inspectValidation = async (request, reply) => {
+    const result = inspectSchema.safeParse(request.body);
     
     if (!result.success) {
         const errorDetails = {};
@@ -116,15 +116,15 @@ const inspectValidation = (req, res, next) => {
             errorDetails[path] = issue.message;
         });
         
-        return res.status(400).json({
+        reply.code(400).send({
             success: false,
             message: "Validation failed",
             errors: errorDetails
         });
+        return;
     }
     
-    req.body = result.data;
-    next();
+    request.body = result.data;
 };
 
 module.exports = {

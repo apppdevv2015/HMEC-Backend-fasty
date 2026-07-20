@@ -13,3 +13,7 @@ scratch/
 database/seeds/
 database/seed-*.js
 scripts/create-super-admin.js
+
+# Database Backups
+*.sql
+

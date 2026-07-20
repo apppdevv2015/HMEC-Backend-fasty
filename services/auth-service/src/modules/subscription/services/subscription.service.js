@@ -18,8 +18,33 @@ class SubscriptionService {
 
 
     async createPlan(planData) {
+        // 1. Check if plan name already exists
+        const existingPlan = await subscriptionRepository.getPlanByName(planData.name);
+        if (existingPlan) {
+            const error = new Error(`Plan with name '${planData.name}' already exists. Please choose a different plan name.`);
+            error.statusCode = 400;
+            throw error;
+        }
+
+        // 2. Check if a plan with the exact same limits and price already exists
+        const existingPlanByLimits = await prisma.subscriptionPlan.findFirst({
+            where: {
+                price: parseFloat(planData.price),
+                machineLimit: parseInt(planData.machineLimit),
+                staffLimit: parseInt(planData.staffLimit),
+                validityDays: parseInt(planData.validityDays)
+            }
+        });
+
+        if (existingPlanByLimits) {
+            const error = new Error(`A plan with the same limits (Price: ${planData.price}, Machine Limit: ${planData.machineLimit}, Staff Limit: ${planData.staffLimit}, Validity: ${planData.validityDays} days) already exists under the name '${existingPlanByLimits.planName}'.`);
+            error.statusCode = 400;
+            throw error;
+        }
+
         return subscriptionRepository.createPlan(planData);
     }
+
 
     async updatePlan(id, planData) {
         return subscriptionRepository.updatePlan(id, planData);

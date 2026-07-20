@@ -1,28 +1,31 @@
 const jwt = require('jsonwebtoken');
 const responseHandler = require('../utils/responseHandler');
+const { HTTP_STATUS } = responseHandler;
 
-const authMiddleware = (req, res, next) => {
+const authMiddleware = async (request, reply) => {
     try {
-        const authHeader = req.headers.authorization;
+        const authHeader = request.headers.authorization;
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return responseHandler(res, 401, false, 'Authorization token is required');
+            responseHandler(reply, HTTP_STATUS.UNAUTHORIZED, false, 'Authorization token is required');
+            return;
         }
 
         const token = authHeader.split(' ')[1];
         const decoded = jwt.verify(token, process.env.JWT_SECRET || 'hme-secret-key-2026');
         
-        req.user = decoded;
-        next();
+        request.user = decoded;
     } catch (error) {
-        return responseHandler(res, 401, false, 'Invalid or expired token');
+        responseHandler(reply, HTTP_STATUS.UNAUTHORIZED, false, 'Invalid or expired token');
+        return;
     }
 };
 
-const isAdmin = (req, res, next) => {
-    if (req.user && (req.user.role === 'admin' || req.user.role === 'company_admin' || req.user.role === 'super_admin')) {
-        next();
+const isAdmin = async (request, reply) => {
+    if (request.user && (request.user.role === 'admin' || request.user.role === 'company_admin' || request.user.role === 'super_admin' || request.user.role === 'sub_super_admin')) {
+        // Validation passes
     } else {
-        return responseHandler(res, 403, false, 'Access denied. Admin rights required.');
+        responseHandler(reply, HTTP_STATUS.FORBIDDEN, false, 'Access denied. Admin rights required.');
+        return;
     }
 };
 

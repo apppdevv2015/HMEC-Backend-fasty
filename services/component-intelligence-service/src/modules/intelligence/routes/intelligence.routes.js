@@ -3,32 +3,35 @@ const intelligenceValidation = require('../../../validations/intelligence.valida
 const machineController = require('../../machines/controllers/machine.controller');
 const machineValidation = require('../../../validations/machine.validation');
 const { authMiddleware, isAdmin } = require('../../../middlewares/auth.middleware');
-const toPreHandler = require('../../../utils/toPreHandler');
 
 async function intelligenceRoutes(fastify, options) {
     fastify.get('/register', { 
-        preHandler: [toPreHandler(authMiddleware), toPreHandler(intelligenceValidation)] 
+        preHandler: [authMiddleware, intelligenceValidation] 
     }, intelligenceController.getRegister);
     
     fastify.get('/dashboard-stats', { 
-        preHandler: [toPreHandler(authMiddleware), toPreHandler(intelligenceValidation)] 
+        preHandler: [authMiddleware, intelligenceValidation] 
     }, intelligenceController.getDashboardStats);
 
     fastify.get('/fleet-heatmap', { 
-        preHandler: [toPreHandler(authMiddleware), toPreHandler(intelligenceValidation)] 
+        preHandler: [authMiddleware, intelligenceValidation] 
     }, intelligenceController.getFleetHeatMap);
+
+    fastify.get('/fleet-monitoring', { 
+        preHandler: [authMiddleware, intelligenceValidation] 
+    }, intelligenceController.getFleetMonitoring);
 
     // Fleet Heat Map CRUD routes (interacting with Machines)
     fastify.post('/fleet-heatmap', {
-        preHandler: [toPreHandler(authMiddleware), toPreHandler(isAdmin), toPreHandler(machineValidation)]
+        preHandler: [authMiddleware, isAdmin, machineValidation]
     }, machineController.addMachine);
 
     fastify.put('/fleet-heatmap/:id', {
-        preHandler: [toPreHandler(authMiddleware), toPreHandler(isAdmin), toPreHandler(machineValidation)]
+        preHandler: [authMiddleware, isAdmin, machineValidation]
     }, machineController.updateMachine);
 
     fastify.delete('/fleet-heatmap/:id', {
-        preHandler: [toPreHandler(authMiddleware), toPreHandler(isAdmin)]
+        preHandler: [authMiddleware, isAdmin]
     }, machineController.deleteMachine);
 }
 

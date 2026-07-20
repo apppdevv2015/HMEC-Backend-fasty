@@ -1,0 +1,20 @@
+version: '3.8'
+name: hme-intelligence-infra
+
+services:
+  # Redis Cache Service (for local development when services run natively)
+  redis:
+    image: redis:7-alpine
+    container_name: hme-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  redisdata:

@@ -8,11 +8,11 @@ class UserRepository {
         
         const where = {
             AND: [
-                { role: { name: { not: 'super_admin' } } },
+                !isSuperAdmin ? { role: { name: { notIn: ['super_admin', 'sub_super_admin'] } } } : { role: { name: { not: 'super_admin' } } },
                 { id: { not: currentUserId } },
                 // If super admin and companyId provided, filter by it. 
                 // If not super admin, always filter by their own companyId.
-                isSuperAdmin && filters.company_id ? { companyId: filters.company_id } : (!isSuperAdmin ? { companyId } : {}),
+                isSuperAdmin && (filters.companyId || filters.company_id) ? { companyId: filters.companyId || filters.company_id } : (!isSuperAdmin ? { companyId } : {}),
                 search ? {
                     OR: [
                         { firstName: { contains: search, mode: 'insensitive' } },
@@ -89,7 +89,7 @@ class UserRepository {
                 email: userData.email,
                 password: userData.password,
                 roleId: userData.role_id,
-                companyId: userData.company_id,
+                companyId: userData.companyId || userData.company_id,
                 mobileNumber: userData.mobile_number,
                 isActive: userData.is_active ?? true
             }
@@ -111,6 +111,13 @@ class UserRepository {
             }
         });
     }
+
+    async deleteUser(id) {
+        return await prisma.user.delete({
+            where: { id }
+        });
+    }
+
 
     async getCompanySummaries() {
         // Fetch all companies with their users and active subscriptions
@@ -142,6 +149,31 @@ class UserRepository {
                 staffCount: staffCount,
                 activePlan: activePlan,
                 createdAt: company.createdAt
+            };
+        });
+    }
+
+    async getCompanyStaff(companyId) {
+        const staff = await prisma.user.findMany({
+            where: {
+                companyId,
+                role: {
+                    name: {
+                        notIn: ['admin', 'super_admin', 'sub_super_admin']
+                    }
+                }
+            },
+            include: {
+                role: true
+            },
+            orderBy: { createdAt: 'desc' }
+        });
+
+        return staff.map(user => {
+            const { password, roleId, role, ...rest } = user;
+            return {
+                ...rest,
+                role: role ? role.name : null
             };
         });
     }

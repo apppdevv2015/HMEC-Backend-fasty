@@ -10,26 +10,37 @@ class AuthRepository {
 
     async createCompanyWithAdmin(data) {
         return await prisma.$transaction(async (tx) => {
-            // Get the last company to determine the next code
-            const lastCompany = await tx.company.findFirst({
-                orderBy: { createdAt: 'desc' }
+            // Get all company codes starting with 'HME-' to determine the next numeric code
+            const companies = await tx.company.findMany({
+                where: {
+                    companyCode: {
+                        startsWith: 'HME-'
+                    }
+                },
+                select: {
+                    companyCode: true
+                }
             });
 
-            let nextNumber = 1;
-            if (lastCompany && lastCompany.companyCode) {
-                const lastNumber = parseInt(lastCompany.companyCode.replace('HME-', ''));
-                if (!isNaN(lastNumber)) {
-                    nextNumber = lastNumber + 1;
+            let maxNumber = 0;
+            for (const c of companies) {
+                if (c.companyCode) {
+                    const suffix = c.companyCode.substring(4); // Remove 'HME-'
+                    const num = parseInt(suffix, 10);
+                    if (!isNaN(num) && num > maxNumber) {
+                        maxNumber = num;
+                    }
                 }
             }
 
+            const nextNumber = maxNumber + 1;
             const companyCode = `HME-${nextNumber.toString().padStart(6, '0')}`;
 
             const company = await tx.company.create({
                 data: {
                     name: data.company_name,
                     companyCode: companyCode,
-                    subscriptionStatus: 'active'
+                    subscriptionStatus: 'pending'
                 }
             });
 
@@ -46,13 +57,24 @@ class AuthRepository {
                     firstName: data.fname,
                     lastName: data.lname,
                     roleId: role.id,
-                    companyId: company.id
+                    companyId: company.id,
+                    isActive: false,
+                    mobileNumber: data.mobile_number || data.mobileNumber
+                },
+                include: {
+                    role: true
                 }
             });
 
-            // Exclude sensitive data before returning
-            const { password, ...userWithoutPassword } = user;
-            return { company, user: userWithoutPassword };
+            // Exclude sensitive data and format role before returning
+            const { password, roleId, role: roleObj, ...restOfUser } = user;
+            return { 
+                company, 
+                user: {
+                    ...restOfUser,
+                    role: roleObj ? roleObj.name : null
+                }
+            };
         });
     }
 }
