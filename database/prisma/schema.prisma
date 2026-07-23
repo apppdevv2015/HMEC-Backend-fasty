@@ -20,6 +20,7 @@ model Company {
   notifications      Notification[]
   recommendations    Recommendation[]
   subscriptions      Subscription[]
+  tickets            Ticket[]
 }
 
 model Role {
@@ -42,8 +43,11 @@ model User {
   companyId    String
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
-  company      Company  @relation(fields: [companyId], references: [id])
-  role         Role     @relation(fields: [roleId], references: [id])
+  company         Company         @relation(fields: [companyId], references: [id])
+  role            Role            @relation(fields: [roleId], references: [id])
+  createdTickets  Ticket[]        @relation("CreatedTickets")
+  assignedTickets Ticket[]        @relation("AssignedTickets")
+  ticketMessages  TicketMessage[]
 }
 
 model SubscriptionPlan {
@@ -232,4 +236,37 @@ model Log {
   createdAt     DateTime @default(now()) @map("created_at")
 
   @@map("logs")
+}
+
+model Ticket {
+  id           String          @id @default(uuid())
+  ticketNumber String          @unique @map("ticket_number")
+  subject      String
+  description  String
+  category     String          @default("General")
+  priority     String          @default("Medium")
+  status       String          @default("Open")
+  companyId    String          @map("company_id")
+  createdById  String          @map("created_by_id")
+  assignedToId String?         @map("assigned_to_id")
+  createdAt    DateTime        @default(now()) @map("created_at")
+  updatedAt    DateTime        @updatedAt @map("updated_at")
+  company      Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  createdBy    User            @relation("CreatedTickets", fields: [createdById], references: [id], onDelete: Cascade)
+  assignedTo   User?           @relation("AssignedTickets", fields: [assignedToId], references: [id])
+  messages     TicketMessage[]
+
+  @@map("tickets")
+}
+
+model TicketMessage {
+  id        String   @id @default(uuid())
+  ticketId  String   @map("ticket_id")
+  senderId  String   @map("sender_id")
+  message   String
+  createdAt DateTime @default(now()) @map("created_at")
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  sender    User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@map("ticket_messages")
 }

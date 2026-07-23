@@ -56,6 +56,13 @@ const setupProxy = async (fastify) => {
         prefix: `${VERSION}/maintenance`,
         rewritePrefix: '/maintenance'
     });
+
+    // Tickets -> Auth Service
+    await fastify.register(fastifyHttpProxy, {
+        upstream: SERVICES.auth,
+        prefix: `${VERSION}/tickets`,
+        rewritePrefix: '/tickets'
+    });
 };
 
 module.exports = setupProxy;

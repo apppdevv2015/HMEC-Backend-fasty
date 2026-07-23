@@ -38,7 +38,11 @@ function buildApp(options = {}) {
         done();
     });
 
-    // Gateway Health Check
+    // Gateway Root & Health Check
+    app.get('/', async (request, reply) => {
+        return { status: 'UP', message: 'HME API Gateway is Running', health: '/health' };
+    });
+
     app.get('/health', async (request, reply) => {
         return { status: 'UP', service: 'hme-api-gateway' };
     });
