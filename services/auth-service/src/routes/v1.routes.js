@@ -3,6 +3,7 @@ const { userRoutes } = require('../modules/user');
 const { roleRoutes } = require('../modules/role');
 const { subscriptionRoutes } = require('../modules/subscription');
 const { notificationRoutes } = require('../modules/notification');
+const { ticketRoutes } = require('../modules/ticket');
 const { requireInternalAccess } = require('../middlewares/internal-auth');
 const { AppError } = require('../runtime');
 
@@ -105,6 +106,7 @@ async function protectedRoutes(fastify) {
   fastify.register(notificationRoutes, { prefix: '/notifications' });
   fastify.register(subscriptionRoutes, { prefix: '/plans' });
   fastify.register(subscriptionRoutes, { prefix: '/subscriptions' });
+  fastify.register(ticketRoutes, { prefix: '/tickets' });
 }
 
 async function v1Routes(fastify) {

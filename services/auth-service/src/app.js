@@ -9,6 +9,7 @@ const planRoutes = require('./modules/subscription/routes/subscription.routes');
 const userRoutes = require('./modules/user/routes/user.routes');
 const roleRoutes = require('./modules/role/routes/role.routes');
 const notificationRoutes = require('./modules/notification/routes/notification.routes');
+const ticketRoutes = require('./modules/ticket/routes/ticket.routes');
 
 // Middleware Imports
 const errorHandler = require('./middlewares/errorHandler');
@@ -58,6 +59,10 @@ function buildApp(opts = {}) {
     fastify.register(planRoutes, { prefix: '/api/plans' });
     fastify.register(planRoutes, { prefix: '/plans' });
     fastify.register(planRoutes, { prefix: '/subscriptions' });
+
+    // Tickets
+    fastify.register(ticketRoutes, { prefix: '/tickets' });
+    fastify.register(ticketRoutes, { prefix: '/api/tickets' });
 
     // 7. Register Global Error Handler
     fastify.setErrorHandler(errorHandler);

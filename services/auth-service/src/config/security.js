@@ -14,7 +14,7 @@ function getAllowedOrigins() {
 }
 
 function isLocalDevelopmentOrigin(origin) {
-  return /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(?::\d+)?$/i.test(String(origin || ''));
+  return /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\]|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+)(?::\d+)?$/i.test(String(origin || ''));
 }
 
 function buildCorsOptions() {
@@ -23,11 +23,7 @@ function buildCorsOptions() {
  
   return {
     origin(origin, callback) {
-      if (!origin) {
-        return callback(null, true);
-      }
- 
-      if (isDevelopment && (allowedOrigins.length === 0 || isLocalDevelopmentOrigin(origin))) {
+      if (!origin || isDevelopment) {
         return callback(null, true);
       }
  
