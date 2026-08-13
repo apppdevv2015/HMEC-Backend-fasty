@@ -3,12 +3,16 @@ const { createClient } = require('redis');
 const prisma = require('../../../database/prismaClient');
 
 async function publishRedisAlert(channel, payload) {
-    const redisUrl = process.env.REDIS_URL || 'redis://redis:6379';
+    const redisUrl = process.env.REDIS_URL || 'redis://127.0.0.1:6379';
     const client = createClient({ 
         url: redisUrl,
-        RESP: 2 
+        RESP: 2,
+        socket: {
+            connectTimeout: 2000,
+            reconnectStrategy: false
+        }
     });
-    client.on('error', (err) => console.error('[Redis Error]', err));
+    client.on('error', (err) => console.error('[Redis Error]', err.message || err));
     try {
         await client.connect();
         await client.publish(channel, JSON.stringify(payload));

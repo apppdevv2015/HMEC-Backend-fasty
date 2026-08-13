@@ -66,13 +66,20 @@ class UserController {
 
     async getCompanySummaries(req, res) {
         try {
-            if (req.user.role !== 'super_admin' && req.user.role !== 'sub_super_admin') {
+            const roleName = String(req.user?.role?.name || req.user?.roleName || req.user?.role || '').toLowerCase();
+            const isAuthorized = roleName.includes('super_admin') || roleName.includes('superadmin') || roleName.includes('sub_super_admin') || roleName.includes('admin');
+            if (!isAuthorized) {
                 return responseHandler(res, HTTP_STATUS.FORBIDDEN, 'Access denied. Super Admin or Sub Super Admin only.');
             }
             const result = await userService.getCompanySummaries();
             return responseHandler(res, HTTP_STATUS.OK, 'Company summaries fetched successfully', result);
         } catch (error) {
-            throw error;
+            console.error('[GET COMPANY SUMMARIES ERROR]:', error);
+            res.status(500).send({
+                statusCode: 500,
+                error: 'Internal Server Error',
+                message: error?.message || 'Failed to fetch company summaries'
+            });
         }
     }
 

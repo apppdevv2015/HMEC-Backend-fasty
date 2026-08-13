@@ -14,8 +14,8 @@ class ComponentService {
      * Get the full component register with calculated intelligence metrics
      * This logic powers the dashboard table view
      */
-    async getComponentRegister(companyId) {
-        const components = await componentRepository.findAll(companyId);
+    async getComponentRegister(companyId, machineId) {
+        const components = await componentRepository.findAll(companyId, machineId);
         return intelligenceService.processRegister(components);
     }
 

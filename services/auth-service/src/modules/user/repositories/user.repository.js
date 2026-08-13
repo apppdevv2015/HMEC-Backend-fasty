@@ -36,6 +36,7 @@ class UserRepository {
                     mobileNumber: true,
                     isActive: true,
                     createdAt: true,
+                    updatedAt: true,
                     role: true,
                     company: true
                 },
@@ -68,6 +69,7 @@ class UserRepository {
                 mobileNumber: true,
                 isActive: true,
                 createdAt: true,
+                updatedAt: true,
                 role: true,
                 company: true
             }
@@ -120,14 +122,13 @@ class UserRepository {
 
 
     async getCompanySummaries() {
-        // Fetch all companies with their users and active subscriptions
+        // Fetch all companies with their users and subscriptions
         const companies = await prisma.company.findMany({
             include: {
                 users: {
                     include: { role: true }
                 },
                 subscriptions: {
-                    where: { status: 'active' },
                     include: { plan: true },
                     take: 1,
                     orderBy: { createdAt: 'desc' }
@@ -136,18 +137,23 @@ class UserRepository {
         });
 
         return companies.map(company => {
-            const admin = company.users.find(u => u.role.name === 'admin');
-            const staffCount = company.users.filter(u => u.role.name !== 'admin' && u.role.name !== 'super_admin').length;
-            const activePlan = company.subscriptions[0]?.plan?.planName || 'None';
+            const usersList = Array.isArray(company.users) ? company.users : [];
+            const admin = usersList.find(u => u.role?.name === 'admin');
+            const staffCount = usersList.filter(u => u.role?.name !== 'admin' && u.role?.name !== 'super_admin').length;
+            const activePlan = company.subscriptions?.[0]?.plan?.planName || 'None';
 
             return {
                 id: company.id,
-                companyName: company.name,
-                companyCode: company.companyCode,
+                adminId: admin ? admin.id : null,
+                adminRole: admin?.role?.name || 'admin',
+                companyName: company.name || 'Unnamed Company',
+                companyCode: company.companyCode || 'N/A',
                 adminEmail: admin ? admin.email : 'N/A',
-                adminName: admin ? `${admin.firstName} ${admin.lastName || ''}` : 'N/A',
+                adminName: admin ? `${admin.firstName || ''} ${admin.lastName || ''}`.trim() || 'N/A' : 'N/A',
                 staffCount: staffCount,
                 activePlan: activePlan,
+                isActive: admin ? admin.isActive : true,
+                status: admin ? (admin.isActive ? 'Active' : 'Inactive') : 'Inactive',
                 createdAt: company.createdAt
             };
         });

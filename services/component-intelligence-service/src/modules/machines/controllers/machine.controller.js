@@ -21,7 +21,8 @@ class MachineController {
             const machines = await machineService.getMachines(companyId);
             return responseHandler(res, HTTP_STATUS.OK, true, 'Machines fetched successfully', machines);
         } catch (error) {
-            return responseHandler(res, HTTP_STATUS.BAD_REQUEST, false, error.message);
+            console.error('[GET MACHINES ERROR]:', error);
+            return responseHandler(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, false, error.message || 'Failed to fetch machines');
         }
     }
 

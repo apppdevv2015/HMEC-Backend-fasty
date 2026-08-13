@@ -5,9 +5,7 @@ const { HTTP_STATUS } = responseHandler;
 class RoleController {
     async getRoles(req, res) {
         try {
-            const page = parseInt(req.query.page) || 1;
-            const limit = parseInt(req.query.limit) || 10;
-            const result = await roleService.getAllRoles(page, limit);
+            const result = await roleService.getAllRoles();
             return responseHandler(res, HTTP_STATUS.OK, 'Roles fetched successfully', result);
         } catch (error) {
             throw error;

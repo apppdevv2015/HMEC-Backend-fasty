@@ -6,6 +6,9 @@ const authMiddleware = require('../../../middlewares/auth.middleware');
 async function authRoutes(fastify, options) {
     fastify.post('/register', { preHandler: registerValidation }, authController.register);
     fastify.post('/login', { preHandler: loginValidation }, authController.login);
+    fastify.post('/forgot-password', authController.forgotPassword);
+    fastify.post('/verify-reset-token', authController.verifyResetToken);
+    fastify.post('/reset-password', authController.resetPassword);
     fastify.get('/me', { preHandler: authMiddleware }, authController.getMe);
 
     // Custom role preHandler hook

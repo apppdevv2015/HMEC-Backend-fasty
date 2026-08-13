@@ -6,10 +6,9 @@ const { HTTP_STATUS } = responseHandler;
 class IntelligenceController {
     async getRegister(req, res) {
         try {
-            const { companyId } = req.query;
-            const components = await componentService.getComponentRegister(companyId);
-            const processed = intelligenceService.processRegister(components);
-            return responseHandler(res, HTTP_STATUS.OK, true, 'Intelligence register fetched', processed);
+            const { companyId, machineId } = req.query;
+            const components = await componentService.getComponentRegister(companyId, machineId);
+            return responseHandler(res, HTTP_STATUS.OK, true, 'Intelligence register fetched', components);
         } catch (error) {
             return responseHandler(res, HTTP_STATUS.BAD_REQUEST, false, error.message);
         }

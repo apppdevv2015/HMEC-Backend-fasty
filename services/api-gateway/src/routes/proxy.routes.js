@@ -63,6 +63,13 @@ const setupProxy = async (fastify) => {
         prefix: `${VERSION}/tickets`,
         rewritePrefix: '/tickets'
     });
+
+    // Job Cards -> Intelligence Service
+    await fastify.register(fastifyHttpProxy, {
+        upstream: SERVICES.intelligence,
+        prefix: `${VERSION}/job-cards`,
+        rewritePrefix: '/job-cards'
+    });
 };
 
 module.exports = setupProxy;

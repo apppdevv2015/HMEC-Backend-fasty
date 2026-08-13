@@ -1,8 +1,8 @@
 const roleRepository = require('../repositories/role.repository');
 
 class RoleService {
-    async getAllRoles(page, limit) {
-        return await roleRepository.getAllRoles(page, limit);
+    async getAllRoles() {
+        return await roleRepository.getAllRoles();
     }
 
     async getRole(id) {

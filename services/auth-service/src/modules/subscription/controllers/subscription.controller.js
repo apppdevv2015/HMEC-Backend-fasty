@@ -10,7 +10,7 @@ class SubscriptionController {
             if (authHeader) {
                 try {
                     const jwt = require('jsonwebtoken');
-                    const JWT_SECRET = process.env.JWT_SECRET || 'hme-secret-key-2026';
+                    const JWT_SECRET = process.env.JWT_SECRET;
                     const token = authHeader.split(' ')[1];
                     const decoded = jwt.verify(token, JWT_SECRET);
                     if (decoded && decoded.role === 'super_admin') {
