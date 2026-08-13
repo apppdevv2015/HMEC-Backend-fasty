@@ -14,9 +14,24 @@ class RoleRepository {
     }
 
     async createRole(roleData) {
+        const normalizedName = String(roleData.name || '').toLowerCase().trim();
+        const existingRole = await prisma.role.findFirst({
+            where: {
+                name: {
+                    equals: normalizedName,
+                    mode: 'insensitive'
+                }
+            }
+        });
+        if (existingRole) {
+            const error = new Error(`Role with name '${roleData.name}' already exists.`);
+            error.statusCode = 400;
+            throw error;
+        }
+
         return await prisma.role.create({
             data: {
-                name: roleData.name
+                name: normalizedName
             }
         });
     }

@@ -131,6 +131,41 @@ class AuthController {
             throw error;
         }
     }
+
+    async forgotPassword(req, res) {
+        try {
+            const { email } = req.body || {};
+            const result = await authService.forgotPassword(email);
+            return responseHandler(res, HTTP_STATUS.OK, result.message, result);
+        } catch (error) {
+            return responseHandler(res, HTTP_STATUS.BAD_REQUEST, error.message, null, error);
+        }
+    }
+
+    async verifyResetToken(req, res) {
+        try {
+            const { token, email, otp } = req.body || {};
+            const result = await authService.verifyResetToken({ token, email, otp });
+            return responseHandler(res, HTTP_STATUS.OK, 'Token verified successfully', result);
+        } catch (error) {
+            return responseHandler(res, HTTP_STATUS.BAD_REQUEST, error.message, null, error);
+        }
+    }
+
+    async resetPassword(req, res) {
+        try {
+            const { token, email, otp, newPassword, password } = req.body || {};
+            const result = await authService.resetPassword({ 
+                token, 
+                email, 
+                otp, 
+                newPassword: newPassword || password 
+            });
+            return responseHandler(res, HTTP_STATUS.OK, result.message, result);
+        } catch (error) {
+            return responseHandler(res, HTTP_STATUS.BAD_REQUEST, error.message, null, error);
+        }
+    }
 }
 
 module.exports = new AuthController();

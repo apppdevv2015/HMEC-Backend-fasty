@@ -107,7 +107,7 @@ async function main() {
     const plans = [
       { name: 'demo', machineLimit: 3, staffLimit: 5, price: 0, validityDays: 14 },
       { name: 'silver', machineLimit: 10, staffLimit: 20, price: 100, validityDays: 30 },
-      { name: 'premium', machineLimit: 100, staffLimit: 100, price: 300, validityDays: 30 }
+      { name: 'premium', machineLimit: 100, staffLimit: 100, price: 300, validityDays: 365 }
     ];
     
     for (const plan of plans) {
@@ -191,7 +191,7 @@ async function main() {
       where: { email: 'admin@hme.com' },
       update: {
         password: adminHashedPassword,
-        firstName: 'System',
+        firstName: 'Company',
         lastName: 'Admin',
         roleId: seededRoles['admin'].id,
         companyId: systemCompany.id,
@@ -199,7 +199,7 @@ async function main() {
       create: {
         email: 'admin@hme.com',
         password: adminHashedPassword,
-        firstName: 'System',
+        firstName: 'Company',
         lastName: 'Admin',
         roleId: seededRoles['admin'].id,
         companyId: systemCompany.id,
@@ -211,7 +211,7 @@ async function main() {
       where: { email: 'admin@gmail.com' },
       update: {
         password: defaultAdminPassword,
-        firstName: 'System',
+        firstName: 'Company',
         lastName: 'Admin',
         roleId: seededRoles['admin'].id,
         companyId: globalCompany.id,
@@ -219,7 +219,7 @@ async function main() {
       create: {
         email: 'admin@gmail.com',
         password: defaultAdminPassword,
-        firstName: 'System',
+        firstName: 'Company',
         lastName: 'Admin',
         roleId: seededRoles['admin'].id,
         companyId: globalCompany.id,

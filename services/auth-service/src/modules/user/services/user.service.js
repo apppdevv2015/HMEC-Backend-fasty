@@ -9,12 +9,16 @@ const { createClient } = require('redis');
 const notificationRepository = require('../../notification/repositories/notification.repository');
 
 async function publishRedisAlert(channel, payload) {
-    const redisUrl = process.env.REDIS_URL || 'redis://redis:6379';
+    const redisUrl = process.env.REDIS_URL || 'redis://127.0.0.1:6379';
     const client = createClient({ 
         url: redisUrl,
-        RESP: 2 
+        RESP: 2,
+        socket: {
+            connectTimeout: 2000,
+            reconnectStrategy: false
+        }
     });
-    client.on('error', (err) => console.error('[Redis Error]', err));
+    client.on('error', (err) => console.error('[Redis Error]', err.message || err));
     try {
         await client.connect();
         await client.publish(channel, JSON.stringify(payload));
@@ -803,6 +807,32 @@ class UserService {
             }
             delete updateData.role_name;
         }
+
+        // Update linked company details if provided
+        if (currentUser.companyId && (data.companyName || data.company_name || data.companyCode || data.company_code)) {
+            const companyUpdate = {};
+            if (data.companyName || data.company_name) {
+                companyUpdate.name = (data.companyName || data.company_name).trim();
+            }
+            if (data.companyCode || data.company_code) {
+                companyUpdate.companyCode = (data.companyCode || data.company_code).trim();
+            }
+            await prisma.company.update({
+                where: { id: currentUser.companyId },
+                data: companyUpdate
+            });
+        }
+
+        // Clean up non-user payload fields so Prisma user.update doesn't throw validation error
+        delete updateData.companyName;
+        delete updateData.company_name;
+        delete updateData.companyCode;
+        delete updateData.company_code;
+        delete updateData.adminName;
+        delete updateData.adminEmail;
+        delete updateData.staffCount;
+        delete updateData.activePlan;
+        delete updateData.status;
 
         return await userRepository.updateUser(id, updateData);
     }

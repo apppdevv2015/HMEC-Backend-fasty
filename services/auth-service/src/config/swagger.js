@@ -7,7 +7,7 @@ const swaggerOptions = {
         info: {
             title: 'HME Auth Service API',
             version: '1.0.0',
-            description: 'Authentication and User Management Service Documentation',
+            description: 'Authentication, User Management, and Ticket Service Documentation',
         },
         servers: [
             { url: 'http://localhost:3002', description: 'Auth Service Local' },
@@ -25,8 +25,8 @@ const swaggerOptions = {
         security: [{ bearerAuth: [] }],
     },
     apis: [
-        path.join(__dirname, '../**/*.js'),
-        path.join(__dirname, '../../swagger/*.js')
+        path.join(__dirname, '../**/*.js').replace(/\\/g, '/'),
+        path.join(__dirname, '../../swagger/*.js').replace(/\\/g, '/')
     ], 
 };
 
@@ -34,7 +34,10 @@ const swaggerDocs = swaggerJsdoc(swaggerOptions);
 
 const setupSwagger = async (fastify) => {
     await fastify.register(require('@fastify/swagger'), {
-        openapi: swaggerDocs
+        mode: 'static',
+        specification: {
+            document: swaggerDocs
+        }
     });
 
     await fastify.register(require('@fastify/swagger-ui'), {

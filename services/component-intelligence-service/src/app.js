@@ -6,6 +6,7 @@ const setupSwagger = require('./config/swagger');
 const componentRoutes = require('./modules/components/routes/component.routes');
 const machineRoutes = require('./modules/machines/routes/machine.routes');
 const maintenanceRoutes = require('./modules/maintenance/routes/maintenance.routes');
+const jobCardRoutes = require('./modules/job-cards/routes/job-card.routes');
 const intelligenceRoutes = require('./modules/intelligence/routes/intelligence.routes');
 
 function buildApp(options = {}) {
@@ -33,6 +34,7 @@ function buildApp(options = {}) {
     app.register(componentRoutes, { prefix: '/components' });
     app.register(machineRoutes, { prefix: '/machines' });
     app.register(maintenanceRoutes, { prefix: '/maintenance' });
+    app.register(jobCardRoutes, { prefix: '/job-cards' });
     app.register(intelligenceRoutes, { prefix: '/' });
 
     return app;

@@ -1,26 +1,25 @@
 const Fastify = require('fastify');
-const db = require('./database/prisma');
-const jwt = require('jsonwebtoken');
-const JWT_SECRET = process.env.JWT_SECRET || 'hme-secret-key-2026';
+const querystring = require('querystring');
+const fastifySensible = require('@fastify/sensible');
+const fastifyCors = require('@fastify/cors');
 
-// Routes Imports
+// Middleware & Config Imports
+const errorHandler = require('./middlewares/errorHandler');
+const setupSwagger = require('./config/swagger');
+
+// Route Imports
 const authRoutes = require('./modules/auth/routes/auth.routes');
-const planRoutes = require('./modules/subscription/routes/subscription.routes');
 const userRoutes = require('./modules/user/routes/user.routes');
 const roleRoutes = require('./modules/role/routes/role.routes');
 const notificationRoutes = require('./modules/notification/routes/notification.routes');
+const subscriptionRoutes = require('./modules/subscription/routes/subscription.routes');
 const ticketRoutes = require('./modules/ticket/routes/ticket.routes');
-
-// Middleware Imports
-const errorHandler = require('./middlewares/errorHandler');
-const setupSwagger = require('./config/swagger');
 
 function buildApp(opts = {}) {
     // 1. Initialize Fastify Instance with built-in Logger
     const fastify = Fastify(opts);
 
     // Register Form-Urlencoded Content Type Parser
-    const querystring = require('querystring');
     fastify.addContentTypeParser('application/x-www-form-urlencoded', { parseAs: 'string' }, (req, body, done) => {
         try {
             done(null, querystring.parse(body));
@@ -30,8 +29,8 @@ function buildApp(opts = {}) {
     });
 
     // 2. Register Sensible utilities & CORS support
-    fastify.register(require('@fastify/sensible'));
-    fastify.register(require('@fastify/cors'), {
+    fastify.register(fastifySensible);
+    fastify.register(fastifyCors, {
         origin: true, // Allow cross-origin requests
         credentials: true
     });
@@ -49,16 +48,16 @@ function buildApp(opts = {}) {
         return { status: 'UP', service: 'auth-service' };
     });
 
-    // 6. Register Fastify Route Plugins (with respective prefixes)
+    // 6. Register Fastify Route Plugins
     fastify.register(authRoutes);
     fastify.register(userRoutes);
     fastify.register(roleRoutes, { prefix: '/roles' });
     fastify.register(notificationRoutes, { prefix: '/notifications' });
 
     // Plans & PayFast (Mount at multiple prefixes for gateway rewrites compatibility)
-    fastify.register(planRoutes, { prefix: '/api/plans' });
-    fastify.register(planRoutes, { prefix: '/plans' });
-    fastify.register(planRoutes, { prefix: '/subscriptions' });
+    fastify.register(subscriptionRoutes, { prefix: '/api/plans' });
+    fastify.register(subscriptionRoutes, { prefix: '/plans' });
+    fastify.register(subscriptionRoutes, { prefix: '/subscriptions' });
 
     // Tickets
     fastify.register(ticketRoutes, { prefix: '/tickets' });

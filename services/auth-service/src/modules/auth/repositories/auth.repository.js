@@ -77,6 +77,27 @@ class AuthRepository {
             };
         });
     }
+
+    async updateUserLastLogin(userId) {
+        try {
+            return await prisma.user.update({
+                where: { id: userId },
+                data: { updatedAt: new Date() }
+            });
+        } catch (e) {
+            console.error("Failed to update user last login time:", e);
+        }
+    }
+
+    async updateUserPassword(userId, hashedPassword) {
+        return await prisma.user.update({
+            where: { id: userId },
+            data: { 
+                password: hashedPassword,
+                updatedAt: new Date()
+            }
+        });
+    }
 }
 
 module.exports = new AuthRepository();

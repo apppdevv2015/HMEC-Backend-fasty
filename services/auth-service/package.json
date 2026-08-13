@@ -20,6 +20,7 @@
         "@fastify/swagger-ui": "^3.0.0",
         "@prisma/client": "^5.14.0",
         "bcryptjs": "^2.4.3",
+        "dotenv": "^16.4.5",
         "fastify": "^4.26.2",
         "jsonwebtoken": "^9.0.2",
         "module-alias": "^2.3.4",
