@@ -44,8 +44,27 @@ class ComponentController {
 
     async getCategories(req, res) {
         try {
-            const categories = await componentService.getCategories();
+            const { companyId } = req.query;
+            const categories = await componentService.getCategories(companyId);
             return responseHandler(res, HTTP_STATUS.OK, true, 'Categories fetched successfully', categories);
+        } catch (error) {
+            return responseHandler(res, HTTP_STATUS.BAD_REQUEST, false, error.message);
+        }
+    }
+
+    async createCategory(req, res) {
+        try {
+            const category = await componentService.createCategory(req.body);
+            return responseHandler(res, HTTP_STATUS.CREATED, true, 'Component category created successfully', category);
+        } catch (error) {
+            return responseHandler(res, HTTP_STATUS.BAD_REQUEST, false, error.message);
+        }
+    }
+
+    async deleteCategory(req, res) {
+        try {
+            const category = await componentService.deleteCategory(req.params.id);
+            return responseHandler(res, HTTP_STATUS.OK, true, 'Component category deleted successfully', category);
         } catch (error) {
             return responseHandler(res, HTTP_STATUS.BAD_REQUEST, false, error.message);
         }

@@ -865,6 +865,75 @@ class UserService {
         }
     }
 
+    async sendMachineAssignmentEmails(data) {
+        const {
+            supervisorName,
+            supervisorEmail,
+            operatorName,
+            operatorEmail,
+            machineName,
+            serialNumber,
+            shift,
+            assignedAt
+        } = data;
+
+        const timestamp = assignedAt ? new Date(assignedAt).toLocaleString() : new Date().toLocaleString();
+        const loginUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/operator/dashboard`;
+
+        // 1. Send confirmation email to Supervisor
+        if (supervisorEmail && supervisorEmail.includes('@')) {
+            try {
+                const supervisorHtml = await templateService.getTemplate('machine-assigned-supervisor', {
+                    supervisorName: supervisorName || 'Supervisor',
+                    operatorName: operatorName || 'Operator',
+                    operatorEmail: operatorEmail || 'N/A',
+                    machineName: machineName || 'Assigned Equipment',
+                    serialNumber: serialNumber || 'N/A',
+                    shift: shift || 'Morning',
+                    timestamp
+                });
+
+                await emailUtils.sendEmailNow({
+                    to: supervisorEmail,
+                    subject: `🚜 Machine Assignment Confirmed - ${machineName}`,
+                    html: supervisorHtml
+                });
+                console.log(`[ASSIGNMENT_EMAIL] Supervisor confirmation sent to: ${supervisorEmail}`);
+            } catch (err) {
+                console.error('[ASSIGNMENT_EMAIL_ERR] Failed supervisor email:', err.message);
+            }
+        }
+
+        // Delay between emails to prevent Mailtrap free tier rate limit (550 5.7.0)
+        await new Promise((resolve) => setTimeout(resolve, 5500));
+
+        // 2. Send notification email to Operator
+        if (operatorEmail && operatorEmail.includes('@')) {
+            try {
+                const operatorHtml = await templateService.getTemplate('machine-assigned-operator', {
+                    operatorName: operatorName || 'Operator',
+                    supervisorName: supervisorName || 'Supervisor',
+                    machineName: machineName || 'Assigned Equipment',
+                    serialNumber: serialNumber || 'N/A',
+                    shift: shift || 'Morning',
+                    timestamp,
+                    loginUrl
+                });
+
+                await emailUtils.sendEmailNow({
+                    to: operatorEmail,
+                    subject: `🚜 New Machine Assigned: ${machineName}`,
+                    html: operatorHtml
+                });
+                console.log(`[ASSIGNMENT_EMAIL] Operator notification sent to: ${operatorEmail}`);
+            } catch (err) {
+                console.error('[ASSIGNMENT_EMAIL_ERR] Failed operator email:', err.message);
+            }
+        }
+
+        return { sent: true };
+    }
+
     async createSubSuperAdmin(data) {
         const { first_name, last_name, email, password, mobile_number } = data;
 

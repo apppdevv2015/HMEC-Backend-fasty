@@ -88,6 +88,14 @@ class MachineService {
         return machines.map(mapMachineResponse);
     }
 
+    async getPaginatedMachines({ companyId, page, limit, search }) {
+        const result = await machineRepository.findPaginated({ companyId, page, limit, search });
+        return {
+            ...result,
+            data: result.data.map(mapMachineResponse)
+        };
+    }
+
     async getMachineById(id) {
         const machine = await machineRepository.findById(id);
         return mapMachineResponse(machine);
@@ -102,9 +110,28 @@ class MachineService {
         if (data.site !== undefined) dbData.site = data.site;
         if (data.costPerHourTarget !== undefined) dbData.costPerHourTarget = data.costPerHourTarget;
         if (data.costPerTonTarget !== undefined) dbData.costPerTonTarget = data.costPerTonTarget;
+        // Assignment fields
+        if (data.assignedOperatorId !== undefined) dbData.assignedOperatorId = data.assignedOperatorId;
+        if (data.assignedOperatorName !== undefined) dbData.assignedOperatorName = data.assignedOperatorName;
+        if (data.assignedArtisanId !== undefined) dbData.assignedArtisanId = data.assignedArtisanId;
+        if (data.assignedArtisanName !== undefined) dbData.assignedArtisanName = data.assignedArtisanName;
+        if (data.assignedSupervisorId !== undefined) dbData.assignedSupervisorId = data.assignedSupervisorId;
+        if (data.assignedSupervisorName !== undefined) dbData.assignedSupervisorName = data.assignedSupervisorName;
         
         const machine = await machineRepository.update(id, dbData);
         return mapMachineResponse(machine);
+    }
+
+    async getCategories(companyId) {
+        return await machineRepository.getCategories(companyId);
+    }
+
+    async createCategory(data) {
+        return await machineRepository.createCategory(data);
+    }
+
+    async deleteCategory(id) {
+        return await machineRepository.deleteCategory(id);
     }
 
     async deleteMachine(id) {

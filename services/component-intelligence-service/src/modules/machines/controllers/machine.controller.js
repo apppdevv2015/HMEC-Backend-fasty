@@ -17,7 +17,16 @@ class MachineController {
 
     async getMachines(req, res) {
         try {
-            const { companyId } = req.query;
+            const { companyId, page, limit, search } = req.query;
+            if (page || limit || search) {
+                const paginatedResult = await machineService.getPaginatedMachines({
+                    companyId,
+                    page: Number(page) || 1,
+                    limit: Number(limit) || 10,
+                    search: search || ''
+                });
+                return responseHandler(res, HTTP_STATUS.OK, true, 'Machines fetched successfully with pagination', paginatedResult);
+            }
             const machines = await machineService.getMachines(companyId);
             return responseHandler(res, HTTP_STATUS.OK, true, 'Machines fetched successfully', machines);
         } catch (error) {
@@ -39,6 +48,34 @@ class MachineController {
         try {
             const machine = await machineService.deleteMachine(req.params.id);
             return responseHandler(res, HTTP_STATUS.OK, true, 'Machine deleted successfully', machine);
+        } catch (error) {
+            return responseHandler(res, HTTP_STATUS.BAD_REQUEST, false, error.message);
+        }
+    }
+
+    async getCategories(req, res) {
+        try {
+            const { companyId } = req.query;
+            const categories = await machineService.getCategories(companyId);
+            return responseHandler(res, HTTP_STATUS.OK, true, 'Machine categories fetched successfully', categories);
+        } catch (error) {
+            return responseHandler(res, HTTP_STATUS.BAD_REQUEST, false, error.message);
+        }
+    }
+
+    async createCategory(req, res) {
+        try {
+            const category = await machineService.createCategory(req.body);
+            return responseHandler(res, HTTP_STATUS.CREATED, true, 'Machine category created successfully', category);
+        } catch (error) {
+            return responseHandler(res, HTTP_STATUS.BAD_REQUEST, false, error.message);
+        }
+    }
+
+    async deleteCategory(req, res) {
+        try {
+            const category = await machineService.deleteCategory(req.params.id);
+            return responseHandler(res, HTTP_STATUS.OK, true, 'Machine category deleted successfully', category);
         } catch (error) {
             return responseHandler(res, HTTP_STATUS.BAD_REQUEST, false, error.message);
         }

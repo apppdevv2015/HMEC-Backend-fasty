@@ -34,6 +34,9 @@ async function userRoutes(fastify, options) {
 
     fastify.get('/users/company/:companyId/staff', { preHandler: authMiddleware }, userController.getCompanyStaff);
 
+    // Machine Assignment Notification Emails
+    fastify.post('/users/send-assignment-email', { preHandler: authMiddleware }, userController.sendAssignmentEmail);
+
     // Super Admin Management Routes
     fastify.get('/users/super-admin/companies', { preHandler: authMiddleware }, userController.getCompanySummaries);
 }

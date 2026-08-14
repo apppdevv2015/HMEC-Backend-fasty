@@ -127,6 +127,15 @@ class UserController {
             throw error;
         }
     }
+
+    async sendAssignmentEmail(req, res) {
+        try {
+            const result = await userService.sendMachineAssignmentEmails(req.body || {});
+            return responseHandler(res, HTTP_STATUS.OK, 'Assignment notification emails dispatched successfully', result);
+        } catch (error) {
+            throw error;
+        }
+    }
 }
 
 module.exports = new UserController();
