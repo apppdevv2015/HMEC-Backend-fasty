@@ -4,8 +4,10 @@ const { componentValidation, inspectValidation } = require('../../../validations
 const { authMiddleware, isAdmin } = require('../../../middlewares/auth.middleware');
 
 async function componentRoutes(fastify, options) {
-    // Get all component categories
-    fastify.get('/categories', { preHandler: authMiddleware }, componentController.getCategories);
+    // Component categories endpoints
+    fastify.get('/categories', componentController.getCategories);
+    fastify.post('/categories', componentController.createCategory);
+    fastify.delete('/categories/:id', componentController.deleteCategory);
 
     // Get all components for a machine or company
     fastify.get('/', { preHandler: authMiddleware }, componentController.getComponents);

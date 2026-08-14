@@ -9,12 +9,12 @@ datasource db {
 }
 
 model Company {
-  id                 String           @id @default(uuid())
-  companyCode        String           @unique
-  name               String           @unique
-  subscriptionStatus String           @default("active")
-  createdAt          DateTime         @default(now())
-  updatedAt          DateTime         @updatedAt
+  id                 String              @id @default(uuid())
+  companyCode        String              @unique
+  name               String              @unique
+  subscriptionStatus String              @default("active")
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
   users              User[]
   maintenanceLogs    MaintenanceLog[]
   notifications      Notification[]
@@ -22,6 +22,9 @@ model Company {
   subscriptions      Subscription[]
   tickets            Ticket[]
   jobCards           JobCard[]
+  machineCategories  MachineCategory[]
+  componentCategories ComponentCategory[]
+  components         Component[]
 }
 
 model Role {
@@ -84,56 +87,98 @@ model Subscription {
 }
 
 model Machine {
-  id                String           @id @default(uuid())
-  name              String
-  model             String
-  serialNumber      String           @unique
-  companyId         String
-  createdAt         DateTime         @default(now())
-  updatedAt         DateTime         @updatedAt
-  site              String?
-  status            String?          @default("Healthy")
-  costPerHourTarget Decimal?         @map("cost_per_hour_target") @db.Decimal(10, 2)
-  costPerTonTarget  Decimal?         @map("cost_per_ton_target") @db.Decimal(10, 2)
-  components        Component[]
-  maintenanceLogs   MaintenanceLog[]
-  recommendations   Recommendation[]
-  jobCards          JobCard[]
+  id                     String           @id @default(uuid())
+  name                   String
+  model                  String
+  serialNumber           String           @unique
+  companyId              String
+  createdAt              DateTime         @default(now())
+  updatedAt              DateTime         @updatedAt
+  site                   String?
+  status                 String?          @default("Healthy")
+  costPerHourTarget      Decimal?         @map("cost_per_hour_target") @db.Decimal(10, 2)
+  equipmentType          String?          @map("equipment_type")
+  assignedOperatorId     String?          @map("assigned_operator_id")
+  assignedOperatorName   String?          @map("assigned_operator_name")
+  assignedArtisanId      String?          @map("assigned_artisan_id")
+  assignedArtisanName    String?          @map("assigned_artisan_name")
+  assignedSupervisorId   String?          @map("assigned_supervisor_id")
+  assignedSupervisorName String?          @map("assigned_supervisor_name")
+  components             Component[]
+  maintenanceLogs        MaintenanceLog[]
+  recommendations        Recommendation[]
+  jobCards               JobCard[]
 }
 
-model ComponentCategory {
+model MachineCategory {
   id          String   @id @default(uuid())
-  name        String   @unique
+  companyId   String?  @map("company_id")
+  name        String
   description String?
+  icon        String?
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  company     Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([name, companyId])
+  @@map("machine_categories")
+}
+
+model ComponentCategory {
+  id          String      @id @default(uuid())
+  companyId   String?     @map("company_id")
+  name        String
+  description String?
+  isActive    Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  components  Component[]
+
+  company     Company?    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([name, companyId])
+  @@map("component_categories")
 }
 
 model Component {
-  id                 String              @id @default(uuid())
-  machineId          String
-  category           String
-  description        String
-  serialNumber       String              @unique
-  supplier           String?
-  installHours       Int                 @default(0)
-  currentHours       Int                 @default(0)
-  plannedLife        Int                 @default(0)
-  replacementCost    Decimal             @default(0)
-  condition          Int                 @default(1)
-  createdAt          DateTime            @default(now())
-  updatedAt          DateTime            @updatedAt
-  installDate        DateTime?           @map("install_date")
-  expectedLifeHours  Int?                @map("expected_life_hours")
-  currentLifeHours   Int                 @default(0) @map("current_life_hours")
-  purchasePrice      Decimal?            @map("purchase_price") @db.Decimal(15, 2)
-  machine            Machine             @relation(fields: [machineId], references: [id])
-  componentCosts     ComponentCost[]
-  failurePredictions FailurePrediction[]
-  maintenanceLogs    MaintenanceLog[]
-  recommendations    Recommendation[]
-  jobCards           JobCard[]
+  id                     String              @id @default(uuid())
+  machineId              String
+  companyId              String?             @map("company_id")
+  categoryId             String?             @map("category_id")
+  category               String
+  componentType          String?             @map("component_type")
+  description            String
+  serialNumber           String              @unique
+  supplier               String?
+  installHours           Int                 @default(0)
+  currentHours           Int                 @default(0)
+  plannedLife            Int                 @default(0)
+  replacementCost        Decimal             @default(0)
+  condition              Int                 @default(1)
+  createdAt              DateTime            @default(now())
+  updatedAt              DateTime            @updatedAt
+  installDate            DateTime?           @map("install_date")
+  expectedLifeHours      Int?                @map("expected_life_hours")
+  currentLifeHours       Int                 @default(0) @map("current_life_hours")
+  purchasePrice          Decimal?            @map("purchase_price") @db.Decimal(15, 2)
+  assignedArtisanId      String?             @map("assigned_artisan_id")
+  assignedArtisanName    String?             @map("assigned_artisan_name")
+  assignedSupervisorId   String?             @map("assigned_supervisor_id")
+  assignedSupervisorName String?             @map("assigned_supervisor_name")
+  assignedStartDate      DateTime?           @map("assigned_start_date")
+  assignedDueDate        DateTime?           @map("assigned_due_date")
+  assignedWorkScope      String?             @map("assigned_work_scope")
+  assignedPriority       String?             @map("assigned_priority")
+  machine                Machine             @relation(fields: [machineId], references: [id])
+  company                Company?            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  categoryRef            ComponentCategory?  @relation(fields: [categoryId], references: [id])
+  componentCosts         ComponentCost[]
+  failurePredictions     FailurePrediction[]
+  maintenanceLogs        MaintenanceLog[]
+  recommendations        Recommendation[]
+  jobCards               JobCard[]
 }
 
 model ComponentCost {

@@ -1,5 +1,22 @@
 const prisma = require('../../../database/prismaClient');
 
+async function resolveCompanyId(companyId) {
+    if (!companyId) return null;
+    try {
+        const company = await prisma.company.findFirst({
+            where: {
+                OR: [
+                    { id: companyId },
+                    { companyCode: companyId }
+                ]
+            }
+        });
+        return company ? company.id : null;
+    } catch (e) {
+        return null;
+    }
+}
+
 async function enrichMachinesWithCompany(machines) {
     if (!machines) return machines;
     const isArray = Array.isArray(machines);
@@ -53,6 +70,50 @@ class MachineRepository {
         return await enrichMachinesWithCompany(machines);
     }
 
+    async findPaginated({ companyId, search, page = 1, limit = 10 }) {
+        const whereClause = {};
+        if (companyId && companyId !== 'all') {
+            whereClause.companyId = companyId;
+        }
+
+        if (search && search.trim()) {
+            const q = search.trim();
+            whereClause.OR = [
+                { name: { contains: q, mode: 'insensitive' } },
+                { model: { contains: q, mode: 'insensitive' } },
+                { serialNumber: { contains: q, mode: 'insensitive' } },
+                { site: { contains: q, mode: 'insensitive' } },
+                { assignedOperatorName: { contains: q, mode: 'insensitive' } },
+                { assignedArtisanName: { contains: q, mode: 'insensitive' } },
+            ];
+        }
+
+        const skip = (Number(page) - 1) * Number(limit);
+        const take = Number(limit);
+
+        const [totalItems, rawMachines] = await Promise.all([
+            prisma.machine.count({ where: whereClause }),
+            prisma.machine.findMany({
+                where: whereClause,
+                skip,
+                take,
+                include: { components: true },
+                orderBy: { createdAt: 'desc' }
+            })
+        ]);
+
+        const machines = await enrichMachinesWithCompany(rawMachines);
+        const totalPages = Math.ceil(totalItems / limit) || 1;
+
+        return {
+            page: Number(page),
+            limit: Number(limit),
+            totalItems,
+            totalPages,
+            data: machines
+        };
+    }
+
     async findById(id) {
         const machine = await prisma.machine.findUnique({
             where: { id },
@@ -77,6 +138,47 @@ class MachineRepository {
             include: {
                 plan: true
             }
+        });
+    }
+
+    async getCategories(companyId) {
+        const whereClause = { isActive: true };
+        if (companyId && companyId !== 'all') {
+            const validCompanyId = await resolveCompanyId(companyId);
+            whereClause.OR = [
+                { companyId: companyId },
+                ...(validCompanyId ? [{ companyId: validCompanyId }] : []),
+                { companyId: null }
+            ];
+        }
+        return await prisma.machineCategory.findMany({
+            where: whereClause,
+            orderBy: { name: 'asc' }
+        });
+    }
+
+    async createCategory(data) {
+        const validCompanyId = await resolveCompanyId(data.companyId);
+        const payload = {
+            name: data.name,
+            description: data.description || null,
+            icon: data.icon || null,
+            isActive: data.isActive !== undefined ? data.isActive : true,
+            companyId: validCompanyId
+        };
+        return await prisma.machineCategory.create({ data: payload });
+    }
+
+    async updateCategory(id, data) {
+        return await prisma.machineCategory.update({
+            where: { id },
+            data
+        });
+    }
+
+    async deleteCategory(id) {
+        return await prisma.machineCategory.delete({
+            where: { id }
         });
     }
 

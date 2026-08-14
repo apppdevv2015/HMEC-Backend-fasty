@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>New Machine Assigned</title>
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; color: #1e293b; }
+    .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.08); border: 1px solid #e2e8f0; }
+    .header { background: linear-gradient(135deg, #059669 0%, #047857 100%); padding: 32px 24px; text-align: center; color: #ffffff; }
+    .header h1 { margin: 0; font-size: 24px; font-weight: 800; }
+    .header p { margin: 6px 0 0; font-size: 13px; opacity: 0.9; }
+    .content { padding: 28px 24px; }
+    .badge { display: inline-block; background: #d1fae5; color: #065f46; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; margin-bottom: 16px; }
+    .info-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; margin: 16px 0; }
+    .info-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed #cbd5e1; font-size: 13px; }
+    .info-row:last-child { border-bottom: none; }
+    .info-label { color: #64748b; font-weight: 600; }
+    .info-value { color: #0f172a; font-weight: 700; }
+    .btn-container { text-align: center; margin-top: 24px; }
+    .btn { display: inline-block; background: #059669; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 10px; font-size: 14px; font-weight: 700; transition: background 0.3s ease; }
+    .footer { text-align: center; padding: 20px; background: #f8fafc; font-size: 11px; color: #94a3b8; border-top: 1px solid #e2e8f0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🚜 New Machine Assigned</h1>
+      <p>Operator Shift Schedule • HME Intelligence</p>
+    </div>
+    <div class="content">
+      <span class="badge">Machine Assignment Notice</span>
+      <p style="font-size: 14px; line-height: 1.6;">
+        Hello <strong>{{operatorName}}</strong>,<br>
+        Supervisor <strong>{{supervisorName}}</strong> has assigned a new equipment/machine to you for your upcoming shift:
+      </p>
+
+      <div class="info-card">
+        <div class="info-row">
+          <span class="info-label">Assigned Machine:</span>
+          <span class="info-value">{{machineName}}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Machine Serial Code:</span>
+          <span class="info-value">{{serialNumber}}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Assigned By Supervisor:</span>
+          <span class="info-value">{{supervisorName}}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Shift:</span>
+          <span class="info-value">{{shift}}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Assignment Timestamp:</span>
+          <span class="info-value">{{timestamp}}</span>
+        </div>
+      </div>
+
+      <p style="font-size: 13px; color: #475569; line-height: 1.5;">
+        ⚠️ <strong>Important Safety Note:</strong> Please perform your pre-start safety inspection and record running hours on your operator dashboard before starting operations.
+      </p>
+
+      <div class="btn-container">
+        <a href="{{loginUrl}}" class="btn">Open Operator Dashboard</a>
+      </div>
+    </div>
+    <div class="footer">
+      &copy; 2026 HME Intelligence System. All rights reserved.
+    </div>
+  </div>
+</body>
+</html>

@@ -3,6 +3,10 @@ const machineValidation = require('../../../validations/machine.validation');
 const { authMiddleware, isAdmin } = require('../../../middlewares/auth.middleware');
 
 async function machineRoutes(fastify, options) {
+    fastify.get('/categories', machineController.getCategories);
+    fastify.post('/categories', machineController.createCategory);
+    fastify.delete('/categories/:id', machineController.deleteCategory);
+
     fastify.post('/', { 
         preHandler: [authMiddleware, isAdmin, machineValidation] 
     }, machineController.addMachine);

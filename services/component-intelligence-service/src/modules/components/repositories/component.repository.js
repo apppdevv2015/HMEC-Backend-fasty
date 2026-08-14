@@ -1,5 +1,22 @@
 const prisma = require('../../../database/prismaClient');
 
+async function resolveCompanyId(companyId) {
+    if (!companyId) return null;
+    try {
+        const company = await prisma.company.findFirst({
+            where: {
+                OR: [
+                    { id: companyId },
+                    { companyCode: companyId }
+                ]
+            }
+        });
+        return company ? company.id : null;
+    } catch (e) {
+        return null;
+    }
+}
+
 async function enrichComponentsWithCompany(components) {
     if (!components) return components;
     const isArray = Array.isArray(components);
@@ -104,10 +121,43 @@ class ComponentRepository {
         return await enrichComponentsWithCompany(component);
     }
 
-    async getCategories() {
+    async getCategories(companyId) {
+        const whereClause = { isActive: true };
+        if (companyId && companyId !== 'all') {
+            const validCompanyId = await resolveCompanyId(companyId);
+            whereClause.OR = [
+                { companyId: companyId },
+                ...(validCompanyId ? [{ companyId: validCompanyId }] : []),
+                { companyId: null }
+            ];
+        }
         return await prisma.componentCategory.findMany({
-            where: { isActive: true },
+            where: whereClause,
             orderBy: { name: 'asc' }
+        });
+    }
+
+    async createCategory(data) {
+        const validCompanyId = await resolveCompanyId(data.companyId);
+        const payload = {
+            name: data.name,
+            description: data.description || null,
+            isActive: data.isActive !== undefined ? data.isActive : true,
+            companyId: validCompanyId
+        };
+        return await prisma.componentCategory.create({ data: payload });
+    }
+
+    async updateCategory(id, data) {
+        return await prisma.componentCategory.update({
+            where: { id },
+            data
+        });
+    }
+
+    async deleteCategory(id) {
+        return await prisma.componentCategory.delete({
+            where: { id }
         });
     }
     async delete(id) {
