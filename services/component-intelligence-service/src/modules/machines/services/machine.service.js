@@ -122,6 +122,143 @@ class MachineService {
         return mapMachineResponse(machine);
     }
 
+    async assignMachine(id, data, user) {
+        const assignedAt = data.assignedAt || new Date().toISOString();
+        
+        // 1. Automatically bind companyId from logged-in user context
+        const companyId = user?.companyId || data.companyId;
+
+        // 2. Multitenancy Check: Verify target Machine belongs to the user's company
+        const targetMachine = await machineRepository.findById(id);
+        if (!targetMachine) {
+            throw new Error("Machine not found.");
+        }
+        if (companyId && targetMachine.companyId && targetMachine.companyId !== companyId) {
+            throw new Error("Access denied. You can only assign machines that belong to your company.");
+        }
+
+        // 3. Automatically bind supervisor details from logged-in user context
+        const supervisorId = user?.id || user?.userId || data.supervisorId || data.assignedSupervisorId;
+        const supervisorName = (user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : '') || user?.name || user?.fullName || data.supervisorName || data.assignedSupervisorName || 'Supervisor';
+
+        // Collect all user IDs passed in payload (userId can be string or array)
+        let rawUserIds = [];
+        if (typeof data.userId === 'string') rawUserIds.push(data.userId);
+        if (Array.isArray(data.userId)) rawUserIds.push(...data.userId);
+        if (Array.isArray(data.userIds)) rawUserIds.push(...data.userIds);
+        if (data.operatorId) rawUserIds.push(data.operatorId);
+        if (data.artisanId) rawUserIds.push(data.artisanId);
+
+        const uniqueUserIds = [...new Set(rawUserIds)].filter(Boolean);
+
+        let operatorId = data.assignedOperatorId || null;
+        let operatorName = data.assignedOperatorName || null;
+        let artisanId = data.assignedArtisanId || null;
+        let artisanName = data.assignedArtisanName || null;
+
+        // Fetch User & Role details for each provided User ID
+        for (const uId of uniqueUserIds) {
+            let foundUser = null;
+            try {
+                foundUser = await prisma.user.findUnique({
+                    where: { id: uId },
+                    include: { role: true }
+                });
+            } catch (e) {}
+
+            if (foundUser) {
+                // Multitenancy Check: Verify target User belongs to the user's company
+                if (companyId && foundUser.companyId && foundUser.companyId !== companyId) {
+                    throw new Error(`Access denied. User '${foundUser.firstName}' belongs to a different company.`);
+                }
+                const fullName = `${foundUser.firstName} ${foundUser.lastName || ''}`.trim();
+                const roleName = (foundUser.role?.name || '').toLowerCase();
+
+                if (roleName.includes('operator')) {
+                    if (operatorId && operatorId !== uId) {
+                        throw new Error(`Machine can only have 1 assigned Operator. Cannot assign multiple operators.`);
+                    }
+                    operatorId = foundUser.id;
+                    operatorName = fullName;
+                } else if (roleName.includes('artisan') || roleName.includes('engineer') || roleName.includes('technician')) {
+                    if (artisanId && artisanId !== uId) {
+                        throw new Error(`Machine can only have 1 assigned Artisan. Cannot assign multiple artisans.`);
+                    }
+                    artisanId = foundUser.id;
+                    artisanName = fullName;
+                } else {
+                    throw new Error(`User '${fullName}' has role '${foundUser.role?.name || 'User'}' and cannot be assigned to a machine. Only Operators and Artisans can be assigned.`);
+                }
+            }
+        }
+
+        // Fallback if direct IDs were passed without DB user match
+        if (data.operatorId && !operatorId) {
+            operatorId = data.operatorId;
+            operatorName = data.operatorName || 'Operator';
+        }
+        if (data.artisanId && !artisanId) {
+            artisanId = data.artisanId;
+            artisanName = data.artisanName || 'Artisan';
+        }
+
+        const dbData = {
+            assignedOperatorId: operatorId,
+            assignedOperatorName: operatorName,
+            assignedArtisanId: artisanId,
+            assignedArtisanName: artisanName,
+            assignedSupervisorId: supervisorId,
+            assignedSupervisorName: supervisorName,
+        };
+
+        const machine = await machineRepository.update(id, dbData);
+
+        return {
+            ...mapMachineResponse(machine),
+            assignedAt,
+            assignedBy: `${supervisorName} (${supervisorId || 'N/A'})`,
+            companyId: machine.companyId || companyId || null,
+        };
+    }
+
+    async getMachineAssignment(id) {
+        const machine = await machineRepository.findById(id);
+        if (!machine) throw new Error("Machine not found");
+        return {
+            machineId: machine.id,
+            machineName: machine.name,
+            model: machine.model,
+            serialNumber: machine.serialNumber,
+            companyId: machine.companyId || null,
+            assignedOperatorId: machine.assignedOperatorId || null,
+            assignedOperatorName: machine.assignedOperatorName || null,
+            assignedArtisanId: machine.assignedArtisanId || null,
+            assignedArtisanName: machine.assignedArtisanName || null,
+            assignedSupervisorId: machine.assignedSupervisorId || null,
+            assignedSupervisorName: machine.assignedSupervisorName || null,
+            assignedAt: machine.assignedAt || machine.updatedAt || null,
+        };
+    }
+
+    async getAllAssignedMachines(companyId) {
+        const machines = await machineRepository.findAll(companyId);
+        const assignedMachines = machines.filter(m => m.assignedOperatorId || m.assignedArtisanId || m.assignedSupervisorId || m.assignedOperatorName || m.assignedSupervisorName);
+        return assignedMachines.map(machine => ({
+            machineId: machine.id,
+            machineName: machine.name,
+            model: machine.model,
+            serialNumber: machine.serialNumber,
+            companyId: machine.companyId || null,
+            assignedOperatorId: machine.assignedOperatorId || null,
+            assignedOperatorName: machine.assignedOperatorName || null,
+            assignedArtisanId: machine.assignedArtisanId || null,
+            assignedArtisanName: machine.assignedArtisanName || null,
+            assignedSupervisorId: machine.assignedSupervisorId || null,
+            assignedSupervisorName: machine.assignedSupervisorName || null,
+            assignedAt: machine.assignedAt || machine.updatedAt || null,
+        }));
+    }
+
     async getCategories(companyId) {
         return await machineRepository.getCategories(companyId);
     }
@@ -143,6 +280,8 @@ const mapMachineResponse = (machine) => {
     if (!machine) return null;
     return {
         ...machine,
+        machineId: machine.id,
+        machineName: machine.name,
         equipmentType: machine.site || 'N/A'
     };
 };

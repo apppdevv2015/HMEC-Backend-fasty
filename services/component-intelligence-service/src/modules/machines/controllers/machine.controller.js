@@ -3,19 +3,17 @@ const responseHandler = require('../../../utils/responseHandler');
 const { HTTP_STATUS } = responseHandler;
 
 class MachineController {
-    async addMachine(req, res) {
+    addMachine = async (req, res) => {
         try {
-            // Securely bind the logged-in user's companyId to the machine data
             req.body.companyId = req.user.companyId;
-            
             const machine = await machineService.addMachine(req.body);
             return responseHandler(res, HTTP_STATUS.CREATED, true, 'Machine registered successfully', machine);
         } catch (error) {
             return responseHandler(res, HTTP_STATUS.BAD_REQUEST, false, error.message);
         }
-    }
+    };
 
-    async getMachines(req, res) {
+    getMachines = async (req, res) => {
         try {
             const { companyId, page, limit, search } = req.query;
             if (page || limit || search) {
@@ -33,27 +31,68 @@ class MachineController {
             console.error('[GET MACHINES ERROR]:', error);
             return responseHandler(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, false, error.message || 'Failed to fetch machines');
         }
-    }
+    };
 
-    async updateMachine(req, res) {
+    getMachineById = async (req, res) => {
+        try {
+            const machine = await machineService.getMachineById(req.params.id);
+            return responseHandler(res, HTTP_STATUS.OK, true, 'Machine details fetched successfully', machine);
+        } catch (error) {
+            return responseHandler(res, HTTP_STATUS.BAD_REQUEST, false, error.message);
+        }
+    };
+
+    getMachineAssignment = async (req, res) => {
+        try {
+            const assignment = await machineService.getMachineAssignment(req.params.id);
+            return responseHandler(res, HTTP_STATUS.OK, true, 'Machine assignment details fetched successfully', assignment);
+        } catch (error) {
+            return responseHandler(res, HTTP_STATUS.BAD_REQUEST, false, error.message);
+        }
+    };
+
+    getAllAssignedMachines = async (req, res) => {
+        try {
+            const companyId = req.query.companyId || req.user?.companyId;
+            const assignments = await machineService.getAllAssignedMachines(companyId);
+            return responseHandler(res, HTTP_STATUS.OK, true, 'All assigned machines fetched successfully', assignments);
+        } catch (error) {
+            return responseHandler(res, HTTP_STATUS.BAD_REQUEST, false, error.message);
+        }
+    };
+
+    updateMachine = async (req, res) => {
         try {
             const machine = await machineService.updateMachine(req.params.id, req.body);
             return responseHandler(res, HTTP_STATUS.OK, true, 'Machine updated successfully', machine);
         } catch (error) {
             return responseHandler(res, HTTP_STATUS.BAD_REQUEST, false, error.message);
         }
-    }
+    };
 
-    async deleteMachine(req, res) {
+    assignMachine = async (req, res) => {
+        try {
+            const machineId = req.params?.id || req.body?.machineId;
+            if (!machineId) {
+                return responseHandler(res, HTTP_STATUS.BAD_REQUEST, false, 'machineId is required for machine assignment');
+            }
+            const assignedMachine = await machineService.assignMachine(machineId, req.body, req.user);
+            return responseHandler(res, HTTP_STATUS.OK, true, 'Machine assigned successfully', assignedMachine);
+        } catch (error) {
+            return responseHandler(res, HTTP_STATUS.BAD_REQUEST, false, error.message);
+        }
+    };
+
+    deleteMachine = async (req, res) => {
         try {
             const machine = await machineService.deleteMachine(req.params.id);
             return responseHandler(res, HTTP_STATUS.OK, true, 'Machine deleted successfully', machine);
         } catch (error) {
             return responseHandler(res, HTTP_STATUS.BAD_REQUEST, false, error.message);
         }
-    }
+    };
 
-    async getCategories(req, res) {
+    getCategories = async (req, res) => {
         try {
             const { companyId } = req.query;
             const categories = await machineService.getCategories(companyId);
@@ -61,25 +100,25 @@ class MachineController {
         } catch (error) {
             return responseHandler(res, HTTP_STATUS.BAD_REQUEST, false, error.message);
         }
-    }
+    };
 
-    async createCategory(req, res) {
+    createCategory = async (req, res) => {
         try {
             const category = await machineService.createCategory(req.body);
             return responseHandler(res, HTTP_STATUS.CREATED, true, 'Machine category created successfully', category);
         } catch (error) {
             return responseHandler(res, HTTP_STATUS.BAD_REQUEST, false, error.message);
         }
-    }
+    };
 
-    async deleteCategory(req, res) {
+    deleteCategory = async (req, res) => {
         try {
             const category = await machineService.deleteCategory(req.params.id);
             return responseHandler(res, HTTP_STATUS.OK, true, 'Machine category deleted successfully', category);
         } catch (error) {
             return responseHandler(res, HTTP_STATUS.BAD_REQUEST, false, error.message);
         }
-    }
+    };
 }
 
 module.exports = new MachineController();
