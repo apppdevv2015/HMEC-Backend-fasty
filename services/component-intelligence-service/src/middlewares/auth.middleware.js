@@ -29,4 +29,12 @@ const isAdmin = async (request, reply) => {
     }
 };
 
-module.exports = { authMiddleware, isAdmin };
+const canAssignMachine = async (request, reply) => {
+    const role = (request.user?.role || '').toLowerCase();
+    if (role.includes('operator') || role.includes('artisan')) {
+        responseHandler(reply, HTTP_STATUS.FORBIDDEN, false, 'Access denied. Operators and Artisans cannot assign machines. Only Supervisors, Admins, or Managers are authorized.');
+        return;
+    }
+};
+
+module.exports = { authMiddleware, isAdmin, canAssignMachine };
