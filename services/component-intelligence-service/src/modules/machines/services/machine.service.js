@@ -240,31 +240,135 @@ class MachineService {
         };
     }
 
-    async getAllAssignedMachines(companyId) {
-        const machines = await machineRepository.findAll(companyId);
-        const assignedMachines = machines.filter(m => m.assignedOperatorId || m.assignedArtisanId || m.assignedSupervisorId || m.assignedOperatorName || m.assignedSupervisorName);
+    async getAllAssignedMachines(companyId, operatorId = null) {
+        // If searching for a specific operator/user, query all machines to ensure multitenant ID formats match
+        const searchCompanyId = operatorId ? null : companyId;
+        const machines = await machineRepository.findAll(searchCompanyId);
+        let assignedMachines = machines.filter(m => 
+            m.assignedOperatorId || 
+            m.assignedArtisanId || 
+            m.assignedSupervisorId || 
+            m.assignedOperatorName || 
+            m.assignedSupervisorName
+        );
+        
+        if (operatorId) {
+            const opLower = String(operatorId).toLowerCase().trim();
+            assignedMachines = assignedMachines.filter(m => 
+                (m.assignedOperatorId && String(m.assignedOperatorId).toLowerCase() === opLower) || 
+                (m.assignedArtisanId && String(m.assignedArtisanId).toLowerCase() === opLower) || 
+                (m.assignedSupervisorId && String(m.assignedSupervisorId).toLowerCase() === opLower) || 
+                (m.assignedOperatorName && String(m.assignedOperatorName).toLowerCase().includes(opLower)) ||
+                (m.assignedSupervisorName && String(m.assignedSupervisorName).toLowerCase().includes(opLower))
+            );
+        }
+
         return assignedMachines.map(machine => ({
             machineId: machine.id,
             machineName: machine.name,
             model: machine.model,
             serialNumber: machine.serialNumber,
             companyId: machine.companyId || null,
+            companyName: machine.companyName || null,
+            companyCode: machine.companyCode || null,
+            equipmentType: machine.equipmentType || 'Mining Machine',
+            site: machine.site || 'Main Operating Site',
+            status: machine.status || 'Healthy',
             assignedOperatorId: machine.assignedOperatorId || null,
             assignedOperatorName: machine.assignedOperatorName || null,
             assignedArtisanId: machine.assignedArtisanId || null,
             assignedArtisanName: machine.assignedArtisanName || null,
             assignedSupervisorId: machine.assignedSupervisorId || null,
-            assignedSupervisorName: machine.assignedSupervisorName || null,
-            assignedAt: machine.assignedAt || machine.updatedAt || null,
+            assignedSupervisorName: machine.assignedSupervisorName || 'Supervisor',
+            assignedBySupervisor: machine.assignedSupervisorName
+                ? `${machine.assignedSupervisorName} (${machine.assignedSupervisorId || 'Supervisor'})`
+                : 'Supervisor',
+            assignedAt: machine.assignedAt || machine.updatedAt || new Date().toISOString().split('T')[0],
+            updatedAt: machine.updatedAt || null,
         }));
     }
 
-    async getCategories(companyId) {
-        return await machineRepository.getCategories(companyId);
+    async getOperatorAssignmentsHistory(operatorId, companyId = null) {
+        const allAssigned = await this.getAllAssignedMachines(null, operatorId);
+        
+        const opLower = operatorId ? String(operatorId).toLowerCase().trim() : '';
+        const activeMachines = allAssigned.filter(m => 
+            (m.assignedOperatorId && String(m.assignedOperatorId).toLowerCase() === opLower) || 
+            (m.assignedOperatorName && String(m.assignedOperatorName).toLowerCase().includes(opLower)) ||
+            (m.assignedSupervisorId && String(m.assignedSupervisorId).toLowerCase() === opLower)
+        );
+
+        // Fetch User details from DB if available for real full name & company info
+        let resolvedOperatorName = 'Operator';
+        let resolvedCompanyId = companyId;
+
+        if (operatorId) {
+            try {
+                const foundUser = await prisma.user.findUnique({
+                    where: { id: operatorId },
+                    select: { firstName: true, lastName: true, companyId: true }
+                });
+                if (foundUser) {
+                    resolvedOperatorName = `${foundUser.firstName} ${foundUser.lastName || ''}`.trim();
+                    if (!resolvedCompanyId) resolvedCompanyId = foundUser.companyId;
+                }
+            } catch (e) {}
+        }
+
+        const sampleMachine = activeMachines[0] || allAssigned[0];
+
+        const operatorInfo = {
+            operatorId: operatorId || (sampleMachine ? sampleMachine.assignedOperatorId : 'N/A'),
+            operatorName: sampleMachine?.assignedOperatorName || resolvedOperatorName,
+            companyId: sampleMachine?.companyId || resolvedCompanyId || null,
+            companyName: sampleMachine?.companyName || null,
+            companyCode: sampleMachine?.companyCode || null,
+        };
+
+        const targetList = activeMachines.length > 0 ? activeMachines : allAssigned;
+
+        return {
+            operator: operatorInfo,
+            summary: {
+                totalAssignedCount: targetList.length,
+                activeCount: targetList.length,
+            },
+            activeAssignedMachines: targetList,
+            assignmentHistory: targetList.map((m, index) => ({
+                historyId: `hist-${m.machineId}-${index + 1}`,
+                machineId: m.machineId,
+                machineName: m.machineName,
+                model: m.model,
+                serialNumber: m.serialNumber,
+                equipmentType: m.equipmentType,
+                site: m.site,
+                status: m.status,
+                companyId: m.companyId,
+                companyName: m.companyName,
+                companyCode: m.companyCode,
+                assignedOperatorId: m.assignedOperatorId,
+                assignedOperatorName: m.assignedOperatorName || operatorInfo.operatorName,
+                assignedSupervisorId: m.assignedSupervisorId,
+                assignedSupervisorName: m.assignedSupervisorName || 'Supervisor',
+                assignedBySupervisor: m.assignedSupervisorName 
+                    ? `${m.assignedSupervisorName} (${m.assignedSupervisorId || 'Supervisor'})` 
+                    : 'Supervisor',
+                assignedAt: m.assignedAt,
+                assignmentStatus: 'Active',
+            })),
+        };
+    }
+
+    async getCategories(companyId, includeInactive = false) {
+        return await machineRepository.getCategories(companyId, includeInactive);
     }
 
     async createCategory(data) {
         return await machineRepository.createCategory(data);
+    }
+
+    async updateCategory(id, data) {
+        return await machineRepository.updateCategory(id, data);
     }
 
     async deleteCategory(id) {

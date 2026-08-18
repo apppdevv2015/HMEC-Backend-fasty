@@ -1,31 +1,80 @@
 /**
  * @swagger
  * tags:
- *   name: Components
- *   description: Component lifecycle and monitoring
+ *   - name: Component Category Create
+ *     description: Component Category creation and management
+ *   - name: Components
+ *     description: Component lifecycle and monitoring
  */
 
 /**
  * @swagger
  * /components/categories:
+ *   post:
+ *     summary: Create a Component Category
+ *     description: Company Admin token automatically binds companyId. companyId in request body is optional.
+ *     tags: [Component Category Create]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [name]
+ *             properties:
+ *               name: { type: string, example: 'Engine Assembly' }
+ *               description: { type: string, example: 'High-horsepower mining diesel engine block & turbochargers' }
+ *               companyId: { type: string, example: 'COMP-101', description: 'Optional. Auto-filled from JWT token if omitted.' }
+ *     responses:
+ *       201:
+ *         description: Component Category created successfully
  *   get:
- *     summary: Get all component categories (for dropdowns)
- *     tags: [Components]
+ *     summary: Get all Component Categories
+ *     tags: [Component Category Create]
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: List of categories
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 type: object
- *                 properties:
- *                   id: { type: string }
- *                   name: { type: string, example: 'Tyre' }
- *                   description: { type: string }
+ *         description: List of Component Categories
+ *
+ * /components/categories/{id}:
+ *   put:
+ *     summary: Update an existing Component Category (Edit)
+ *     tags: [Component Category Create]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name: { type: string, example: 'Engine Assembly Updated' }
+ *               description: { type: string, example: 'Updated category description' }
+ *     responses:
+ *       200:
+ *         description: Component Category updated successfully
+ *   delete:
+ *     summary: Delete a Component Category
+ *     tags: [Component Category Create]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: Component Category deleted successfully
  */
 
 /**
@@ -33,6 +82,7 @@
  * /components:
  *   post:
  *     summary: Register a new component
+ *     description: Company Admin token automatically binds companyId. companyId in request body is optional.
  *     tags: [Components]
  *     security:
  *       - bearerAuth: []
@@ -44,20 +94,29 @@
  *             type: object
  *             required: [machineId, category, description, serialNumber]
  *             properties:
- *               machineId: { type: string }
- *               category: { type: string, example: 'Tyre' }
- *               description: { type: string, example: 'Front Left Tyre' }
- *               serialNumber: { type: string, example: 'TY-990-001' }
- *               supplier: { type: string, example: 'CK & IJ Group' }
- *               installHours: { type: number, example: 800 }
- *               currentHours: { type: number, example: 4900 }
- *               plannedLife: { type: number, example: 8000 }
- *               replacementCost: { type: number, example: 14200 }
- *               condition: { type: number, example: 3 }
+ *               machineId: { type: string, example: 'm_1' }
+ *               category: { type: string, example: 'Engine Assembly' }
+ *               description: { type: string, example: 'CAT C175-20 Diesel Engine' }
+ *               serialNumber: { type: string, example: 'ENG-797F-001' }
+ *               supplier: { type: string, example: 'Caterpillar Inc.' }
+ *               installHours: { type: number, example: 0 }
+ *               currentHours: { type: number, example: 1200 }
+ *               plannedLife: { type: number, example: 18000 }
+ *               replacementCost: { type: number, example: 350000 }
+ *               condition: { type: number, example: 1 }
  *     responses:
  *       201:
  *         description: Component registered successfully
+ *   get:
+ *     summary: Get all components
+ *     tags: [Components]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of components
  */
+
 /**
  * @swagger
  * /components/{id}:
@@ -78,15 +137,11 @@
  *           schema:
  *             type: object
  *             properties:
- *               category: { type: string, example: 'Tyre' }
- *               description: { type: string, example: 'Front Left Tyre' }
- *               serialNumber: { type: string, example: 'TY-990-001' }
- *               supplier: { type: string, example: 'CK & IJ Group' }
- *               installHours: { type: number, example: 800 }
- *               currentHours: { type: number, example: 4900 }
- *               plannedLife: { type: number, example: 8000 }
- *               replacementCost: { type: number, example: 14200 }
- *               condition: { type: number, example: 3 }
+ *               category: { type: string, example: 'Engine Assembly' }
+ *               description: { type: string, example: 'CAT C175-20 Diesel Engine' }
+ *               serialNumber: { type: string, example: 'ENG-797F-001' }
+ *               supplier: { type: string, example: 'Caterpillar Inc.' }
+ *               currentHours: { type: number, example: 1500 }
  *     responses:
  *       200:
  *         description: Component updated successfully
@@ -104,5 +159,3 @@
  *       200:
  *         description: Component deleted successfully
  */
-
-

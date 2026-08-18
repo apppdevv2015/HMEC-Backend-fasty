@@ -5,9 +5,10 @@ const { authMiddleware, isAdmin } = require('../../../middlewares/auth.middlewar
 
 async function componentRoutes(fastify, options) {
     // Component categories endpoints
-    fastify.get('/categories', componentController.getCategories);
-    fastify.post('/categories', componentController.createCategory);
-    fastify.delete('/categories/:id', componentController.deleteCategory);
+    fastify.get('/categories', { preHandler: authMiddleware }, componentController.getCategories);
+    fastify.post('/categories', { preHandler: [authMiddleware, isAdmin] }, componentController.createCategory);
+    fastify.put('/categories/:id', { preHandler: [authMiddleware, isAdmin] }, componentController.updateCategory);
+    fastify.delete('/categories/:id', { preHandler: [authMiddleware, isAdmin] }, componentController.deleteCategory);
 
     // Get all components for a machine or company
     fastify.get('/', { preHandler: authMiddleware }, componentController.getComponents);
