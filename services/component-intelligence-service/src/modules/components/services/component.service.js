@@ -90,12 +90,16 @@ class ComponentService {
         const components = await componentRepository.findAll(companyId);
         return intelligenceService.processRegister(components);
     }
-    async getCategories(companyId) {
-        return await componentRepository.getCategories(companyId);
+    async getCategories(companyId, includeInactive = false) {
+        return await componentRepository.getCategories(companyId, includeInactive);
     }
 
     async createCategory(data) {
         return await componentRepository.createCategory(data);
+    }
+
+    async updateCategory(id, data) {
+        return await componentRepository.updateCategory(id, data);
     }
 
     async deleteCategory(id) {

@@ -5,6 +5,9 @@ const { HTTP_STATUS } = responseHandler;
 class ComponentController {
     async addComponent(req, res) {
         try {
+            if (req.user?.companyId) {
+                req.body.companyId = req.body.companyId || req.user.companyId;
+            }
             const component = await componentService.addComponent(req.body);
             return responseHandler(res, HTTP_STATUS.CREATED, true, 'Component registered successfully', component);
         } catch (error) {
@@ -44,8 +47,9 @@ class ComponentController {
 
     async getCategories(req, res) {
         try {
-            const { companyId } = req.query;
-            const categories = await componentService.getCategories(companyId);
+            const companyId = req.query.companyId || req.user?.companyId;
+            const includeInactive = req.query.includeInactive === 'true';
+            const categories = await componentService.getCategories(companyId, includeInactive);
             return responseHandler(res, HTTP_STATUS.OK, true, 'Categories fetched successfully', categories);
         } catch (error) {
             return responseHandler(res, HTTP_STATUS.BAD_REQUEST, false, error.message);
@@ -54,7 +58,8 @@ class ComponentController {
 
     async createCategory(req, res) {
         try {
-            const category = await componentService.createCategory(req.body);
+            const companyId = req.body.companyId || req.user?.companyId;
+            const category = await componentService.createCategory({ ...req.body, companyId });
             return responseHandler(res, HTTP_STATUS.CREATED, true, 'Component category created successfully', category);
         } catch (error) {
             return responseHandler(res, HTTP_STATUS.BAD_REQUEST, false, error.message);
@@ -65,6 +70,15 @@ class ComponentController {
         try {
             const category = await componentService.deleteCategory(req.params.id);
             return responseHandler(res, HTTP_STATUS.OK, true, 'Component category deleted successfully', category);
+        } catch (error) {
+            return responseHandler(res, HTTP_STATUS.BAD_REQUEST, false, error.message);
+        }
+    }
+
+    async updateCategory(req, res) {
+        try {
+            const category = await componentService.updateCategory(req.params.id, req.body);
+            return responseHandler(res, HTTP_STATUS.OK, true, 'Component category updated successfully', category);
         } catch (error) {
             return responseHandler(res, HTTP_STATUS.BAD_REQUEST, false, error.message);
         }

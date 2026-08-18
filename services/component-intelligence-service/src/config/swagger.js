@@ -30,9 +30,8 @@ const swaggerOptions = {
     ], 
 };
 
-const swaggerDocs = swaggerJsdoc(swaggerOptions);
-
 const setupSwagger = async (fastify) => {
+    const swaggerDocs = swaggerJsdoc(swaggerOptions);
     await fastify.register(require('@fastify/swagger'), {
         openapi: swaggerDocs
     });

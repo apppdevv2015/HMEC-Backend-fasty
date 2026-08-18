@@ -1,3 +1,4 @@
+// Trigger nodemon restart v2 - enhanced operator assignment history with supervisor info
 const Fastify = require('fastify');
 const cors = require('@fastify/cors');
 const setupSwagger = require('./config/swagger');

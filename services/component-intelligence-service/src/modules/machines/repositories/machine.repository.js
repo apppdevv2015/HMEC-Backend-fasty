@@ -141,8 +141,11 @@ class MachineRepository {
         });
     }
 
-    async getCategories(companyId) {
-        const whereClause = { isActive: true };
+    async getCategories(companyId, includeInactive = false) {
+        const whereClause = {};
+        if (!includeInactive) {
+            whereClause.isActive = true;
+        }
         if (companyId && companyId !== 'all') {
             const validCompanyId = await resolveCompanyId(companyId);
             whereClause.OR = [
