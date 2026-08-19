@@ -35,6 +35,11 @@ async function machineRoutes(fastify, options) {
         preHandler: authMiddleware 
     }, machineController.getMachineById);
 
+    // Get all components for a specific machine by machine ID
+    fastify.get('/:id/components', { 
+        preHandler: authMiddleware 
+    }, machineController.getMachineComponents);
+
     // Get single machine assignment by machine ID
     fastify.get('/:id/assign', { 
         preHandler: authMiddleware 

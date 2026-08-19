@@ -158,4 +158,26 @@
  *     responses:
  *       200:
  *         description: Component deleted successfully
+ *//**
+ * @swagger
+ * /components/machine/{machineId}:
+ *   get:
+ *     summary: Get all registered components by Machine ID
+ *     description: Directly retrieves all registered components belonging to a specific machine ID.
+ *     tags: [Components]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: machineId
+ *         required: true
+ *         description: ID of the machine
+ *         schema:
+ *           type: string
+ *           example: 'm_1'
+ *     responses:
+ *       200:
+ *         description: List of components for the specified machine
+ *       400:
+ *         description: Bad request or invalid Machine ID
  */

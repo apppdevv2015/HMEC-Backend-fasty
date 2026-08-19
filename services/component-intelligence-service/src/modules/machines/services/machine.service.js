@@ -1,6 +1,7 @@
 const machineRepository = require('../repositories/machine.repository');
 const { createClient } = require('redis');
 const prisma = require('../../../database/prismaClient');
+const saveMachineImageFile = require('../../../utils/saveMachineImageFile');
 
 async function publishRedisAlert(channel, payload) {
     const redisUrl = process.env.REDIS_URL || 'redis://127.0.0.1:6379';
@@ -43,15 +44,21 @@ class MachineService {
         }
 
         // 3. Create machine if limits are valid
+        const rawImg = data.imageUrl || data.image_url || data.image || data.photo || null;
+        const savedImgUrl = saveMachineImageFile(rawImg);
+
         const dbData = {
             name: data.name,
             model: data.model,
             serialNumber: data.serialNumber,
             companyId: data.companyId,
-            site: data.equipmentType || data.site || null,
-            costPerHourTarget: data.costPerHourTarget || null,
-            costPerTonTarget: data.costPerTonTarget || null
+            manufacturer: data.manufacturer || "Komatsu",
+            imageUrl: savedImgUrl,
         };
+        if (data.equipmentType) dbData.equipmentType = data.equipmentType;
+        if (data.site || data.equipmentType) dbData.site = data.site || data.equipmentType;
+        if (data.costPerHourTarget !== undefined && data.costPerHourTarget !== null) dbData.costPerHourTarget = data.costPerHourTarget;
+        if (data.costPerTonTarget !== undefined && data.costPerTonTarget !== null) dbData.costPerTonTarget = data.costPerTonTarget;
         const machine = await machineRepository.create(dbData);
 
         // --- Save Notification to Database ---
@@ -104,9 +111,17 @@ class MachineService {
     async updateMachine(id, data) {
         const dbData = {};
         if (data.name !== undefined) dbData.name = data.name;
+        if (data.manufacturer !== undefined) dbData.manufacturer = data.manufacturer;
         if (data.model !== undefined) dbData.model = data.model;
         if (data.serialNumber !== undefined) dbData.serialNumber = data.serialNumber;
-        if (data.equipmentType !== undefined) dbData.site = data.equipmentType;
+        if (data.imageUrl !== undefined || data.image_url !== undefined || data.image !== undefined) {
+            const rawImg = data.imageUrl !== undefined ? data.imageUrl : (data.image_url !== undefined ? data.image_url : data.image);
+            dbData.imageUrl = saveMachineImageFile(rawImg);
+        }
+        if (data.equipmentType !== undefined) {
+            dbData.equipmentType = data.equipmentType;
+            dbData.site = data.equipmentType;
+        }
         if (data.site !== undefined) dbData.site = data.site;
         if (data.costPerHourTarget !== undefined) dbData.costPerHourTarget = data.costPerHourTarget;
         if (data.costPerTonTarget !== undefined) dbData.costPerTonTarget = data.costPerTonTarget;
@@ -386,7 +401,9 @@ const mapMachineResponse = (machine) => {
         ...machine,
         machineId: machine.id,
         machineName: machine.name,
-        equipmentType: machine.site || 'N/A'
+        manufacturer: machine.manufacturer || null,
+        imageUrl: machine.imageUrl || machine.image_url || null,
+        equipmentType: machine.equipmentType || machine.site || 'N/A'
     };
 };
 
