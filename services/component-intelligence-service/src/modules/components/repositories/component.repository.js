@@ -47,23 +47,67 @@ async function enrichComponentsWithCompany(components) {
 
         const enrichedMachine = c?.machine ? {
             ...c.machine,
+            serialNumber: c.machine.serialNumber ? c.machine.serialNumber.replace(/^DEMO-/i, '') : c.machine.serialNumber,
             companyCode: company?.companyCode || null,
             companyName: company?.name || null
         } : null;
 
+        const compName = c.name || (c.description ? c.description.split(" - ")[0].trim() : null);
+
         return {
-            ...c,
-            machine: enrichedMachine
+            id: c.id,
+            name: compName,
+            serialNumber: c?.serialNumber ? c.serialNumber.replace(/^DEMO-/i, '') : c?.serialNumber,
+            description: c.description || null,
+            supplier: c.supplier || null,
+            installHours: c.installHours ?? 0,
+            currentHours: c.currentHours ?? 0,
+            plannedLife: c.plannedLife ?? 0,
+            replacementCost: c.replacementCost ? String(c.replacementCost) : "0",
+            condition: c.condition ?? 3,
+            machineId: c.machineId,
+            companyId: c.companyId || (c.machine ? c.machine.companyId : null),
+            createdAt: c.createdAt,
+            updatedAt: c.updatedAt,
+            machine: enrichedMachine ? {
+                id: enrichedMachine.id,
+                name: enrichedMachine.name,
+                manufacturer: enrichedMachine.manufacturer,
+                model: enrichedMachine.model,
+                serialNumber: enrichedMachine.serialNumber,
+                equipmentType: enrichedMachine.equipmentType,
+                companyCode: enrichedMachine.companyCode,
+                companyName: enrichedMachine.companyName
+            } : null
         };
     });
 
     return isArray ? enriched : enriched[0];
 }
 
+function sanitizeComponentPayload(data) {
+    const payload = { ...data };
+    if (payload.name) {
+        payload.name = payload.name.trim();
+    }
+    if (payload.description) {
+        payload.description = payload.description.trim();
+    }
+    delete payload.customCategory;
+    delete payload.parentComponentId;
+
+    if (!payload.category) {
+        payload.category = null;
+    }
+
+    return payload;
+}
+
 class ComponentRepository {
     async create(data) {
+        const payload = sanitizeComponentPayload(data);
         const component = await prisma.component.create({
-            data,
+            data: payload,
             include: {
                 machine: true
             }
@@ -96,11 +140,36 @@ class ComponentRepository {
     }
 
     async findByMachineId(machineId) {
+        if (!machineId) return [];
+
+        let targetIds = [machineId];
+
+        try {
+            const machine = await prisma.machine.findFirst({
+                where: {
+                    OR: [
+                        { id: machineId },
+                        { name: { equals: machineId, mode: 'insensitive' } },
+                        { serialNumber: { equals: machineId, mode: 'insensitive' } }
+                    ]
+                }
+            });
+
+            if (machine) {
+                targetIds = [...new Set([machine.id, machine.name, machine.serialNumber].filter(Boolean))];
+            }
+        } catch (e) {
+            console.error('[FIND_BY_MACHINE_ID_ERROR]:', e.message);
+        }
+
         const components = await prisma.component.findMany({
-            where: { machineId },
+            where: {
+                machineId: { in: targetIds }
+            },
             include: { machine: true },
             orderBy: { createdAt: 'desc' }
         });
+
         return await enrichComponentsWithCompany(components);
     }
 
@@ -113,9 +182,11 @@ class ComponentRepository {
     }
 
     async update(id, data) {
+        const payload = sanitizeComponentPayload(data);
+        delete payload.machineId; // machineId should not be changed on update
         const component = await prisma.component.update({
             where: { id },
-            data,
+            data: payload,
             include: { machine: true }
         });
         return await enrichComponentsWithCompany(component);

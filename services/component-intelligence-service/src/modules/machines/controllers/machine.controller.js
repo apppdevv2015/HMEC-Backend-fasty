@@ -145,6 +145,17 @@ class MachineController {
             return responseHandler(res, HTTP_STATUS.BAD_REQUEST, false, error.message);
         }
     };
+
+    getMachineComponents = async (req, res) => {
+        try {
+            const componentService = require('../../components/services/component.service');
+            const machineId = req.params.id || req.params.machineId;
+            const components = await componentService.getComponents({ machineId });
+            return responseHandler(res, HTTP_STATUS.OK, true, 'Machine components fetched successfully', components);
+        } catch (error) {
+            return responseHandler(res, HTTP_STATUS.BAD_REQUEST, false, error.message);
+        }
+    };
 }
 
 module.exports = new MachineController();

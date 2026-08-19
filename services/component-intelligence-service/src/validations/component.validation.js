@@ -7,10 +7,10 @@ const componentSchema = z.object({
         invalid_type_error: "Machine ID must be a string"
     }).trim().min(1, "Machine ID cannot be empty"),
     
-    category: z.string({
-        required_error: "Category is required",
-        invalid_type_error: "Category must be a string"
-    }).trim().min(1, "Category cannot be empty"),
+    parentComponentId: z.string().trim().optional().nullable(),
+    category: z.string().trim().optional().nullable().default("General"),
+    
+    name: z.string().trim().optional().nullable(),
     
     description: z.string({
         required_error: "Description is required",

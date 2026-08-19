@@ -89,14 +89,17 @@ model Subscription {
 model Machine {
   id                     String           @id @default(uuid())
   name                   String
+  manufacturer           String?          @map("manufacturer")
   model                  String
   serialNumber           String           @unique
+  imageUrl               String?          @map("image_url")
   companyId              String
   createdAt              DateTime         @default(now())
   updatedAt              DateTime         @updatedAt
   site                   String?
   status                 String?          @default("Healthy")
   costPerHourTarget      Decimal?         @map("cost_per_hour_target") @db.Decimal(10, 2)
+  costPerTonTarget       Decimal?         @map("cost_per_ton_target") @db.Decimal(10, 2)
   equipmentType          String?          @map("equipment_type")
   assignedOperatorId     String?          @map("assigned_operator_id")
   assignedOperatorName   String?          @map("assigned_operator_name")
@@ -104,10 +107,12 @@ model Machine {
   assignedArtisanName    String?          @map("assigned_artisan_name")
   assignedSupervisorId   String?          @map("assigned_supervisor_id")
   assignedSupervisorName String?          @map("assigned_supervisor_name")
+  healthScore            Int?             @map("health_score")
   components             Component[]
   maintenanceLogs        MaintenanceLog[]
   recommendations        Recommendation[]
   jobCards               JobCard[]
+  componentHealthRecords ComponentHealth[]
 }
 
 model MachineCategory {
@@ -144,12 +149,13 @@ model ComponentCategory {
 
 model Component {
   id                     String              @id @default(uuid())
+  name                   String?
   machineId              String
   companyId              String?             @map("company_id")
   categoryId             String?             @map("category_id")
-  category               String
+  category               String?
   componentType          String?             @map("component_type")
-  description            String
+  description            String?
   serialNumber           String              @unique
   supplier               String?
   installHours           Int                 @default(0)
@@ -171,6 +177,9 @@ model Component {
   assignedDueDate        DateTime?           @map("assigned_due_date")
   assignedWorkScope      String?             @map("assigned_work_scope")
   assignedPriority       String?             @map("assigned_priority")
+  healthScore            Int?                @map("health_score")
+  inspectionParameters   Json?               @map("inspection_parameters")
+  lastInspectedAt        DateTime?           @map("last_inspected_at")
   machine                Machine             @relation(fields: [machineId], references: [id])
   company                Company?            @relation(fields: [companyId], references: [id], onDelete: Cascade)
   categoryRef            ComponentCategory?  @relation(fields: [categoryId], references: [id])
@@ -179,6 +188,7 @@ model Component {
   maintenanceLogs        MaintenanceLog[]
   recommendations        Recommendation[]
   jobCards               JobCard[]
+  healthRecords          ComponentHealth[]
 }
 
 model ComponentCost {
@@ -461,5 +471,23 @@ model JobCardVoiceNote {
   jobCard         JobCard  @relation(fields: [jobCardId], references: [id], onDelete: Cascade)
 
   @@map("job_card_voice_notes")
+}
+
+model ComponentHealth {
+  id                   String     @id @default(uuid())
+  machineId            String     @map("machine_id")
+  componentId          String?    @map("component_id")
+  componentName        String     @map("component_name")
+  serialNumber         String?    @map("serial_number")
+  parameters           Json       @map("parameters")
+  healthScore          Int        @map("health_score")
+  status               String     @default("Healthy")
+  createdAt            DateTime   @default(now()) @map("created_at")
+  updatedAt            DateTime   @updatedAt @map("updated_at")
+
+  machine              Machine    @relation(fields: [machineId], references: [id], onDelete: Cascade)
+  component            Component? @relation(fields: [componentId], references: [id], onDelete: SetNull)
+
+  @@map("component_health")
 }
 

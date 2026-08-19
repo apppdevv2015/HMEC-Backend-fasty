@@ -17,6 +17,10 @@ const machineSchema = z.object({
         invalid_type_error: "Serial Number must be a string"
     }).trim().min(1, "Serial Number cannot be empty"),
     
+    manufacturer: z.string().trim().optional().nullable(),
+    imageUrl: z.string().optional().nullable(),
+    image_url: z.string().optional().nullable(),
+    image: z.string().optional().nullable(),
     companyId: z.string().trim().optional(),
 
     site: z.string().trim().optional().nullable(),

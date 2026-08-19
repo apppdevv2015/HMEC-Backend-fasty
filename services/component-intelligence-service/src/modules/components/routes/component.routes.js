@@ -13,6 +13,9 @@ async function componentRoutes(fastify, options) {
     // Get all components for a machine or company
     fastify.get('/', { preHandler: authMiddleware }, componentController.getComponents);
 
+    // Get all components for a specific machine by machine ID
+    fastify.get('/machine/:machineId', { preHandler: authMiddleware }, componentController.getComponentsByMachineId);
+
     // Register a new component - Admin Only
     fastify.post('/', { 
         preHandler: [authMiddleware, isAdmin, componentValidation] 

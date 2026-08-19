@@ -112,9 +112,10 @@ model ComponentCategory {
 
 model Component {
   id                 String              @id @default(uuid())
+  name               String?
   machineId          String
-  category           String
-  description        String
+  category           String?
+  description        String?
   serialNumber       String              @unique
   supplier           String?
   installHours       Int                 @default(0)

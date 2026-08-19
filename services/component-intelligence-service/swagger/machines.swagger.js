@@ -96,12 +96,14 @@
  *         application/json:
  *           schema:
  *             type: object
- *             required: [name, model, serialNumber]
+ *             required: [name, manufacturer, model, serialNumber, equipmentType]
  *             properties:
- *               name: { type: string, example: 'HT-401' }
- *               model: { type: string, example: 'CAT 797F' }
- *               serialNumber: { type: string, example: 'SN-797F-001' }
- *               equipmentType: { type: string, example: 'Haul Truck 400T' }
+ *               name: { type: string, example: 'Haul Truck 01' }
+ *               manufacturer: { type: string, example: 'Komatsu' }
+ *               model: { type: string, example: '980E-5' }
+ *               serialNumber: { type: string, example: 'DEMO-KOM-980E5-001' }
+ *               equipmentType: { type: string, example: 'Haul Truck' }
+ *               imageUrl: { type: string, example: 'data:image/png;base64,iVBORw0KGgo...', description: 'Base64 image or image URL' }
  *               companyId: { type: string, example: 'COMP-101', description: 'Optional. Auto-filled from JWT token if omitted.' }
  *     responses:
  *       201:
@@ -141,10 +143,12 @@
  *           schema:
  *             type: object
  *             properties:
- *               name: { type: string, example: 'HT-401' }
- *               model: { type: string, example: 'CAT 797F' }
- *               serialNumber: { type: string, example: 'SN-797F-001' }
- *               equipmentType: { type: string, example: 'Haul Truck 400T' }
+ *               name: { type: string, example: 'Haul Truck 01' }
+ *               manufacturer: { type: string, example: 'Komatsu' }
+ *               model: { type: string, example: '980E-5' }
+ *               serialNumber: { type: string, example: 'DEMO-KOM-980E5-001' }
+ *               equipmentType: { type: string, example: 'Haul Truck' }
+ *               imageUrl: { type: string, example: 'data:image/png;base64,...' }
  *     responses:
  *       200:
  *         description: Machine updated successfully
@@ -252,4 +256,26 @@
  *     responses:
  *       200:
  *         description: Machine assignment details fetched successfully
+ *//**
+ * @swagger
+ * /machines/{id}/components:
+ *   get:
+ *     summary: Get all components for a machine by Machine ID
+ *     description: Returns the list of registered components and intelligence metrics for the specified machine ID.
+ *     tags: [Machines]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: Machine ID
+ *         schema:
+ *           type: string
+ *           example: 'm_1'
+ *     responses:
+ *       200:
+ *         description: Machine components fetched successfully
+ *       400:
+ *         description: Bad request or machine not found
  */

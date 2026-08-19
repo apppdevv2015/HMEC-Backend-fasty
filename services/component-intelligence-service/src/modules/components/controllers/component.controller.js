@@ -114,6 +114,16 @@ class ComponentController {
             return responseHandler(res, HTTP_STATUS.BAD_REQUEST, false, error.message);
         }
     }
+
+    async getComponentsByMachineId(req, res) {
+        try {
+            const machineId = req.params.machineId || req.params.id;
+            const components = await componentService.getComponents({ machineId });
+            return responseHandler(res, HTTP_STATUS.OK, true, 'Machine components fetched successfully', components);
+        } catch (error) {
+            return responseHandler(res, HTTP_STATUS.BAD_REQUEST, false, error.message);
+        }
+    }
 }
 
 module.exports = new ComponentController();
