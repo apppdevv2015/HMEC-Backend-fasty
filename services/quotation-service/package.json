@@ -1,0 +1,28 @@
+{
+    "name": "hme-quotation-service",
+    "version": "1.0.0",
+    "main": "src/main.js",
+    "scripts": {
+        "start": "node src/main.js",
+        "dev": "nodemon src/main.js"
+    },
+    "prisma": {
+        "schema": "src/database/prisma/schema.prisma"
+    },
+    "dependencies": {
+        "@fastify/cors": "^8.0.0",
+        "@fastify/sensible": "^5.0.0",
+        "@fastify/swagger": "^8.14.0",
+        "@fastify/swagger-ui": "^3.0.0",
+        "@prisma/client": "^5.22.0",
+        "dotenv": "^16.4.5",
+        "fastify": "^4.26.2",
+        "jsonwebtoken": "^9.0.2",
+        "pg": "^8.20.0",
+        "swagger-jsdoc": "^6.2.8"
+    },
+    "devDependencies": {
+        "nodemon": "^3.1.14",
+        "prisma": "^5.22.0"
+    }
+}

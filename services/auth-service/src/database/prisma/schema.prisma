@@ -285,7 +285,7 @@ model Log {
   errorCode     String?  @map("error_code")
   stack         String?
   status        Int?
-  method        String?  
+  method        String?
   url           String?
   duration      Int?
   ipAddress     String?  @map("ip_address")
@@ -491,6 +491,41 @@ model ComponentHealth {
   @@map("component_health")
 }
 
+model MachineInspectionAuditLog {
+  id                   String   @id @default(uuid())
+  actionType           String   @default("ROUTINE_UPDATE") @map("action_type")
+  companyId            String?  @map("company_id")
+  companyName          String?  @map("company_name")
+  userId               String?  @map("user_id")
+  userName             String   @default("Super Admin") @map("user_name")
+  userRole             String   @default("SUPER_ADMIN") @map("user_role")
+  userEmail            String?  @map("user_email")
+  machineId            String   @map("machine_id")
+  machineName          String?  @map("machine_name")
+  serialNumber         String?  @map("serial_number")
+  brand                String?  @map("brand")
+  category             String?  @map("category")
+  modelName            String?  @map("model_name")
+  componentId          String?  @map("component_id")
+  componentName        String   @map("component_name")
+  previousParameters   Json?    @map("previous_parameters")
+  currentParameters    Json     @map("current_parameters")
+  parameterChanges     Json?    @map("parameter_changes")
+  componentHealthScore Int      @map("component_health_score")
+  overallMachineHealth Int      @map("overall_machine_health")
+  status               String   @default("Healthy")
+  issues               Json?    @map("issues")
+  createdAt            DateTime @default(now()) @map("created_at")
+
+  @@index([machineId])
+  @@index([companyId])
+  @@index([userId])
+  @@index([category])
+  @@index([brand])
+  @@index([createdAt])
+  @@map("machine_inspection_audit_logs")
+}
+
 model MachineCondition {
   id          String   @id @default(uuid())
   rating      Int      @unique
@@ -504,3 +539,59 @@ model MachineCondition {
 
   @@map("machine_conditions")
 }
+
+model OptionalServiceCatalog {
+  id           String   @id @default(uuid())
+  code         String   @unique
+  name         String
+  category     String   @default("Integration")
+  description  String?
+  pricingType  String   @default("as_per_requirement") @map("pricing_type")
+  defaultPrice Decimal  @default(0) @map("default_price") @db.Decimal(12, 2)
+  unit         String?  @default("per quotation")
+  features     Json?
+  isActive     Boolean  @default(true) @map("is_active")
+  sortOrder    Int      @default(0) @map("sort_order")
+  createdBy    String?  @map("created_by")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("optional_service_catalog")
+}
+
+model Quotation {
+  id                     String    @id @default(uuid())
+  quotationNumber        String    @unique @map("quotation_number")
+  companyId              String    @map("company_id")
+  companyName            String    @map("company_name")
+  contactPerson          String?   @map("contact_person")
+  contactEmail           String    @map("contact_email")
+  contactPhone           String?   @map("contact_phone")
+  status                 String    @default("PENDING_REVIEW")
+  tier                   String    @default("Enterprise")
+  machineCount           Int       @default(1) @map("machine_count")
+  contractDuration       String    @default("12") @map("contract_duration")
+  billingFrequency       String    @default("Monthly in Advance") @map("billing_frequency")
+  baseAmount             Decimal   @default(0) @map("base_amount") @db.Decimal(12, 2)
+  optionalServicesAmount Decimal   @default(0) @map("optional_services_amount") @db.Decimal(12, 2)
+  discountAmount         Decimal   @default(0) @map("discount_amount") @db.Decimal(12, 2)
+  taxAmount              Decimal   @default(0) @map("tax_amount") @db.Decimal(12, 2)
+  totalAmount            Decimal   @default(0) @map("total_amount") @db.Decimal(12, 2)
+  optionalServices       Json      @default("[]") @map("optional_services")
+  scopeOfWork            Json?     @map("scope_of_work")
+  paymentTerms           String?   @map("payment_terms")
+  notes                  String?
+  validUntil             DateTime? @map("valid_until")
+  sentAt                 DateTime? @map("sent_at")
+  acceptedAt             DateTime? @map("accepted_at")
+  rejectedAt             DateTime? @map("rejected_at")
+  signedBy               String?   @map("signed_by")
+  signatureUrl           String?   @map("signature_url")
+  createdAt              DateTime  @default(now()) @map("created_at")
+  updatedAt              DateTime  @updatedAt @map("updated_at")
+
+  @@index([companyId])
+  @@index([status])
+  @@map("quotations")
+}
+
