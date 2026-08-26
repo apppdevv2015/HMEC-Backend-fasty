@@ -23,13 +23,13 @@ model Company {
   tickets            Ticket[]
   jobCards           JobCard[]
   machineCategories  MachineCategory[]
-  componentCategories ComponentCategory[]
   components         Component[]
 }
 
 model Role {
   id        String   @id @default(uuid())
   name      String   @unique
+  isActive  Boolean  @default(true) @map("is_active")
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
   users     User[]
@@ -108,6 +108,7 @@ model Machine {
   assignedSupervisorId   String?          @map("assigned_supervisor_id")
   assignedSupervisorName String?          @map("assigned_supervisor_name")
   healthScore            Int?             @map("health_score")
+  condition              Int              @default(1)
   components             Component[]
   maintenanceLogs        MaintenanceLog[]
   recommendations        Recommendation[]
@@ -131,20 +132,20 @@ model MachineCategory {
   @@map("machine_categories")
 }
 
-model ComponentCategory {
-  id          String      @id @default(uuid())
-  companyId   String?     @map("company_id")
-  name        String
-  description String?
-  isActive    Boolean     @default(true)
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  components  Component[]
+model MasterEquipmentCatalog {
+  id              String   @id @default(uuid())
+  brand           String   @map("brand")
+  category        String   @map("category")
+  modelName       String   @map("model_name")
+  slug            String   @unique @map("slug")
+  operatingWeight String?  @map("operating_weight")
+  enginePower     String?  @map("engine_power")
+  components      Json     @map("components")
+  totalSpecsCount Int      @default(12) @map("total_specs_count")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
 
-  company     Company?    @relation(fields: [companyId], references: [id], onDelete: Cascade)
-
-  @@unique([name, companyId])
-  @@map("component_categories")
+  @@map("master_equipment_catalog")
 }
 
 model Component {
@@ -182,7 +183,6 @@ model Component {
   lastInspectedAt        DateTime?           @map("last_inspected_at")
   machine                Machine             @relation(fields: [machineId], references: [id])
   company                Company?            @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  categoryRef            ComponentCategory?  @relation(fields: [categoryId], references: [id])
   componentCosts         ComponentCost[]
   failurePredictions     FailurePrediction[]
   maintenanceLogs        MaintenanceLog[]
@@ -489,5 +489,57 @@ model ComponentHealth {
   component            Component? @relation(fields: [componentId], references: [id], onDelete: SetNull)
 
   @@map("component_health")
+}
+
+
+
+
+model MachineInspectionAuditLog {
+  id                   String   @id @default(uuid())
+  actionType           String   @default("ROUTINE_UPDATE") @map("action_type")
+  companyId            String?  @map("company_id")
+  companyName          String?  @map("company_name")
+  userId               String?  @map("user_id")
+  userName             String   @default("Super Admin") @map("user_name")
+  userRole             String   @default("SUPER_ADMIN") @map("user_role")
+  userEmail            String?  @map("user_email")
+  machineId            String   @map("machine_id")
+  machineName          String?  @map("machine_name")
+  serialNumber         String?  @map("serial_number")
+  brand                String?  @map("brand")
+  category             String?  @map("category")
+  modelName            String?  @map("model_name")
+  componentId          String?  @map("component_id")
+  componentName        String   @map("component_name")
+  previousParameters   Json?    @map("previous_parameters")
+  currentParameters    Json     @map("current_parameters")
+  parameterChanges     Json?    @map("parameter_changes")
+  componentHealthScore Int      @map("component_health_score")
+  overallMachineHealth Int      @map("overall_machine_health")
+  status               String   @default("Healthy")
+  issues               Json?    @map("issues")
+  createdAt            DateTime @default(now()) @map("created_at")
+
+  @@index([machineId])
+  @@index([companyId])
+  @@index([userId])
+  @@index([category])
+  @@index([brand])
+  @@index([createdAt])
+  @@map("machine_inspection_audit_logs")
+}
+
+model MachineCondition {
+  id          String   @id @default(uuid())
+  rating      Int      @unique
+  name        String
+  code        String
+  description String?
+  color       String?
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("machine_conditions")
 }
 

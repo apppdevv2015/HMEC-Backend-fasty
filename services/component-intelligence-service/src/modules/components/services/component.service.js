@@ -42,12 +42,6 @@ class ComponentService {
     }
 
     /**
-     * Get all active component categories
-     */
-    async getCategories() {
-        return await componentRepository.getCategories();
-    }
-    /**
      * Inspect component - restricted to staff/engineers belonging to the same company
      */
     async inspectComponent(id, data, companyId, role) {
@@ -89,21 +83,6 @@ class ComponentService {
         }
         const components = await componentRepository.findAll(companyId);
         return intelligenceService.processRegister(components);
-    }
-    async getCategories(companyId, includeInactive = false) {
-        return await componentRepository.getCategories(companyId, includeInactive);
-    }
-
-    async createCategory(data) {
-        return await componentRepository.createCategory(data);
-    }
-
-    async updateCategory(id, data) {
-        return await componentRepository.updateCategory(id, data);
-    }
-
-    async deleteCategory(id) {
-        return await componentRepository.deleteCategory(id);
     }
 }
 

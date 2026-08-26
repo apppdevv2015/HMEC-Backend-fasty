@@ -120,6 +120,10 @@ class AuthService {
             throw new Error('Your account is inactive. Please wait for Super Admin approval.');
         }
 
+        if (user.role && user.role.isActive === false) {
+            throw new Error('Your assigned role is currently inactive. Please wait for Super Admin approval.');
+        }
+
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) throw new Error('Invalid credentials');
 

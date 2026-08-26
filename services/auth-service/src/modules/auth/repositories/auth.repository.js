@@ -2,8 +2,10 @@ const prisma = require('../../../database/prisma');
 
 class AuthRepository {
     async findUserByEmail(email) {
-        return await prisma.user.findUnique({
-            where: { email },
+        if (!email) return null;
+        const normalizedEmail = email.trim().toLowerCase();
+        return await prisma.user.findFirst({
+            where: { email: { equals: normalizedEmail, mode: 'insensitive' } },
             include: { role: true, company: true }
         });
     }

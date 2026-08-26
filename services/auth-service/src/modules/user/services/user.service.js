@@ -764,7 +764,7 @@ class UserService {
 
         const currentUser = await prisma.user.findUnique({
             where: { id },
-            include: { role: true }
+            include: { role: true, company: true }
         });
         if (!currentUser) throw new Error('User not found');
 
@@ -772,9 +772,10 @@ class UserService {
         const isApproving = (data.is_active === true || data.is_active === 'true') && currentUser.isActive === false;
         if (isApproving) {
             try {
+                const frontendUrl = (process.env.FRONTEND_URL || '').replace(/\/+$/, '');
                 const approvalHtml = await templateService.getTemplate('approval-welcome', {
                     name: `${currentUser.firstName} ${currentUser.lastName || ''}`.trim(),
-                    loginUrl: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/login`
+                    loginUrl: `${frontendUrl}/signin`
                 });
                 await emailUtils.sendEmail({
                     to: currentUser.email,
@@ -783,6 +784,34 @@ class UserService {
                 });
             } catch (emailErr) {
                 console.error('[APPROVAL EMAIL ERROR] Failed to send approval email:', emailErr.message);
+            }
+        }
+
+        // Check if user is being deactivated
+        const isDeactivating = (data.is_active === false || data.is_active === 'false') && currentUser.isActive === true;
+        if (isDeactivating) {
+            try {
+                const companyName = currentUser.company?.name || data.companyName || 'HME';
+                const deactivationHtml = `
+                  <div style="font-family: Arial, sans-serif; padding: 24px; color: #1e293b; background-color: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0;">
+                    <h2 style="color: #e11d48; margin-top: 0;">Account Deactivated / Inactive</h2>
+                    <p>Hello <strong>${currentUser.firstName} ${currentUser.lastName || ''}</strong>,</p>
+                    <p>Your account status has been updated to <strong>Inactive</strong>. Your access to the dashboard has been temporarily paused.</p>
+                    <p style="background-color: #fff1f2; color: #9f1239; padding: 12px; border-radius: 8px; border-left: 4px solid #e11d48; font-weight: bold;">
+                      Please wait for approval from your System Administrator to reactivate your account.
+                    </p>
+                    <p>If you believe this is an error, please contact your Super Admin for assistance.</p>
+                    <br/>
+                    <p style="color: #64748b; font-size: 13px;">Thank you,<br/><strong>${companyName}</strong></p>
+                  </div>
+                `;
+                await emailUtils.sendEmail({
+                    to: currentUser.email,
+                    subject: 'Account Deactivated - Wait for Approval',
+                    html: deactivationHtml
+                });
+            } catch (emailErr) {
+                console.error('[DEACTIVATION EMAIL ERROR] Failed to send deactivation email:', emailErr.message);
             }
         }
 
