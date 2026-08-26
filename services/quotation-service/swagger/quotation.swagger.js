@@ -1,10 +1,12 @@
 /**
  * @swagger
  * tags:
+ *   - name: Quotation Requests
+ *     description: Client Inbound Quotation Requests & Inquiries (Submit 8 Requirement Fields, Review Sites/Machines/Attachments)
  *   - name: Quotation
- *     description: Comprehensive Quotation Request, Official Proposal Generation, Review, and Digital Signature Contract Lifecycle
- *   - name: Quotation - Optional Services
- *     description: Value-Added and Optional Integrations Catalogue Management (Telematics, ERP, Reports, Migration, Training, Support)
+ *     description: Comprehensive Official Proposal Generation, Send, Digital Signature Contract Lifecycle
+ *   - name: Optional Quotation Services
+ *     description: Value-Added and Optional Quotation Services Catalog Management (Super Admin & Public)
  */
 
 /**
@@ -19,45 +21,16 @@
  *           type: string
  *           format: uuid
  *           example: "8f7e6d5c-4b3a-2109-8765-43210fedcba9"
- *         code:
- *           type: string
- *           example: "telematics"
- *           description: Unique slug identifier for the service
  *         name:
  *           type: string
  *           example: "Telematics / ECU Integration"
  *           description: Human-readable service name
- *         category:
- *           type: string
- *           enum: [Integration, Analytics, Support, Data, Training]
- *           example: "Integration"
  *         description:
  *           type: string
  *           example: "Direct CAN-bus, IoT telematics gateway, and OEM electronic control unit integration for real-time telemetry streaming."
- *         pricingType:
- *           type: string
- *           enum: [included, as_per_requirement, fixed_price, per_machine, monthly]
- *           example: "as_per_requirement"
- *         defaultPrice:
- *           type: number
- *           format: float
- *           example: 2500.00
- *           description: Base or suggested price in USD / ZAR
- *         unit:
- *           type: string
- *           example: "per machine setup"
- *           description: Billing metric or scope specification
- *         features:
- *           type: array
- *           items:
- *             type: string
- *           example:
- *             - "Real-time CAN-bus engine parameter streaming"
- *             - "Automated fault code (DTC) ingestion"
- *             - "GPS geofencing & operational route mapping"
  *         isActive:
  *           type: boolean
- *           example: true
+ *           example: false
  *         sortOrder:
  *           type: integer
  *           example: 1
@@ -82,37 +55,17 @@
  *         name:
  *           type: string
  *           example: "SAP / ERP Integration"
- *         code:
- *           type: string
- *           example: "erp"
- *         category:
- *           type: string
- *           example: "Integration"
  *         description:
  *           type: string
  *           example: "Seamless bidirectional synchronization with corporate ERP, SAP S/4HANA, and Oracle EAM."
- *         pricingType:
- *           type: string
- *           example: "as_per_requirement"
- *         defaultPrice:
- *           type: number
- *           example: 4500.00
- *         unit:
- *           type: string
- *           example: "one-time enterprise connector"
- *         features:
- *           type: array
- *           items:
- *             type: string
- *           example:
- *             - "Automated purchase order & spare parts requisition"
- *             - "Work order sync with SAP Maintenance module"
  *         sortOrder:
  *           type: integer
  *           example: 2
  *         isActive:
  *           type: boolean
- *           example: true
+ *           default: false
+ *           example: false
+ *           description: Default is false (inactive). Can be toggled active from UI.
  *
  *     Quotation:
  *       type: object
@@ -191,12 +144,8 @@
  *                 type: string
  *               name:
  *                 type: string
- *               category:
- *                 type: string
  *               price:
  *                 type: number
- *               pricingType:
- *                 type: string
  *           example:
  *             - id: "8f7e6d5c-4b3a-2109-8765-43210fedcba9"
  *               code: "telematics"
@@ -242,47 +191,129 @@
  *     QuotationRequestInput:
  *       type: object
  *       required:
- *         - companyName
- *         - contactEmail
+ *         - quotationType
+ *         - numberOfSites
+ *         - siteNames
+ *         - activeMachines
+ *         - equipmentTypes
+ *         - contractDuration
  *       properties:
- *         companyId:
+ *         quotationType:
  *           type: string
- *           format: uuid
- *         companyName:
- *           type: string
- *           example: "African Mining & Infrastructure Ltd"
- *         contactPerson:
- *           type: string
- *           example: "John Doe"
- *         contactEmail:
- *           type: string
- *           example: "johndoe@miningcorp.com"
- *         contactPhone:
- *           type: string
- *           example: "+27 11 555 0192"
- *         tier:
- *           type: string
- *           example: "Enterprise"
- *         machineCount:
+ *           enum: ["Fleet Management", "Predictive Maintenance", "Asset Monitoring"]
+ *           example: "Predictive Maintenance"
+ *         numberOfSites:
+ *           type: integer
+ *           example: 2
+ *         siteNames:
+ *           type: array
+ *           items:
+ *             type: string
+ *           example: ["Nagpur Site 1", "Chandrapur Pit 2"]
+ *         activeMachines:
  *           type: integer
  *           example: 25
+ *         equipmentTypes:
+ *           type: array
+ *           items:
+ *             type: string
+ *           example: ["Excavator", "Dump Truck", "Dozer"]
  *         contractDuration:
  *           type: string
- *           example: "12"
- *         billingFrequency:
+ *           enum: ["6 Months", "12 Months", "18 Months", "24 Months"]
+ *           example: "12 Months"
+ *         optionalServices:
+ *           type: array
+ *           description: Selected optional services from catalog dropdown / multi-select
+ *           items:
+ *             type: string
+ *           example: ["Telematics / ECU Integration", "SAP / ERP Integration"]
+ *         implementationRequirements:
  *           type: string
- *           example: "Monthly in Advance"
+ *           example: "Deploy telematics units across active machines within 2 weeks."
+ *         additionalRequirements:
+ *           type: string
+ *           example: "On-site artisan training support."
+ *         attachmentUrl:
+ *           type: string
+ *           example: "https://storage.googleapis.com/hme/survey.pdf"
+ *
+ *     QuotationRequest:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: string
+ *           format: uuid
+ *           example: "4710bd1b-ec80-47d0-b872-9753bb82bfc9"
+ *         requestId:
+ *           type: string
+ *           example: "REQ-20260826-A7K4"
+ *         userId:
+ *           type: string
+ *           nullable: true
+ *         companyId:
+ *           type: string
+ *           nullable: true
+ *         companyName:
+ *           type: string
+ *           nullable: true
+ *         contactPerson:
+ *           type: string
+ *           nullable: true
+ *         email:
+ *           type: string
+ *           nullable: true
+ *         phone:
+ *           type: string
+ *           nullable: true
+ *         siteLocation:
+ *           type: string
+ *           nullable: true
+ *         quotationType:
+ *           type: string
+ *           example: "Predictive Maintenance"
+ *         numberOfSites:
+ *           type: integer
+ *           example: 2
+ *         siteNames:
+ *           type: array
+ *           items:
+ *             type: string
+ *           example: ["Nagpur Site 1", "Chandrapur Pit 2"]
+ *         activeMachines:
+ *           type: integer
+ *           example: 25
+ *         equipmentTypes:
+ *           type: array
+ *           items:
+ *             type: string
+ *           example: ["Excavator", "Dump Truck", "Dozer"]
+ *         contractDuration:
+ *           type: string
+ *           example: "12 Months"
  *         optionalServices:
  *           type: array
  *           items:
  *             type: string
- *           example:
- *             - "telematics"
- *             - "erp"
- *             - "reports"
- *         notes:
+ *           example: ["Telematics / ECU Integration", "SAP / ERP Integration"]
+ *         implementationRequirements:
  *           type: string
- *           example: "Need expedited deployment for our Northern Cape open-pit fleet."
+ *           nullable: true
+ *         additionalRequirements:
+ *           type: string
+ *           nullable: true
+ *         attachmentUrl:
+ *           type: string
+ *           nullable: true
+ *         status:
+ *           type: string
+ *           example: "PENDING"
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
  *
  *     QuotationSendInput:
  *       type: object
@@ -356,13 +387,8 @@
  *   get:
  *     summary: List all active optional services
  *     description: Public and client-facing catalogue of active value-added optional services for quotation building.
- *     tags: [Quotation - Optional Services]
+ *     tags: [Optional Quotation Services]
  *     parameters:
- *       - in: query
- *         name: category
- *         schema:
- *           type: string
- *         description: Filter by category (e.g. Integration, Analytics, Support, Data, Training)
  *       - in: query
  *         name: search
  *         schema:
@@ -386,7 +412,7 @@
  *
  *   post:
  *     summary: Super Admin - Create new optional service
- *     tags: [Quotation - Optional Services]
+ *     tags: [Optional Quotation Services]
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -399,10 +425,25 @@
  *       201:
  *         description: Service created successfully
  *
+ * /optional-services/admin/all:
+ *   get:
+ *     summary: Super Admin - List all optional services (including inactive)
+ *     tags: [Optional Quotation Services]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: isActive
+ *         schema:
+ *           type: boolean
+ *     responses:
+ *       200:
+ *         description: All optional services
+ *
  * /optional-services/{id}:
  *   get:
  *     summary: Get single optional service details
- *     tags: [Quotation - Optional Services]
+ *     tags: [Optional Quotation Services]
  *     parameters:
  *       - in: path
  *         name: id
@@ -423,30 +464,17 @@
  *                 data:
  *                   $ref: '#/components/schemas/OptionalServiceCatalog'
  *
- * /optional-services/admin/all:
- *   get:
- *     summary: Super Admin - List all optional services (including inactive)
- *     tags: [Quotation - Optional Services]
+ *   put:
+ *     summary: Super Admin - Update an optional service
+ *     tags: [Optional Quotation Services]
  *     security:
  *       - bearerAuth: []
  *     parameters:
- *       - in: query
- *         name: isActive
- *         schema:
- *           type: boolean
- *       - in: query
- *         name: category
+ *       - in: path
+ *         name: id
+ *         required: true
  *         schema:
  *           type: string
- *     responses:
- *       200:
- *         description: All optional services
- *
- *   post:
- *     summary: Super Admin - Create new optional service
- *     tags: [Quotation - Optional Services]
- *     security:
- *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -454,13 +482,28 @@
  *           schema:
  *             $ref: '#/components/schemas/OptionalServiceInput'
  *     responses:
- *       201:
- *         description: Service created successfully
+ *       200:
+ *         description: Optional service updated successfully
+ *
+ *   delete:
+ *     summary: Super Admin - Delete an optional service
+ *     tags: [Optional Quotation Services]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Optional service deleted successfully
  *
  * /optional-services/{id}/toggle:
  *   patch:
  *     summary: Super Admin - Toggle active/inactive status of an optional service
- *     tags: [Quotation - Optional Services]
+ *     tags: [Optional Quotation Services]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -472,6 +515,130 @@
  *     responses:
  *       200:
  *         description: Status updated
+ *
+ * /quotations/requests:
+ *   post:
+ *     summary: Submit a Quotation Request (Client / Prospect Form)
+ *     description: Submit detailed requirement fields including quotation type, sites, machine counts, equipment types, contract duration, requirements, and optional PDF attachment.
+ *     tags: [Quotation Requests]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/QuotationRequestInput'
+ *     responses:
+ *       201:
+ *         description: Quotation request submitted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   $ref: '#/components/schemas/QuotationRequest'
+ *
+ *   get:
+ *     summary: List Quotation Requests (Super Admin & Company Admin)
+ *     description: Super Admin views all client requests; Company Admin views own requests. Supports filtering by status, quotationType, and search.
+ *     tags: [Quotation Requests]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [PENDING, IN_REVIEW, QUOTED, REJECTED]
+ *       - in: query
+ *         name: quotationType
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: List of quotation requests
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/QuotationRequest'
+ *
+ * /quotations/requests/{id}:
+ *   get:
+ *     summary: Get single Quotation Request by ID
+ *     tags: [Quotation Requests]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Quotation request details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   $ref: '#/components/schemas/QuotationRequest'
+ *
+ *   put:
+ *     summary: Super Admin - Update Quotation Request (Status / Notes)
+ *     tags: [Quotation Requests]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               status:
+ *                 type: string
+ *                 enum: [PENDING, IN_REVIEW, QUOTED, REJECTED]
+ *     responses:
+ *       200:
+ *         description: Quotation request updated
+ *
+ *   delete:
+ *     summary: Super Admin - Delete Quotation Request
+ *     tags: [Quotation Requests]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Quotation request deleted
  *
  * /quotations:
  *   get:
@@ -501,9 +668,7 @@
  *                 success:
  *                   type: boolean
  *                 data:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/Quotation'
+ *                   $ref: '#/components/schemas/Quotation'
  *
  * /quotations/{id}:
  *   get:

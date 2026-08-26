@@ -1,4 +1,5 @@
 const optionalServiceRepository = require('../repositories/optionalService.repository');
+const optionalServiceValidator = require('../validators/optionalService.validator');
 
 class OptionalServiceService {
     async getPublicServices(filter = {}) {
@@ -16,31 +17,20 @@ class OptionalServiceService {
     }
 
     async createService(data, user) {
-        if (!data.name || !data.name.trim()) {
-            throw new Error('Service name is required');
-        }
+        // 1. Separate validator handles all field rules & duplicate checks
+        const validated = await optionalServiceValidator.validateCreate(data);
 
-        // Generate clean code if not provided
-        let code = data.code ? data.code.trim().toLowerCase().replace(/[^a-z0-9_]+/g, '_') : null;
-        if (!code) {
-            code = data.name.trim().toLowerCase().replace(/[^a-z0-9_]+/g, '_').slice(0, 30) + '_' + Date.now().toString().slice(-4);
-        }
-
-        const existing = await optionalServiceRepository.findByCode(code);
-        if (existing) {
-            code = `${code}_${Date.now().toString().slice(-4)}`;
-        }
-
+        // 2. Save purely minimal data (no code generation)
         return optionalServiceRepository.create({
-            ...data,
-            code,
+            ...validated,
             createdBy: user?.id || null
         });
     }
 
     async updateService(id, data) {
         await this.getServiceById(id);
-        return optionalServiceRepository.update(id, data);
+        const validated = await optionalServiceValidator.validateUpdate(id, data);
+        return optionalServiceRepository.update(id, validated);
     }
 
     async toggleServiceStatus(id) {

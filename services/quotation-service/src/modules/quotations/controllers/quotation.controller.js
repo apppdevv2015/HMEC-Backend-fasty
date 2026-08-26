@@ -56,6 +56,52 @@ class QuotationController {
             return responseHandler(res, HTTP_STATUS.BAD_REQUEST, false, error.message);
         }
     }
+
+    // Quotation Requests CRUD (Client Inquiry)
+    async createQuotationRequest(req, res) {
+        try {
+            const quotationRequest = await quotationService.createQuotationRequest(req.body, req.user);
+            return responseHandler(res, HTTP_STATUS.CREATED, true, 'Quotation request submitted successfully', quotationRequest);
+        } catch (error) {
+            return responseHandler(res, HTTP_STATUS.BAD_REQUEST, false, error.message);
+        }
+    }
+
+    async getQuotationRequests(req, res) {
+        try {
+            const quotationRequests = await quotationService.getQuotationRequests(req.user, req.query);
+            return responseHandler(res, HTTP_STATUS.OK, true, 'Quotation requests retrieved successfully', quotationRequests);
+        } catch (error) {
+            return responseHandler(res, HTTP_STATUS.BAD_REQUEST, false, error.message);
+        }
+    }
+
+    async getQuotationRequestById(req, res) {
+        try {
+            const quotationRequest = await quotationService.getQuotationRequestById(req.params.id, req.user);
+            return responseHandler(res, HTTP_STATUS.OK, true, 'Quotation request retrieved successfully', quotationRequest);
+        } catch (error) {
+            return responseHandler(res, HTTP_STATUS.NOT_FOUND, false, error.message);
+        }
+    }
+
+    async updateQuotationRequest(req, res) {
+        try {
+            const quotationRequest = await quotationService.updateQuotationRequest(req.params.id, req.body, req.user);
+            return responseHandler(res, HTTP_STATUS.OK, true, 'Quotation request updated successfully', quotationRequest);
+        } catch (error) {
+            return responseHandler(res, HTTP_STATUS.BAD_REQUEST, false, error.message);
+        }
+    }
+
+    async deleteQuotationRequest(req, res) {
+        try {
+            await quotationService.deleteQuotationRequest(req.params.id, req.user);
+            return responseHandler(res, HTTP_STATUS.OK, true, 'Quotation request deleted successfully');
+        } catch (error) {
+            return responseHandler(res, HTTP_STATUS.BAD_REQUEST, false, error.message);
+        }
+    }
 }
 
 module.exports = new QuotationController();

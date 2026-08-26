@@ -6,13 +6,9 @@ class OptionalServiceRepository {
         if (filter.isActive !== undefined) {
             where.isActive = filter.isActive;
         }
-        if (filter.category) {
-            where.category = { equals: filter.category, mode: 'insensitive' };
-        }
         if (filter.search) {
             where.OR = [
                 { name: { contains: filter.search, mode: 'insensitive' } },
-                { code: { contains: filter.search, mode: 'insensitive' } },
                 { description: { contains: filter.search, mode: 'insensitive' } }
             ];
         }
@@ -32,24 +28,20 @@ class OptionalServiceRepository {
         });
     }
 
-    async findByCode(code) {
-        return prisma.optionalServiceCatalog.findUnique({
-            where: { code }
+    async findByName(name) {
+        return prisma.optionalServiceCatalog.findFirst({
+            where: {
+                name: { equals: name.trim(), mode: 'insensitive' }
+            }
         });
     }
 
     async create(data) {
         return prisma.optionalServiceCatalog.create({
             data: {
-                code: data.code,
                 name: data.name,
-                category: data.category ,
                 description: data.description || null,
-                pricingType: data.pricingType,
-                defaultPrice: Number(data.defaultPrice) || 0,
-                unit: data.unit,
-                features: data.features || [],
-                isActive: data.isActive !== undefined ? Boolean(data.isActive) : true,
+                isActive: data.isActive !== undefined ? Boolean(data.isActive) : false,
                 sortOrder: Number(data.sortOrder) || 0,
                 createdBy: data.createdBy || null
             }
@@ -59,12 +51,7 @@ class OptionalServiceRepository {
     async update(id, data) {
         const updatePayload = {};
         if (data.name !== undefined) updatePayload.name = data.name;
-        if (data.category !== undefined) updatePayload.category = data.category;
         if (data.description !== undefined) updatePayload.description = data.description;
-        if (data.pricingType !== undefined) updatePayload.pricingType = data.pricingType;
-        if (data.defaultPrice !== undefined) updatePayload.defaultPrice = Number(data.defaultPrice);
-        if (data.unit !== undefined) updatePayload.unit = data.unit;
-        if (data.features !== undefined) updatePayload.features = data.features;
         if (data.isActive !== undefined) updatePayload.isActive = Boolean(data.isActive);
         if (data.sortOrder !== undefined) updatePayload.sortOrder = Number(data.sortOrder);
 

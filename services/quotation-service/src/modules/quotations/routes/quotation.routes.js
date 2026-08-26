@@ -1,13 +1,30 @@
 const quotationController = require('../controllers/quotation.controller');
-const { authMiddleware } = require('../../../middlewares/auth.middleware');
+const { authMiddleware, optionalAuthMiddleware } = require('../../../middlewares/auth.middleware');
 const { requireSuperAdmin, requireCompanyAdmin } = require('../../../middlewares/rbac.middleware');
 
 async function quotationRoutes(fastify, options) {
-    // List and details
+    // 1. Client Quotation Requests / Inquiries (Submit, List, Manage)
+    fastify.post('/requests', { preHandler: optionalAuthMiddleware }, quotationController.createQuotationRequest);
+    fastify.post('/inquiry', { preHandler: optionalAuthMiddleware }, quotationController.createQuotationRequest);
+    fastify.post('/inquiries', { preHandler: optionalAuthMiddleware }, quotationController.createQuotationRequest);
+
+    fastify.get('/requests', { preHandler: authMiddleware }, quotationController.getQuotationRequests);
+    fastify.get('/inquiries', { preHandler: authMiddleware }, quotationController.getQuotationRequests);
+
+    fastify.get('/requests/:id', { preHandler: authMiddleware }, quotationController.getQuotationRequestById);
+    fastify.get('/inquiries/:id', { preHandler: authMiddleware }, quotationController.getQuotationRequestById);
+
+    fastify.put('/requests/:id', { preHandler: [authMiddleware, requireSuperAdmin] }, quotationController.updateQuotationRequest);
+    fastify.put('/inquiries/:id', { preHandler: [authMiddleware, requireSuperAdmin] }, quotationController.updateQuotationRequest);
+
+    fastify.delete('/requests/:id', { preHandler: [authMiddleware, requireSuperAdmin] }, quotationController.deleteQuotationRequest);
+    fastify.delete('/inquiries/:id', { preHandler: [authMiddleware, requireSuperAdmin] }, quotationController.deleteQuotationRequest);
+
+    // 2. Formal Generated Quotations (Proposals, Send, Accept, Reject)
     fastify.get('/', { preHandler: authMiddleware }, quotationController.getQuotations);
     fastify.get('/:id', { preHandler: authMiddleware }, quotationController.getQuotationById);
 
-    // Company Admin requests quote
+    // Company Admin requests quote (Legacy / Snapshot)
     fastify.post('/request', { preHandler: [authMiddleware, requireCompanyAdmin] }, quotationController.requestQuotation);
 
     // Super Admin sends official quote
@@ -19,3 +36,4 @@ async function quotationRoutes(fastify, options) {
 }
 
 module.exports = quotationRoutes;
+

@@ -9,21 +9,13 @@ datasource db {
 }
 
 model Company {
-  id                 String              @id @default(uuid())
-  companyCode        String              @unique
-  name               String              @unique
-  subscriptionStatus String              @default("active")
-  createdAt          DateTime            @default(now())
-  updatedAt          DateTime            @updatedAt
+  id                 String   @id @default(uuid())
+  companyCode        String   @unique
+  name               String   @unique
+  subscriptionStatus String   @default("active")
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
   users              User[]
-  maintenanceLogs    MaintenanceLog[]
-  notifications      Notification[]
-  recommendations    Recommendation[]
-  subscriptions      Subscription[]
-  tickets            Ticket[]
-  jobCards           JobCard[]
-  machineCategories  MachineCategory[]
-  components         Component[]
 }
 
 model Role {
@@ -47,514 +39,19 @@ model User {
   companyId    String
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
-  company         Company         @relation(fields: [companyId], references: [id])
-  role            Role            @relation(fields: [roleId], references: [id])
-  createdTickets  Ticket[]        @relation("CreatedTickets")
-  assignedTickets Ticket[]        @relation("AssignedTickets")
-  ticketMessages  TicketMessage[]
-}
-
-model SubscriptionPlan {
-  id            String         @id @default(uuid())
-  planName      String         @unique
-  price         Decimal
-  machineLimit  Int
-  staffLimit    Int
-  validityDays  Int
-  isPublic      Boolean        @default(true)
-  isActive      Boolean        @default(true)
-  subscriptions Subscription[]
-
-  @@map("subscription_plans")
-}
-
-model Subscription {
-  id                    String           @id @default(uuid())
-  companyId             String
-  userId                String?
-  planId                String
-  status                String           @default("pending")
-  paymentStatus         String           @default("PENDING")
-  idempotencyKey        String?          @unique
-  subscriptionStartDate DateTime         @default(now())
-  subscriptionEndDate   DateTime?
-  createdAt             DateTime         @default(now())
-  updatedAt             DateTime         @updatedAt
-  company               Company          @relation(fields: [companyId], references: [id])
-  plan                  SubscriptionPlan @relation(fields: [planId], references: [id])
-
-  @@map("subscriptions")
-}
-
-model Machine {
-  id                     String           @id @default(uuid())
-  name                   String
-  manufacturer           String?          @map("manufacturer")
-  model                  String
-  serialNumber           String           @unique
-  imageUrl               String?          @map("image_url")
-  companyId              String
-  createdAt              DateTime         @default(now())
-  updatedAt              DateTime         @updatedAt
-  site                   String?
-  status                 String?          @default("Healthy")
-  costPerHourTarget      Decimal?         @map("cost_per_hour_target") @db.Decimal(10, 2)
-  costPerTonTarget       Decimal?         @map("cost_per_ton_target") @db.Decimal(10, 2)
-  equipmentType          String?          @map("equipment_type")
-  assignedOperatorId     String?          @map("assigned_operator_id")
-  assignedOperatorName   String?          @map("assigned_operator_name")
-  assignedArtisanId      String?          @map("assigned_artisan_id")
-  assignedArtisanName    String?          @map("assigned_artisan_name")
-  assignedSupervisorId   String?          @map("assigned_supervisor_id")
-  assignedSupervisorName String?          @map("assigned_supervisor_name")
-  healthScore            Int?             @map("health_score")
-  condition              Int              @default(1)
-  components             Component[]
-  maintenanceLogs        MaintenanceLog[]
-  recommendations        Recommendation[]
-  jobCards               JobCard[]
-  componentHealthRecords ComponentHealth[]
-}
-
-model MachineCategory {
-  id          String   @id @default(uuid())
-  companyId   String?  @map("company_id")
-  name        String
-  description String?
-  icon        String?
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  company     Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
-
-  @@unique([name, companyId])
-  @@map("machine_categories")
-}
-
-model MasterEquipmentCatalog {
-  id              String   @id @default(uuid())
-  brand           String   @map("brand")
-  category        String   @map("category")
-  modelName       String   @map("model_name")
-  slug            String   @unique @map("slug")
-  operatingWeight String?  @map("operating_weight")
-  enginePower     String?  @map("engine_power")
-  components      Json     @map("components")
-  totalSpecsCount Int      @default(12) @map("total_specs_count")
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
-
-  @@map("master_equipment_catalog")
-}
-
-model Component {
-  id                     String              @id @default(uuid())
-  name                   String?
-  machineId              String
-  companyId              String?             @map("company_id")
-  categoryId             String?             @map("category_id")
-  category               String?
-  componentType          String?             @map("component_type")
-  description            String?
-  serialNumber           String              @unique
-  supplier               String?
-  installHours           Int                 @default(0)
-  currentHours           Int                 @default(0)
-  plannedLife            Int                 @default(0)
-  replacementCost        Decimal             @default(0)
-  condition              Int                 @default(1)
-  createdAt              DateTime            @default(now())
-  updatedAt              DateTime            @updatedAt
-  installDate            DateTime?           @map("install_date")
-  expectedLifeHours      Int?                @map("expected_life_hours")
-  currentLifeHours       Int                 @default(0) @map("current_life_hours")
-  purchasePrice          Decimal?            @map("purchase_price") @db.Decimal(15, 2)
-  assignedArtisanId      String?             @map("assigned_artisan_id")
-  assignedArtisanName    String?             @map("assigned_artisan_name")
-  assignedSupervisorId   String?             @map("assigned_supervisor_id")
-  assignedSupervisorName String?             @map("assigned_supervisor_name")
-  assignedStartDate      DateTime?           @map("assigned_start_date")
-  assignedDueDate        DateTime?           @map("assigned_due_date")
-  assignedWorkScope      String?             @map("assigned_work_scope")
-  assignedPriority       String?             @map("assigned_priority")
-  healthScore            Int?                @map("health_score")
-  inspectionParameters   Json?               @map("inspection_parameters")
-  lastInspectedAt        DateTime?           @map("last_inspected_at")
-  machine                Machine             @relation(fields: [machineId], references: [id])
-  company                Company?            @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  componentCosts         ComponentCost[]
-  failurePredictions     FailurePrediction[]
-  maintenanceLogs        MaintenanceLog[]
-  recommendations        Recommendation[]
-  jobCards               JobCard[]
-  healthRecords          ComponentHealth[]
-}
-
-model ComponentCost {
-  id          String    @id @default(uuid())
-  componentId String    @map("component_id")
-  costType    String    @map("cost_type")
-  amount      Decimal   @db.Decimal(15, 2)
-  currency    String    @default("USD")
-  date        DateTime
-  notes       String?
-  createdAt   DateTime  @default(now()) @map("created_at")
-  component   Component @relation(fields: [componentId], references: [id], onDelete: Cascade)
-
-  @@map("component_costs")
-}
-
-model Recommendation {
-  id                 String     @id @default(uuid())
-  companyId          String     @map("company_id")
-  machineId          String?    @map("machine_id")
-  componentId        String?    @map("component_id")
-  actionType         String     @map("action_type")
-  recommendationText String     @map("recommendation_text")
-  rationale          String?
-  estimatedSaving    Decimal    @map("estimated_saving") @db.Decimal(15, 2)
-  priority           String
-  status             String     @default("pending")
-  createdAt          DateTime   @default(now()) @map("created_at")
-  company            Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  component          Component? @relation(fields: [componentId], references: [id])
-  machine            Machine?   @relation(fields: [machineId], references: [id])
-
-  @@map("recommendations")
-}
-
-model FailurePrediction {
-  id                          String    @id @default(uuid())
-  componentId                 String    @map("component_id")
-  predictedRemainingLifeHours Int       @map("predicted_remaining_life_hours")
-  predictedFailureDate        DateTime  @map("predicted_failure_date")
-  confidenceScore             Int       @map("confidence_score")
-  factors                     Json
-  calculatedAt                DateTime  @default(now()) @map("calculated_at")
-  component                   Component @relation(fields: [componentId], references: [id], onDelete: Cascade)
-
-  @@map("failure_predictions")
-}
-
-model MaintenanceLog {
-  id          String     @id @default(uuid())
-  companyId   String     @map("company_id")
-  machineId   String     @map("machine_id")
-  componentId String?    @map("component_id")
-  technician  String
-  date        DateTime   @default(now())
-  work        String
-  cost        Decimal    @db.Decimal(15, 2)
-  downtime    String
-  status      String     @default("Open")
-  createdAt   DateTime   @default(now()) @map("created_at")
-  updatedAt   DateTime   @updatedAt @map("updated_at")
-  company     Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  component   Component? @relation(fields: [componentId], references: [id])
-  machine     Machine    @relation(fields: [machineId], references: [id], onDelete: Cascade)
-
-  @@map("maintenance_logs")
-}
-
-model Notification {
-  id        String   @id @default(uuid())
-  companyId String   @map("company_id")
-  message   String
-  type      String
-  isRead    Boolean  @default(false) @map("is_read")
-  createdAt DateTime @default(now()) @map("created_at")
-  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
-
-  @@map("notifications")
-}
-
-model Log {
-  id            String   @id @default(uuid())
-  level         String
-  message       String
-  service       String
-  module        String?
-  action        String?
-  requestId     String?  @map("request_id")
-  correlationId String?  @map("correlation_id")
-  userId        String?  @map("user_id")
-  userRole      String?  @map("user_role")
-  companyId     String?  @map("company_id")
-  error         String?
-  errorCode     String?  @map("error_code")
-  stack         String?
-  status        Int?
-  method        String?
-  url           String?
-  duration      Int?
-  ipAddress     String?  @map("ip_address")
-  userAgent     String?  @map("user_agent")
-  metadata      Json?
-  createdAt     DateTime @default(now()) @map("created_at")
-
-  @@map("logs")
-}
-
-model Ticket {
-  id           String          @id @default(uuid())
-  ticketNumber String          @unique @map("ticket_number")
-  subject      String
-  description  String
-  category     String          @default("General")
-  priority     String          @default("Medium")
-  status       String          @default("Open")
-  companyId    String          @map("company_id")
-  createdById  String          @map("created_by_id")
-  assignedToId String?         @map("assigned_to_id")
-  createdAt    DateTime        @default(now()) @map("created_at")
-  updatedAt    DateTime        @updatedAt @map("updated_at")
-  company      Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  createdBy    User            @relation("CreatedTickets", fields: [createdById], references: [id], onDelete: Cascade)
-  assignedTo   User?           @relation("AssignedTickets", fields: [assignedToId], references: [id])
-  messages     TicketMessage[]
-
-  @@map("tickets")
-}
-
-model TicketMessage {
-  id        String   @id @default(uuid())
-  ticketId  String   @map("ticket_id")
-  senderId  String   @map("sender_id")
-  message   String
-  createdAt DateTime @default(now()) @map("created_at")
-  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
-  sender    User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
-
-  @@map("ticket_messages")
-}
-
-model JobCard {
-  id                        String                     @id @default(uuid())
-  jobCardNumber             String                     @unique @map("job_card_number")
-  companyId                 String                     @map("company_id")
-  machineId                 String                     @map("machine_id")
-  componentId               String?                    @map("component_id")
-  maintenanceType           String                     @default("PREVENTIVE") @map("maintenance_type")
-  priority                  String                     @default("MEDIUM")
-  status                    String                     @default("OPEN")
-  title                     String
-  description               String?
-  plannedStartDate          DateTime?                  @map("planned_start_date")
-  plannedFinishDate         DateTime?                  @map("planned_finish_date")
-  actualStartDate           DateTime?                  @map("actual_start_date")
-  actualFinishDate          DateTime?                  @map("actual_finish_date")
-  assignedTechnicianId      String?                    @map("assigned_technician_id")
-  assignedTechnicianName    String?                    @map("assigned_technician_name")
-  assignedSupervisorId      String?                    @map("assigned_supervisor_id")
-  assignedSupervisorName    String?                    @map("assigned_supervisor_name")
-  assignedPlannerId         String?                    @map("assigned_planner_id")
-  assignedPlannerName       String?                    @map("assigned_planner_name")
-  allocatedLaborHours       Decimal?                   @default(0) @map("allocated_labor_hours") @db.Decimal(8, 2)
-  actualLaborHours          Decimal?                   @default(0) @map("actual_labor_hours") @db.Decimal(8, 2)
-  downtimeHours             Decimal?                   @default(0) @map("downtime_hours") @db.Decimal(8, 2)
-  requiredTools             String?                    @map("required_tools")
-  rootCause                 String?                    @map("root_cause")
-  correctiveAction          String?                    @map("corrective_action")
-  postRepairCondition       String?                    @map("post_repair_condition")
-  totalCost                 Decimal?                   @default(0) @map("total_cost") @db.Decimal(15, 2)
-  supervisorNotes           String?                    @map("supervisor_notes")
-  engineeringNotes          String?                    @map("engineering_notes")
-  supervisorApprovedAt      DateTime?                  @map("supervisor_approved_at")
-  engineeringApprovedAt     DateTime?                  @map("engineering_approved_at")
-  closedAt                  DateTime?                  @map("closed_at")
-  createdAt                 DateTime                   @default(now()) @map("created_at")
-  updatedAt                 DateTime                   @updatedAt @map("updated_at")
-
-  company                   Company                    @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  machine                   Machine                    @relation(fields: [machineId], references: [id], onDelete: Cascade)
-  component                 Component?                 @relation(fields: [componentId], references: [id])
-  laborLogs                 JobCardLaborLog[]
-  parts                     JobCardPart[]
-  findings                  JobCardInspectionFinding[]
-  attachments               JobCardAttachment[]
-  auditLogs                 JobCardAuditLog[]
-  voiceNotes                JobCardVoiceNote[]
-
-  @@map("job_cards")
-}
-
-model JobCardLaborLog {
-  id              String    @id @default(uuid())
-  jobCardId       String    @map("job_card_id")
-  artisanId       String?   @map("artisan_id")
-  artisanName     String?   @map("artisan_name")
-  startTime       DateTime  @map("start_time")
-  endTime         DateTime? @map("end_time")
-  durationMinutes Int?      @map("duration_minutes")
-  actionType      String    @default("WORK") @map("action_type")
-  notes           String?
-  createdAt       DateTime  @default(now()) @map("created_at")
-  jobCard         JobCard   @relation(fields: [jobCardId], references: [id], onDelete: Cascade)
-
-  @@map("job_card_labor_logs")
-}
-
-model JobCardPart {
-  id          String   @id @default(uuid())
-  jobCardId   String   @map("job_card_id")
-  partName    String   @map("part_name")
-  partNumber  String?  @map("part_number")
-  quantity    Int      @default(1)
-  unitCost    Decimal  @default(0) @map("unit_cost") @db.Decimal(15, 2)
-  totalCost   Decimal  @default(0) @map("total_cost") @db.Decimal(15, 2)
-  isConsumed  Boolean  @default(true) @map("is_consumed")
-  createdAt   DateTime @default(now()) @map("created_at")
-  jobCard     JobCard  @relation(fields: [jobCardId], references: [id], onDelete: Cascade)
-
-  @@map("job_card_parts")
-}
-
-model JobCardInspectionFinding {
-  id            String   @id @default(uuid())
-  jobCardId     String   @map("job_card_id")
-  parameterName String   @map("parameter_name")
-  measuredValue String   @map("measured_value")
-  unit          String?
-  standardSpec  String?  @map("standard_spec")
-  status        String   @default("PASS")
-  remarks       String?
-  createdAt     DateTime @default(now()) @map("created_at")
-  jobCard       JobCard  @relation(fields: [jobCardId], references: [id], onDelete: Cascade)
-
-  @@map("job_card_inspection_findings")
-}
-
-model JobCardAttachment {
-  id         String   @id @default(uuid())
-  jobCardId  String   @map("job_card_id")
-  fileType   String   @default("PHOTO_BEFORE") @map("file_type")
-  fileName   String   @map("file_name")
-  fileUrl    String   @map("file_url")
-  uploadedBy String?  @map("uploaded_by")
-  createdAt  DateTime @default(now()) @map("created_at")
-  jobCard    JobCard  @relation(fields: [jobCardId], references: [id], onDelete: Cascade)
-
-  @@map("job_card_attachments")
-}
-
-model JobCardAuditLog {
-  id            String   @id @default(uuid())
-  jobCardId     String   @map("job_card_id")
-  action        String   @map("action")
-  title         String
-  description   String
-  fieldChanged  String?  @map("field_changed")
-  oldValue      String?  @map("old_value")
-  newValue      String?  @map("new_value")
-  userId        String?  @map("user_id")
-  userName      String   @map("user_name")
-  userRole      String?  @map("user_role")
-  userEmail     String?  @map("user_email")
-  badgeColor    String?  @map("badge_color")
-  createdAt     DateTime @default(now()) @map("created_at")
-  jobCard       JobCard  @relation(fields: [jobCardId], references: [id], onDelete: Cascade)
-
-  @@map("job_card_audit_logs")
-}
-
-model JobCardVoiceNote {
-  id              String   @id @default(uuid())
-  jobCardId       String   @map("job_card_id")
-  title           String
-  audioUrl        String   @map("audio_url") @db.Text
-  durationSeconds Decimal  @default(0) @map("duration_seconds") @db.Decimal(8, 2)
-  userId          String?  @map("user_id")
-  userName        String   @map("user_name")
-  userRole        String?  @map("user_role")
-  createdAt       DateTime @default(now()) @map("created_at")
-  jobCard         JobCard  @relation(fields: [jobCardId], references: [id], onDelete: Cascade)
-
-  @@map("job_card_voice_notes")
-}
-
-model ComponentHealth {
-  id                   String     @id @default(uuid())
-  machineId            String     @map("machine_id")
-  componentId          String?    @map("component_id")
-  componentName        String     @map("component_name")
-  serialNumber         String?    @map("serial_number")
-  parameters           Json       @map("parameters")
-  healthScore          Int        @map("health_score")
-  status               String     @default("Healthy")
-  createdAt            DateTime   @default(now()) @map("created_at")
-  updatedAt            DateTime   @updatedAt @map("updated_at")
-
-  machine              Machine    @relation(fields: [machineId], references: [id], onDelete: Cascade)
-  component            Component? @relation(fields: [componentId], references: [id], onDelete: SetNull)
-
-  @@map("component_health")
-}
-
-model MachineInspectionAuditLog {
-  id                   String   @id @default(uuid())
-  actionType           String   @default("ROUTINE_UPDATE") @map("action_type")
-  companyId            String?  @map("company_id")
-  companyName          String?  @map("company_name")
-  userId               String?  @map("user_id")
-  userName             String   @default("Super Admin") @map("user_name")
-  userRole             String   @default("SUPER_ADMIN") @map("user_role")
-  userEmail            String?  @map("user_email")
-  machineId            String   @map("machine_id")
-  machineName          String?  @map("machine_name")
-  serialNumber         String?  @map("serial_number")
-  brand                String?  @map("brand")
-  category             String?  @map("category")
-  modelName            String?  @map("model_name")
-  componentId          String?  @map("component_id")
-  componentName        String   @map("component_name")
-  previousParameters   Json?    @map("previous_parameters")
-  currentParameters    Json     @map("current_parameters")
-  parameterChanges     Json?    @map("parameter_changes")
-  componentHealthScore Int      @map("component_health_score")
-  overallMachineHealth Int      @map("overall_machine_health")
-  status               String   @default("Healthy")
-  issues               Json?    @map("issues")
-  createdAt            DateTime @default(now()) @map("created_at")
-
-  @@index([machineId])
-  @@index([companyId])
-  @@index([userId])
-  @@index([category])
-  @@index([brand])
-  @@index([createdAt])
-  @@map("machine_inspection_audit_logs")
-}
-
-model MachineCondition {
-  id          String   @id @default(uuid())
-  rating      Int      @unique
-  name        String
-  code        String
-  description String?
-  color       String?
-  isActive    Boolean  @default(true) @map("is_active")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-
-  @@map("machine_conditions")
+  company      Company  @relation(fields: [companyId], references: [id])
+  role         Role     @relation(fields: [roleId], references: [id])
 }
 
 model OptionalServiceCatalog {
-  id           String   @id @default(uuid())
-  code         String   @unique
-  name         String
-  category     String   @default("Integration")
-  description  String?
-  pricingType  String   @default("as_per_requirement") @map("pricing_type")
-  defaultPrice Decimal  @default(0) @map("default_price") @db.Decimal(12, 2)
-  unit         String?  @default("per quotation")
-  features     Json?
-  isActive     Boolean  @default(true) @map("is_active")
-  sortOrder    Int      @default(0) @map("sort_order")
-  createdBy    String?  @map("created_by")
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  isActive    Boolean  @default(false) @map("is_active")
+  sortOrder   Int      @default(0) @map("sort_order")
+  createdBy   String?  @map("created_by")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
   @@map("optional_service_catalog")
 }
@@ -593,5 +90,69 @@ model Quotation {
   @@index([companyId])
   @@index([status])
   @@map("quotations")
+}
+
+model QuotationInquiry {
+  id                         String    @id @default(uuid())
+  inquiryId                  String    @unique @map("inquiry_id")
+  companyId                  String    @map("company_id")
+  companyName                String    @map("company_name")
+  contactPerson              String?   @map("contact_person")
+  email                      String
+  phone                      String?
+  siteLocation               String?   @map("site_location")
+  quotationType              String    @map("quotation_type")
+  numberOfSites              Int       @default(1) @map("number_of_sites")
+  siteNames                  Json      @default("[]") @map("site_names")
+  activeMachines             Int       @default(1) @map("active_machines")
+  equipmentTypes             Json      @default("[]") @map("equipment_types")
+  contractDuration           String    @default("12 Months") @map("contract_duration")
+  implementationRequirements String?   @map("implementation_requirements")
+  additionalRequirements     String?   @map("additional_requirements")
+  attachmentUrl              String?   @map("attachment_url")
+  attachmentFileName         String?   @map("attachment_file_name")
+  attachmentFileType         String?   @map("attachment_file_type")
+  attachmentSize             Int?      @map("attachment_size")
+  status                     String    @default("ACTIVE")
+  quotationStatus            String?   @map("quotation_status")
+  createdAt                  DateTime  @default(now()) @map("created_at")
+  updatedAt                  DateTime  @updatedAt @map("updated_at")
+
+  @@index([companyId])
+  @@index([status])
+  @@map("quotation_inquiries")
+}
+
+model QuotationRequest {
+  id                         String    @id @default(uuid())
+  requestId                  String    @unique @map("request_id")
+  userId                     String?   @map("user_id")
+  companyId                  String?   @map("company_id")
+  companyName                String?   @map("company_name")
+  contactPerson              String?   @map("contact_person")
+  email                      String?
+  phone                      String?
+  siteLocation               String?   @map("site_location")
+  quotationType              String    @map("quotation_type")
+  numberOfSites              Int       @default(1) @map("number_of_sites")
+  siteNames                  Json      @default("[]") @map("site_names")
+  activeMachines             Int       @default(1) @map("active_machines")
+  equipmentTypes             Json      @default("[]") @map("equipment_types")
+  contractDuration           String    @default("12 Months") @map("contract_duration")
+  optionalServices           Json      @default("[]") @map("optional_services")
+  implementationRequirements String?   @map("implementation_requirements")
+  additionalRequirements     String?   @map("additional_requirements")
+  attachmentUrl              String?   @map("attachment_url")
+  attachmentFileName         String?   @map("attachment_file_name")
+  attachmentFileType         String?   @map("attachment_file_type")
+  attachmentSize             Int?      @map("attachment_size")
+  status                     String    @default("PENDING")
+  createdAt                  DateTime  @default(now()) @map("created_at")
+  updatedAt                  DateTime  @updatedAt @map("updated_at")
+
+  @@index([companyId])
+  @@index([userId])
+  @@index([status])
+  @@map("quotation_requests")
 }
 
