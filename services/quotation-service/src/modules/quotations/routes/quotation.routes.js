@@ -1,9 +1,17 @@
 const quotationController = require('../controllers/quotation.controller');
-const { authMiddleware } = require('../../../middlewares/auth.middleware');
+const { authMiddleware, optionalAuthMiddleware } = require('../../../middlewares/auth.middleware');
 const { requireSuperAdmin, requireCompanyAdmin } = require('../../../middlewares/rbac.middleware');
 
 async function quotationRoutes(fastify, options) {
-    // List and details
+    // 1. Quotation Inquiries (Request a Quotation from form)
+    fastify.post('/inquiry', { preHandler: optionalAuthMiddleware }, quotationController.createInquiry);
+    fastify.post('/inquiries', { preHandler: optionalAuthMiddleware }, quotationController.createInquiry);
+    fastify.get('/inquiries', { preHandler: authMiddleware }, quotationController.getInquiries);
+    fastify.get('/inquiries/:id', { preHandler: authMiddleware }, quotationController.getInquiryById);
+    fastify.put('/inquiries/:id', { preHandler: [authMiddleware, requireSuperAdmin] }, quotationController.updateInquiry);
+    fastify.delete('/inquiries/:id', { preHandler: [authMiddleware, requireSuperAdmin] }, quotationController.deleteInquiry);
+
+    // 2. Official Formal Quotations
     fastify.get('/', { preHandler: authMiddleware }, quotationController.getQuotations);
     fastify.get('/:id', { preHandler: authMiddleware }, quotationController.getQuotationById);
 
@@ -19,3 +27,4 @@ async function quotationRoutes(fastify, options) {
 }
 
 module.exports = quotationRoutes;
+

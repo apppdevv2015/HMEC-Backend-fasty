@@ -1,7 +1,80 @@
 const quotationRepository = require('../repositories/quotation.repository');
+const quotationInquiryRepository = require('../repositories/quotationInquiry.repository');
 const optionalServiceRepository = require('../../optional-services/repositories/optionalService.repository');
 
 class QuotationService {
+    async generateInquiryId() {
+        const count = await quotationInquiryRepository.count();
+        const seq = String(count + 1).padStart(5, '0');
+        return `QIN-${seq}`;
+    }
+
+    async createInquiry(data, user) {
+        const companyId = data.companyId || user?.companyId || 'PROSPECTIVE';
+        const companyName = data.companyName || user?.companyName || 'Prospective Client';
+        const email = data.email || user?.email;
+
+        if (!email) {
+            throw new Error('Contact email is required to submit a quotation request');
+        }
+        if (!data.quotationType) {
+            throw new Error('Quotation Type is required');
+        }
+
+        const inquiryId = await this.generateInquiryId();
+
+        return quotationInquiryRepository.create({
+            inquiryId,
+            companyId,
+            companyName,
+            contactPerson: data.contactPerson || user?.firstName ? `${user?.firstName || ''} ${user?.lastName || ''}`.trim() : null,
+            email,
+            phone: data.phone || user?.mobileNumber || null,
+            siteLocation: data.siteLocation || null,
+            quotationType: data.quotationType,
+            numberOfSites: Number(data.numberOfSites) || 1,
+            siteNames: Array.isArray(data.siteNames) ? data.siteNames : (data.siteNames ? [data.siteNames] : []),
+            activeMachines: Number(data.activeMachines) || 1,
+            equipmentTypes: Array.isArray(data.equipmentTypes) ? data.equipmentTypes : (data.equipmentTypes ? [data.equipmentTypes] : []),
+            contractDuration: data.contractDuration || '12 Months',
+            implementationRequirements: data.implementationRequirements || null,
+            additionalRequirements: data.additionalRequirements || null,
+            attachmentUrl: data.attachmentUrl || null,
+            attachmentFileName: data.attachmentFileName || null,
+            attachmentFileType: data.attachmentFileType || null,
+            attachmentSize: data.attachmentSize || null,
+            status: 'ACTIVE',
+            quotationStatus: null
+        });
+    }
+
+    async getInquiries(user, query = {}) {
+        const filter = { ...query };
+        if (user && user.role !== 'super_admin' && user.companyId) {
+            filter.companyId = user.companyId;
+        }
+        return quotationInquiryRepository.findAll(filter);
+    }
+
+    async getInquiryById(id, user) {
+        const inq = await quotationInquiryRepository.findById(id);
+        if (!inq) throw new Error('Quotation inquiry not found');
+        if (user && user.role !== 'super_admin' && inq.companyId !== user.companyId) {
+            throw new Error('Unauthorized to view this inquiry');
+        }
+        return inq;
+    }
+
+    async updateInquiry(id, data, user) {
+        const inq = await this.getInquiryById(id, user);
+        return quotationInquiryRepository.update(inq.id, data);
+    }
+
+    async deleteInquiry(id, user) {
+        const inq = await this.getInquiryById(id, user);
+        return quotationInquiryRepository.delete(inq.id);
+    }
+
     async generateQuotationNumber() {
         const year = new Date().getFullYear();
         const count = await quotationRepository.count();

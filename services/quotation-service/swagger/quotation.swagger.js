@@ -239,6 +239,131 @@
  *           type: string
  *           format: date-time
  *
+ *     QuotationInquiry:
+ *       type: object
+ *       description: Inbound Quotation Request / Inquiry from Client
+ *       properties:
+ *         id:
+ *           type: string
+ *           format: uuid
+ *         inquiryId:
+ *           type: string
+ *           example: "QIN-00001"
+ *         companyId:
+ *           type: string
+ *         companyName:
+ *           type: string
+ *           example: "ABC Mining Pvt Ltd"
+ *         contactPerson:
+ *           type: string
+ *           example: "John Doe"
+ *         email:
+ *           type: string
+ *           example: "john.doe@abcmining.com"
+ *         phone:
+ *           type: string
+ *           example: "+91 98765 43210"
+ *         siteLocation:
+ *           type: string
+ *           example: "Nagpur, Maharashtra"
+ *         quotationType:
+ *           type: string
+ *           enum: ["Fleet Management", "Predictive Maintenance", "Asset Monitoring"]
+ *           example: "Predictive Maintenance"
+ *         numberOfSites:
+ *           type: integer
+ *           example: 2
+ *         siteNames:
+ *           type: array
+ *           items:
+ *             type: string
+ *           example: ["Nagpur Site 1", "Chandrapur Pit 2"]
+ *         activeMachines:
+ *           type: integer
+ *           example: 25
+ *         equipmentTypes:
+ *           type: array
+ *           items:
+ *             type: string
+ *           example: ["Excavator", "Dump Truck", "Dozer"]
+ *         contractDuration:
+ *           type: string
+ *           enum: ["6 Months", "12 Months", "18 Months", "24 Months"]
+ *           example: "12 Months"
+ *         implementationRequirements:
+ *           type: string
+ *           example: "Deploy telematics units across all active machines within 2 weeks of signing."
+ *         additionalRequirements:
+ *           type: string
+ *           example: "Require on-site technical training for 5 artisans."
+ *         attachmentUrl:
+ *           type: string
+ *           nullable: true
+ *         status:
+ *           type: string
+ *           enum: [ACTIVE, INACTIVE]
+ *           example: "ACTIVE"
+ *         quotationStatus:
+ *           type: string
+ *           nullable: true
+ *           enum: [DRAFT, SENT, ACCEPTED, REJECTED, EXPIRED]
+ *           example: null
+ *
+ *     QuotationInquiryInput:
+ *       type: object
+ *       required:
+ *         - email
+ *         - quotationType
+ *         - numberOfSites
+ *         - activeMachines
+ *       properties:
+ *         companyName:
+ *           type: string
+ *           example: "ABC Mining Pvt Ltd"
+ *         contactPerson:
+ *           type: string
+ *           example: "John Doe"
+ *         email:
+ *           type: string
+ *           example: "john.doe@abcmining.com"
+ *         phone:
+ *           type: string
+ *           example: "+91 98765 43210"
+ *         siteLocation:
+ *           type: string
+ *           example: "Nagpur, Maharashtra"
+ *         quotationType:
+ *           type: string
+ *           example: "Predictive Maintenance"
+ *         numberOfSites:
+ *           type: integer
+ *           example: 2
+ *         siteNames:
+ *           type: array
+ *           items:
+ *             type: string
+ *           example: ["Nagpur Site 1", "Chandrapur Pit 2"]
+ *         activeMachines:
+ *           type: integer
+ *           example: 25
+ *         equipmentTypes:
+ *           type: array
+ *           items:
+ *             type: string
+ *           example: ["Excavator", "Dump Truck"]
+ *         contractDuration:
+ *           type: string
+ *           example: "12 Months"
+ *         implementationRequirements:
+ *           type: string
+ *           example: "Deploy telematics units across all active machines."
+ *         additionalRequirements:
+ *           type: string
+ *           example: "Special on-site engineer support."
+ *         attachmentUrl:
+ *           type: string
+ *           example: "https://storage.googleapis.com/hme/specs.pdf"
+ *
  *     QuotationRequestInput:
  *       type: object
  *       required:
@@ -472,6 +597,66 @@
  *     responses:
  *       200:
  *         description: Status updated
+ *
+ * /quotations/inquiry:
+ *   post:
+ *     summary: Request a Quotation (Submit Client Requirement Details)
+ *     description: Submit detailed quotation inquiry including type, number of sites, site names, active machines, equipment types, contract duration, and implementation requirements.
+ *     tags: [Quotation]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/QuotationInquiryInput'
+ *     responses:
+ *       201:
+ *         description: Quotation inquiry created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   $ref: '#/components/schemas/QuotationInquiry'
+ *
+ * /quotations/inquiries:
+ *   get:
+ *     summary: List all Quotation Inquiries
+ *     description: Retrieve all inbound quotation inquiries with filters for status, quotation type, and search keyword.
+ *     tags: [Quotation]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [ACTIVE, INACTIVE]
+ *       - in: query
+ *         name: quotationType
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: List of quotation inquiries
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/QuotationInquiry'
  *
  * /quotations:
  *   get:
