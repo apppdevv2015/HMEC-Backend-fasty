@@ -5,7 +5,8 @@ const SERVICES = {
     auth: process.env.AUTH_SERVICE_URL,
     fleet: process.env.FLEET_SERVICE_URL,
     ingestion: process.env.INGESTION_SERVICE_URL,
-    notifications: process.env.NOTIFICATION_SERVICE_URL
+    notifications: process.env.NOTIFICATION_SERVICE_URL,
+    quotation: process.env.QUOTATION_SERVICE_URL || 'http://localhost:3006'
 };
 
 const setupProxy = async (fastify) => {
@@ -18,7 +19,7 @@ const setupProxy = async (fastify) => {
         rewritePrefix: ''
     });
 
-    // 2. Versioned Generic Service Proxies (e.g. /api/v1/auth, /api/v1/intelligence)
+    // 2. Versioned Generic Service Proxies (e.g. /api/v1/auth, /api/v1/intelligence, /api/v1/quotation)
     for (const [name, url] of Object.entries(SERVICES)) {
         await fastify.register(fastifyHttpProxy, {
             upstream: url,
@@ -76,6 +77,20 @@ const setupProxy = async (fastify) => {
         upstream: SERVICES.intelligence,
         prefix: `${VERSION}/manual-inspections`,
         rewritePrefix: '/machines'
+    });
+
+    // Optional Services -> Quotation Service
+    await fastify.register(fastifyHttpProxy, {
+        upstream: SERVICES.quotation,
+        prefix: `${VERSION}/optional-services`,
+        rewritePrefix: '/optional-services'
+    });
+
+    // Quotations -> Quotation Service
+    await fastify.register(fastifyHttpProxy, {
+        upstream: SERVICES.quotation,
+        prefix: `${VERSION}/quotations`,
+        rewritePrefix: '/quotations'
     });
 };
 
