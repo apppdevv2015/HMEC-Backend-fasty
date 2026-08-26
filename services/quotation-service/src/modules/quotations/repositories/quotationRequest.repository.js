@@ -1,8 +1,8 @@
 const prisma = require('../../../config/database');
 
-class QuotationInquiryRepository {
+class QuotationRequestRepository {
     async count(where = {}) {
-        return prisma.quotationInquiry.count({ where });
+        return prisma.quotationRequest.count({ where });
     }
 
     async findAll(filter = {}) {
@@ -10,6 +10,10 @@ class QuotationInquiryRepository {
 
         if (filter.companyId) {
             where.companyId = filter.companyId;
+        }
+
+        if (filter.userId) {
+            where.userId = filter.userId;
         }
 
         if (filter.status) {
@@ -22,60 +26,61 @@ class QuotationInquiryRepository {
 
         if (filter.search) {
             where.OR = [
-                { inquiryId: { contains: filter.search, mode: 'insensitive' } },
+                { requestId: { contains: filter.search, mode: 'insensitive' } },
                 { companyName: { contains: filter.search, mode: 'insensitive' } },
                 { contactPerson: { contains: filter.search, mode: 'insensitive' } },
                 { email: { contains: filter.search, mode: 'insensitive' } }
             ];
         }
 
-        return prisma.quotationInquiry.findMany({
+        return prisma.quotationRequest.findMany({
             where,
             orderBy: { createdAt: 'desc' }
         });
     }
 
     async findById(id) {
-        return prisma.quotationInquiry.findFirst({
+        return prisma.quotationRequest.findFirst({
             where: {
                 OR: [
                     { id },
-                    { inquiryId: id }
+                    { requestId: id }
                 ]
             }
         });
     }
 
     async create(data) {
-        return prisma.quotationInquiry.create({
+        return prisma.quotationRequest.create({
             data: {
-                inquiryId: data.inquiryId,
-                companyId: data.companyId,
-                companyName: data.companyName,
+                requestId: data.requestId,
+                userId: data.userId || null,
+                companyId: data.companyId || null,
+                companyName: data.companyName || null,
                 contactPerson: data.contactPerson || null,
-                email: data.email,
+                email: data.email || null,
                 phone: data.phone || null,
                 siteLocation: data.siteLocation || null,
                 quotationType: data.quotationType,
-                numberOfSites: Number(data.numberOfSites) || 1,
+                numberOfSites: data.numberOfSites !== undefined ? Number(data.numberOfSites) : null,
                 siteNames: data.siteNames || [],
-                activeMachines: Number(data.activeMachines) || 1,
+                activeMachines: data.activeMachines !== undefined ? Number(data.activeMachines) : null,
                 equipmentTypes: data.equipmentTypes || [],
-                contractDuration: data.contractDuration || '12 Months',
+                contractDuration: data.contractDuration || null,
+                optionalServices: data.optionalServices || [],
                 implementationRequirements: data.implementationRequirements || null,
                 additionalRequirements: data.additionalRequirements || null,
                 attachmentUrl: data.attachmentUrl || null,
                 attachmentFileName: data.attachmentFileName || null,
                 attachmentFileType: data.attachmentFileType || null,
                 attachmentSize: data.attachmentSize ? Number(data.attachmentSize) : null,
-                status: data.status || 'ACTIVE',
-                quotationStatus: data.quotationStatus || null
+                status: data.status || 'PENDING'
             }
         });
     }
 
     async update(id, data) {
-        return prisma.quotationInquiry.update({
+        return prisma.quotationRequest.update({
             where: { id },
             data: {
                 ...data,
@@ -85,10 +90,10 @@ class QuotationInquiryRepository {
     }
 
     async delete(id) {
-        return prisma.quotationInquiry.delete({
+        return prisma.quotationRequest.delete({
             where: { id }
         });
     }
 }
 
-module.exports = new QuotationInquiryRepository();
+module.exports = new QuotationRequestRepository();

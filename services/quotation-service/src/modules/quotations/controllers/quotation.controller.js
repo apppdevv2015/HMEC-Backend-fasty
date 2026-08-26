@@ -55,46 +55,49 @@ class QuotationController {
         } catch (error) {
             return responseHandler(res, HTTP_STATUS.BAD_REQUEST, false, error.message);
         }
-    async createInquiry(req, res) {
+    }
+
+    // Quotation Requests CRUD (Client Inquiry)
+    async createQuotationRequest(req, res) {
         try {
-            const inquiry = await quotationService.createInquiry(req.body, req.user);
-            return responseHandler(res, HTTP_STATUS.CREATED, true, 'Quotation inquiry submitted successfully', inquiry);
+            const quotationRequest = await quotationService.createQuotationRequest(req.body, req.user);
+            return responseHandler(res, HTTP_STATUS.CREATED, true, 'Quotation request submitted successfully', quotationRequest);
         } catch (error) {
             return responseHandler(res, HTTP_STATUS.BAD_REQUEST, false, error.message);
         }
     }
 
-    async getInquiries(req, res) {
+    async getQuotationRequests(req, res) {
         try {
-            const inquiries = await quotationService.getInquiries(req.user, req.query);
-            return responseHandler(res, HTTP_STATUS.OK, true, 'Quotation inquiries retrieved successfully', inquiries);
+            const quotationRequests = await quotationService.getQuotationRequests(req.user, req.query);
+            return responseHandler(res, HTTP_STATUS.OK, true, 'Quotation requests retrieved successfully', quotationRequests);
         } catch (error) {
             return responseHandler(res, HTTP_STATUS.BAD_REQUEST, false, error.message);
         }
     }
 
-    async getInquiryById(req, res) {
+    async getQuotationRequestById(req, res) {
         try {
-            const inquiry = await quotationService.getInquiryById(req.params.id, req.user);
-            return responseHandler(res, HTTP_STATUS.OK, true, 'Quotation inquiry details retrieved successfully', inquiry);
+            const quotationRequest = await quotationService.getQuotationRequestById(req.params.id, req.user);
+            return responseHandler(res, HTTP_STATUS.OK, true, 'Quotation request retrieved successfully', quotationRequest);
         } catch (error) {
             return responseHandler(res, HTTP_STATUS.NOT_FOUND, false, error.message);
         }
     }
 
-    async updateInquiry(req, res) {
+    async updateQuotationRequest(req, res) {
         try {
-            const inquiry = await quotationService.updateInquiry(req.params.id, req.body, req.user);
-            return responseHandler(res, HTTP_STATUS.OK, true, 'Quotation inquiry updated successfully', inquiry);
+            const quotationRequest = await quotationService.updateQuotationRequest(req.params.id, req.body, req.user);
+            return responseHandler(res, HTTP_STATUS.OK, true, 'Quotation request updated successfully', quotationRequest);
         } catch (error) {
             return responseHandler(res, HTTP_STATUS.BAD_REQUEST, false, error.message);
         }
     }
 
-    async deleteInquiry(req, res) {
+    async deleteQuotationRequest(req, res) {
         try {
-            await quotationService.deleteInquiry(req.params.id, req.user);
-            return responseHandler(res, HTTP_STATUS.OK, true, 'Quotation inquiry deleted successfully');
+            await quotationService.deleteQuotationRequest(req.params.id, req.user);
+            return responseHandler(res, HTTP_STATUS.OK, true, 'Quotation request deleted successfully');
         } catch (error) {
             return responseHandler(res, HTTP_STATUS.BAD_REQUEST, false, error.message);
         }
@@ -102,4 +105,3 @@ class QuotationController {
 }
 
 module.exports = new QuotationController();
-
