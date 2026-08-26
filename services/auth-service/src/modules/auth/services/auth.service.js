@@ -116,24 +116,20 @@ class AuthService {
         const user = await authRepository.findUserByEmail(email);
         if (!user) throw new Error('Invalid credentials');
 
-        if (!user.isActive) {
-            throw new Error('Your account is inactive. Please wait for Super Admin approval.');
-        }
-
-        if (user.role && user.role.isActive === false) {
-            throw new Error('Your assigned role is currently inactive. Please wait for Super Admin approval.');
-        }
-
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) throw new Error('Invalid credentials');
+
+        const isUserActive = user.isActive !== false;
+        const roleName = user.role?.name || 'company_admin';
 
         const token = jwt.sign(
             { 
                 id: user.id, 
                 email: user.email, 
-                role: user.role.name, 
+                role: roleName, 
                 companyId: user.companyId,
-                name: `${user.firstName} ${user.lastName || ''}`.trim()
+                name: `${user.firstName} ${user.lastName || ''}`.trim(),
+                isActive: isUserActive
             },
             JWT_SECRET,
             { expiresIn: '365000d' }
@@ -141,7 +137,19 @@ class AuthService {
 
         await authRepository.updateUserLastLogin(user.id);
 
-        return { token };
+        return { 
+            token,
+            user: {
+                id: user.id,
+                email: user.email,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                name: `${user.firstName} ${user.lastName || ''}`.trim(),
+                role: roleName,
+                companyId: user.companyId,
+                isActive: isUserActive
+            }
+        };
     }
 
     async forgotPassword(email) {
