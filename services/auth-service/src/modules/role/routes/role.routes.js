@@ -24,17 +24,17 @@ async function roleRoutes(fastify, options) {
     fastify.get('/', roleController.getRoles);
     fastify.get('/:id', roleController.getRole);
 
-    // Restricted to Super Admin only
+    // Restricted to Super Admin & Sub Super Admin
     fastify.post('/', { 
-        preHandler: [authorize(['super_admin']), roleValidation] 
+        preHandler: [authorize(['super_admin', 'sub_super_admin']), roleValidation] 
     }, roleController.createRole);
     
     fastify.put('/:id', { 
-        preHandler: [authorize(['super_admin']), roleValidation] 
+        preHandler: [authorize(['super_admin', 'sub_super_admin']), roleValidation] 
     }, roleController.updateRole);
     
     fastify.delete('/:id', { 
-        preHandler: authorize(['super_admin']) 
+        preHandler: authorize(['super_admin', 'sub_super_admin']) 
     }, roleController.deleteRole);
 }
 

@@ -17,38 +17,6 @@ async function resolveCompanyId(companyId) {
     }
 }
 
-function computeComponentMetrics(comp) {
-    const plannedLife = Number(comp.plannedLife || 2000) <= 0 ? 2000 : Number(comp.plannedLife);
-    const currentHours = Number(comp.currentHours || 0);
-    const installHours = Number(comp.installHours || 0);
-    const condition = Number(comp.condition || 3);
-
-    const hoursRun = Math.max(0, currentHours - installHours);
-    const lifeUsedPercent = Math.min(100, Math.max(0, Math.round((hoursRun / plannedLife) * 100)));
-    const healthScore = Math.max(0, 100 - lifeUsedPercent);
-
-    let status = 'Healthy';
-    if (condition >= 5 || lifeUsedPercent >= 95) {
-        status = 'Critical';
-    } else if (condition >= 4 || lifeUsedPercent >= 85) {
-        status = 'Warning';
-    } else if (condition >= 3 || lifeUsedPercent >= 70) {
-        status = 'Monitor';
-    }
-
-    const compName = comp.name || (comp.description ? comp.description.split(" - ")[0].trim() : "Component");
-
-    return {
-        ...comp,
-        name: compName,
-        serialNumber: comp.serialNumber ? comp.serialNumber.replace(/^DEMO-/i, '') : comp.serialNumber,
-        hoursRun,
-        lifeUsedPercent,
-        healthScore,
-        status
-    };
-}
-
 async function enrichMachinesWithCompany(machines) {
     if (!machines) return machines;
     const isArray = Array.isArray(machines);
@@ -75,20 +43,12 @@ async function enrichMachinesWithCompany(machines) {
 
     const enriched = list.map(m => {
         const company = m?.companyId ? companyMap.get(m.companyId) : null;
-        const comps = Array.isArray(m?.components) ? m.components.map(computeComponentMetrics) : [];
-
-        const hasManualInspection = m.healthScore !== null && m.healthScore !== undefined;
-
-        let avgHealth = hasManualInspection ? Number(m.healthScore) : null;
-        let machineStatus = hasManualInspection ? m.status : null;
+        const comps = Array.isArray(m?.components) ? m.components : [];
 
         return {
             ...m,
-            serialNumber: m?.serialNumber ? m.serialNumber.replace(/^DEMO-/i, '') : m?.serialNumber,
             componentsCount: comps.length,
             components: comps,
-            healthScore: avgHealth,
-            status: machineStatus,
             companyCode: company?.companyCode || null,
             companyName: company?.name || null
         };
@@ -104,13 +64,27 @@ class MachineRepository {
     }
 
     async findAll(companyId) {
-        const whereClause = (companyId && companyId !== 'all') ? { companyId } : {};
-        const machines = await prisma.machine.findMany({
-            where: whereClause,
-            include: { 
-                components: true
-            }
-        });
+        let actualCompanyId = companyId;
+        if (companyId && companyId !== 'all') {
+            const resolved = await resolveCompanyId(companyId);
+            if (resolved) actualCompanyId = resolved;
+        }
+
+        const whereClause = (actualCompanyId && actualCompanyId !== 'all') ? { companyId: actualCompanyId } : {};
+        let machines = [];
+        try {
+            machines = await prisma.machine.findMany({
+                where: whereClause,
+                include: { 
+                    components: true
+                },
+                orderBy: { createdAt: 'desc' }
+            });
+        } catch (e) {
+            console.error('[FIND_ALL_MACHINES_ERR]:', e.message);
+            machines = [];
+        }
+
         return await enrichMachinesWithCompany(machines);
     }
 
@@ -161,10 +135,22 @@ class MachineRepository {
     }
 
     async findById(id) {
-        const machine = await prisma.machine.findUnique({
-            where: { id },
-            include: { components: true }
-        });
+        if (!id) return null;
+        let machine = null;
+        try {
+            machine = await prisma.machine.findFirst({
+                where: {
+                    OR: [
+                        { id: id },
+                        { serialNumber: id },
+                        { name: id }
+                    ]
+                },
+                include: { components: true }
+            });
+        } catch (e) {
+            console.warn('[FIND_BY_ID_WARN]:', e.message);
+        }
         return await enrichMachinesWithCompany(machine);
     }
 
@@ -191,14 +177,6 @@ class MachineRepository {
         const whereClause = {};
         if (!includeInactive) {
             whereClause.isActive = true;
-        }
-        if (companyId && companyId !== 'all') {
-            const validCompanyId = await resolveCompanyId(companyId);
-            whereClause.OR = [
-                { companyId: companyId },
-                ...(validCompanyId ? [{ companyId: validCompanyId }] : []),
-                { companyId: null }
-            ];
         }
         return await prisma.machineCategory.findMany({
             where: whereClause,
@@ -232,11 +210,28 @@ class MachineRepository {
     }
 
     async update(id, data) {
-        const machine = await prisma.machine.update({
-            where: { id },
-            data,
-            include: { components: true }
-        });
+        if (!id) return null;
+        let machine = null;
+        try {
+            const found = await prisma.machine.findFirst({
+                where: {
+                    OR: [
+                        { id: id },
+                        { serialNumber: id },
+                        { name: id }
+                    ]
+                }
+            });
+            if (found) {
+                machine = await prisma.machine.update({
+                    where: { id: found.id },
+                    data,
+                    include: { components: true }
+                });
+            }
+        } catch (e) {
+            console.error('[MACHINE_UPDATE_ERR]:', e.message);
+        }
         return await enrichMachinesWithCompany(machine);
     }
 
@@ -244,6 +239,15 @@ class MachineRepository {
         return await prisma.machine.delete({
             where: { id }
         });
+    }
+
+    async getConditions() {
+        try {
+            return await prisma.$queryRawUnsafe('SELECT id, rating, name, code, description, color, is_active AS "isActive" FROM "machine_conditions" WHERE "is_active" = true ORDER BY rating ASC;');
+        } catch (error) {
+            console.error('Failed to fetch machine conditions from DB:', error);
+            return [];
+        }
     }
 }
 

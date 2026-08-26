@@ -109,10 +109,14 @@ class SubscriptionController {
     async getCompanySubscriptions(req, res) {
         try {
             const subscriptions = await subscriptionService.getCompanySubscriptionHistory(req.user.companyId);
-            const message = subscriptions.length > 0 
+            const cleaned = (subscriptions || []).map(sub => {
+                const { userId, ...rest } = sub;
+                return rest;
+            });
+            const message = cleaned.length > 0 
                 ? 'Subscriptions fetched successfully' 
                 : 'No subscriptions found for this company.';
-            return responseHandler(res, HTTP_STATUS.OK, message, subscriptions);
+            return responseHandler(res, HTTP_STATUS.OK, message, cleaned);
         } catch (error) {
             throw error;
         }
@@ -121,10 +125,14 @@ class SubscriptionController {
     async getAllSubscriptions(req, res) {
         try {
             const subscriptions = await subscriptionService.getCompanySubscriptions();
-            const message = subscriptions.length > 0 
+            const cleaned = (subscriptions || []).map(sub => {
+                const { userId, ...rest } = sub;
+                return rest;
+            });
+            const message = cleaned.length > 0 
                 ? 'Subscriptions fetched successfully' 
                 : 'No subscriptions found in the system.';
-            return responseHandler(res, HTTP_STATUS.OK, message, subscriptions);
+            return responseHandler(res, HTTP_STATUS.OK, message, cleaned);
         } catch (error) {
             throw error;
         }
@@ -133,10 +141,15 @@ class SubscriptionController {
     async getActiveSubscription(req, res) {
         try {
             const subscription = await subscriptionService.getActiveSubscriptionWithPlan(req.user.companyId);
-            const message = subscription 
+            let cleaned = null;
+            if (subscription) {
+                const { userId, ...rest } = subscription;
+                cleaned = rest;
+            }
+            const message = cleaned 
                 ? 'Active subscription fetched successfully' 
                 : 'No active subscription found for this company.';
-            return responseHandler(res, HTTP_STATUS.OK, message, subscription);
+            return responseHandler(res, HTTP_STATUS.OK, message, cleaned);
         } catch (error) {
             throw error;
         }

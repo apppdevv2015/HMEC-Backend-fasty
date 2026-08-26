@@ -70,6 +70,13 @@ const setupProxy = async (fastify) => {
         prefix: `${VERSION}/job-cards`,
         rewritePrefix: '/job-cards'
     });
+
+    // Manual Inspections -> Intelligence Service (maps to machines/manual-data)
+    await fastify.register(fastifyHttpProxy, {
+        upstream: SERVICES.intelligence,
+        prefix: `${VERSION}/manual-inspections`,
+        rewritePrefix: '/machines'
+    });
 };
 
 module.exports = setupProxy;

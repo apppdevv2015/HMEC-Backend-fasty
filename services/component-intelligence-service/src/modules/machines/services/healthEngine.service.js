@@ -1,52 +1,110 @@
 /**
  * Health Engine Calculator for Heavy Mining Equipment (HME)
- * Evaluates Operating Parameters & Inspection Checklists to compute Health Status (Healthy, Warning, Critical) and Health Score (0-100).
+ * Evaluates Operating Parameters & Inspection Checklists against OEM Safe Limits
+ * (safeMin, safeMax) to compute Component Health Score (0-100) and Status (Healthy, Warning, Critical).
  */
 class HealthEngineService {
     calculateHealth(readings = {}, checklist = {}, customFields = []) {
-        let penalties = 0;
         const issues = [];
         let status = 'Healthy';
 
-        const fieldsList = Array.isArray(customFields) ? customFields : [];
+        let fieldsList = [];
+        if (Array.isArray(customFields)) {
+            fieldsList = customFields;
+        } else if (customFields && Array.isArray(customFields.customFields)) {
+            fieldsList = customFields.customFields;
+        }
+
+        if (fieldsList.length === 0) {
+            return {
+                status: 'Healthy',
+                healthScore: 100,
+                issues: [],
+                evaluatedAt: new Date().toISOString()
+            };
+        }
+
+        const paramScores = [];
 
         fieldsList.forEach(f => {
-            const name = String(f.name || '').toLowerCase();
-            const val = String(f.value || '').toLowerCase();
+            if (!f || !f.name) return;
+            const name = String(f.name || '').trim();
+            const unit = f.unit ? ` ${f.unit}` : '';
+            const rawVal = f.value !== undefined && f.value !== null ? f.value : '';
+            const strVal = String(rawVal).trim().toLowerCase();
 
-            if (val.includes('crit') || val.includes('fail') || val.includes('severe')) {
+            let paramScore = 100;
+
+            // 1. Qualitative / Text matching
+            if (strVal.includes('crit') || strVal.includes('fail') || strVal.includes('severe') || strVal.includes('bad') || strVal.includes('damage') || strVal.includes('leak')) {
                 status = 'Critical';
-                penalties += 35;
-                issues.push(`Critical issue in ${f.name || 'Parameter'}: ${f.value}`);
-            } else if (val.includes('warn') || val.includes('high') || val.includes('low') || val.includes('leak')) {
+                paramScore = 20;
+                issues.push(`Critical condition detected in ${name}: "${rawVal}"`);
+                paramScores.push(paramScore);
+                return;
+            } else if (strVal.includes('warn') || strVal.includes('poor') || strVal.includes('degraded') || strVal.includes('wear')) {
                 if (status !== 'Critical') status = 'Warning';
-                penalties += 20;
-                issues.push(`Warning in ${f.name || 'Parameter'}: ${f.value}`);
+                paramScore = 65;
+                issues.push(`Warning condition detected in ${name}: "${rawVal}"`);
+                paramScores.push(paramScore);
+                return;
             }
 
-            const num = parseFloat(val);
+            // 2. Numeric evaluation with Safe Operating Range (safeMin, safeMax)
+            const num = parseFloat(rawVal);
             if (!isNaN(num)) {
-                if (name.includes('temp') && num > 95) {
-                    if (num > 105) status = 'Critical';
-                    else if (status !== 'Critical') status = 'Warning';
-                    penalties += 20;
-                    issues.push(`Elevated ${f.name || 'Temperature'}: ${num}`);
-                } else if (name.includes('press') && num < 2.0 && num > 0) {
-                    if (status !== 'Critical') status = 'Warning';
-                    penalties += 20;
-                    issues.push(`Low ${f.name || 'Pressure'}: ${num}`);
-                } else if ((name.includes('volt') || name.includes('v') || name.includes('battery')) && (num > 32 || num < 20)) {
-                    if (num > 50 || num < 15) status = 'Critical';
-                    else if (status !== 'Critical') status = 'Warning';
-                    penalties += 30;
-                    issues.push(`Abnormal ${f.name || 'Voltage'} Reading: ${num}`);
+                const hasMin = f.safeMin !== undefined && f.safeMin !== null && !isNaN(Number(f.safeMin));
+                const hasMax = f.safeMax !== undefined && f.safeMax !== null && !isNaN(Number(f.safeMax));
+
+                if (hasMin && hasMax) {
+                    const safeMin = Number(f.safeMin);
+                    const safeMax = Number(f.safeMax);
+                    const rangeSpan = Math.max(1, safeMax - safeMin);
+
+                    if (num < safeMin) {
+                        const delta = safeMin - num;
+                        const severity = delta / rangeSpan;
+                        if (severity > 0.25 || num <= 0) {
+                            status = 'Critical';
+                            paramScore = Math.max(15, Math.round(50 - (severity * 20)));
+                            issues.push(`🔴 CRITICAL LOW: ${name} is ${num}${unit} (Safe: ${safeMin} - ${safeMax}${unit})`);
+                        } else {
+                            if (status !== 'Critical') status = 'Warning';
+                            paramScore = Math.max(60, Math.round(85 - (severity * 30)));
+                            issues.push(`🟡 LOW READING: ${name} is ${num}${unit} (Safe: ${safeMin} - ${safeMax}${unit})`);
+                        }
+                    } else if (num > safeMax) {
+                        const delta = num - safeMax;
+                        const severity = delta / rangeSpan;
+                        if (severity > 0.25) {
+                            status = 'Critical';
+                            paramScore = Math.max(15, Math.round(50 - (severity * 20)));
+                            issues.push(`🔴 CRITICAL HIGH: ${name} is ${num}${unit} (Safe: ${safeMin} - ${safeMax}${unit})`);
+                        } else {
+                            if (status !== 'Critical') status = 'Warning';
+                            paramScore = Math.max(60, Math.round(85 - (severity * 30)));
+                            issues.push(`🟡 HIGH READING: ${name} is ${num}${unit} (Safe: ${safeMin} - ${safeMax}${unit})`);
+                        }
+                    } else {
+                        paramScore = 100;
+                    }
+                } else {
+                    paramScore = 100;
                 }
+            } else {
+                paramScore = 100;
             }
+
+            paramScores.push(paramScore);
         });
 
-        const healthScore = Math.max(10, 100 - penalties);
-        if (healthScore < 50) status = 'Critical';
+        const totalParamScore = paramScores.reduce((sum, s) => sum + s, 0);
+        const avgScore = paramScores.length > 0 ? Math.round(totalParamScore / paramScores.length) : 100;
+        const healthScore = Math.max(10, Math.min(100, avgScore));
+
+        if (healthScore < 50 || status === 'Critical') status = 'Critical';
         else if (healthScore < 85 && status !== 'Critical') status = 'Warning';
+        else if (healthScore >= 85 && issues.length === 0) status = 'Healthy';
 
         return {
             status,
