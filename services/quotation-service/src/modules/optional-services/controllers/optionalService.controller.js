@@ -5,9 +5,16 @@ const { HTTP_STATUS } = responseHandler;
 class OptionalServiceController {
     async getPublicServices(req, res) {
         try {
-            const { category, search } = req.query;
-            const services = await optionalServiceService.getPublicServices({ category, search });
-            return responseHandler(res, HTTP_STATUS.OK, true, 'Optional services fetched successfully', services);
+            const { search, page, limit } = req.query;
+            const result = await optionalServiceService.getPublicServices({ search, page, limit });
+            return responseHandler(
+                res, 
+                HTTP_STATUS.OK, 
+                true, 
+                'Optional services fetched successfully', 
+                result.data,
+                { total: result.total, page: result.page, limit: result.limit, totalPages: result.totalPages }
+            );
         } catch (error) {
             return responseHandler(res, HTTP_STATUS.BAD_REQUEST, false, error.message);
         }
@@ -15,12 +22,19 @@ class OptionalServiceController {
 
     async getAdminServices(req, res) {
         try {
-            const { category, search, isActive } = req.query;
-            const filter = { category, search };
+            const { search, isActive, page, limit } = req.query;
+            const filter = { search, page, limit };
             if (isActive !== undefined) filter.isActive = isActive === 'true' || isActive === true;
             
-            const services = await optionalServiceService.getAdminServices(filter);
-            return responseHandler(res, HTTP_STATUS.OK, true, 'Admin optional services fetched successfully', services);
+            const result = await optionalServiceService.getAdminServices(filter);
+            return responseHandler(
+                res, 
+                HTTP_STATUS.OK, 
+                true, 
+                'Admin optional services fetched successfully', 
+                result.data,
+                { total: result.total, page: result.page, limit: result.limit, totalPages: result.totalPages }
+            );
         } catch (error) {
             return responseHandler(res, HTTP_STATUS.BAD_REQUEST, false, error.message);
         }

@@ -172,40 +172,6 @@ class ManualInspectionController {
                         allParameterChanges.push(...compChanges);
                     }
 
-                    // Update or Create ComponentHealth record
-                    try {
-                        const existingRec = await prisma.componentHealth.findFirst({
-                            where: { machineId: targetMachineId, componentName: cName }
-                        });
-
-                        if (existingRec) {
-                            await prisma.componentHealth.update({
-                                where: { id: existingRec.id },
-                                data: {
-                                    componentName: cName,
-                                    serialNumber: finalSerialNumber,
-                                    parameters: safeParams,
-                                    healthScore: cHealth.healthScore,
-                                    status: cHealth.status,
-                                    updatedAt: new Date()
-                                }
-                            });
-                        } else {
-                            await prisma.componentHealth.create({
-                                data: {
-                                    machineId: targetMachineId,
-                                    componentName: cName,
-                                    serialNumber: finalSerialNumber,
-                                    parameters: safeParams,
-                                    healthScore: cHealth.healthScore,
-                                    status: cHealth.status
-                                }
-                            });
-                        }
-                    } catch (e) {
-                        console.warn('[COMPONENT_HEALTH_BATCH_SYNC_WARN]:', e.message);
-                    }
-
                     processedComponents.push({
                         componentName: cName,
                         componentCategory: cCategory,
@@ -217,12 +183,47 @@ class ManualInspectionController {
                     });
                 }
 
-                // Compute aggregate Machine Health across ALL installed components
+                // Execute all database writes atomically using Prisma $transaction
                 let overallMachineHealth = 100;
                 let machineStatus = 'Healthy';
+                let auditLogRow = null;
+                const batchActionType = hasAnyChanges ? 'ROUTINE_UPDATE' : 'INITIAL_INSPECTION';
 
-                try {
-                    const allCompRecords = await prisma.componentHealth.findMany({
+                await prisma.$transaction(async (tx) => {
+                    // 1. Atomically Upsert ComponentHealth records
+                    for (const comp of processedComponents) {
+                        const existingRec = await tx.componentHealth.findFirst({
+                            where: { machineId: targetMachineId, componentName: comp.componentName }
+                        });
+
+                        if (existingRec) {
+                            await tx.componentHealth.update({
+                                where: { id: existingRec.id },
+                                data: {
+                                    componentName: comp.componentName,
+                                    serialNumber: finalSerialNumber,
+                                    parameters: comp.parameters,
+                                    healthScore: comp.healthScore,
+                                    status: comp.status,
+                                    updatedAt: new Date()
+                                }
+                            });
+                        } else {
+                            await tx.componentHealth.create({
+                                data: {
+                                    machineId: targetMachineId,
+                                    componentName: comp.componentName,
+                                    serialNumber: finalSerialNumber,
+                                    parameters: comp.parameters,
+                                    healthScore: comp.healthScore,
+                                    status: comp.status
+                                }
+                            });
+                        }
+                    }
+
+                    // 2. Compute aggregate Machine Health across ALL installed components in tx
+                    const allCompRecords = await tx.componentHealth.findMany({
                         where: { machineId: targetMachineId }
                     });
 
@@ -239,7 +240,7 @@ class ManualInspectionController {
                     }
 
                     if (resolvedMachine) {
-                        await prisma.machine.update({
+                        await tx.machine.update({
                             where: { id: targetMachineId },
                             data: {
                                 healthScore: overallMachineHealth,
@@ -247,16 +248,9 @@ class ManualInspectionController {
                             }
                         });
                     }
-                } catch (e) {
-                    console.warn('[MACHINE_BATCH_HEALTH_WARN]:', e.message);
-                }
 
-                const batchActionType = hasAnyChanges ? 'ROUTINE_UPDATE' : 'INITIAL_INSPECTION';
-
-                // INSERT EXACTLY ONE CONSOLIDATED AUDIT LOG ROW FOR THE ENTIRE MACHINE INSPECTION
-                let auditLogRow = null;
-                try {
-                    auditLogRow = await prisma.machineInspectionAuditLog.create({
+                    // 3. INSERT EXACTLY ONE CONSOLIDATED AUDIT LOG ROW FOR THE ENTIRE MACHINE INSPECTION
+                    auditLogRow = await tx.machineInspectionAuditLog.create({
                         data: {
                             actionType: batchActionType,
                             companyId,
@@ -282,9 +276,7 @@ class ManualInspectionController {
                             issues: allIssues.length > 0 ? allIssues : null
                         }
                     });
-                } catch (auditErr) {
-                    console.error('[BATCH_AUDIT_LOG_INSERT_ERR]:', auditErr);
-                }
+                });
 
                 return responseHandler(res, HTTP_STATUS.OK, true, `Full machine inspection saved (${batchComponents.length} components). Machine Health: ${overallMachineHealth}% (${machineStatus})`, {
                     actionType: batchActionType,
