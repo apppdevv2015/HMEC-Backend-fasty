@@ -589,6 +589,37 @@ model Quotation {
   @@map("quotations")
 }
 
+model QuotationInquiry {
+  id                         String    @id @default(uuid())
+  inquiryId                  String    @unique @map("inquiry_id")
+  companyId                  String    @map("company_id")
+  companyName                String    @map("company_name")
+  contactPerson              String?   @map("contact_person")
+  email                      String
+  phone                      String?
+  siteLocation               String?   @map("site_location")
+  quotationType              String    @map("quotation_type")
+  numberOfSites              Int       @default(1) @map("number_of_sites")
+  siteNames                  Json      @default("[]") @map("site_names")
+  activeMachines             Int       @default(1) @map("active_machines")
+  equipmentTypes             Json      @default("[]") @map("equipment_types")
+  contractDuration           String    @default("12 Months") @map("contract_duration")
+  implementationRequirements String?   @map("implementation_requirements")
+  additionalRequirements     String?   @map("additional_requirements")
+  attachmentUrl              String?   @map("attachment_url")
+  attachmentFileName         String?   @map("attachment_file_name")
+  attachmentFileType         String?   @map("attachment_file_type")
+  attachmentSize             Int?      @map("attachment_size")
+  status                     String    @default("ACTIVE")
+  quotationStatus            String?   @map("quotation_status")
+  createdAt                  DateTime  @default(now()) @map("created_at")
+  updatedAt                  DateTime  @updatedAt @map("updated_at")
+
+  @@index([companyId])
+  @@index([status])
+  @@map("quotation_inquiries")
+}
+
 model QuotationRequest {
   id                         String    @id @default(uuid())
   requestId                  String    @unique @map("request_id")
