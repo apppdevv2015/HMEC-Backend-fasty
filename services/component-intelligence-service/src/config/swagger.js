@@ -27,7 +27,7 @@ const swaggerOptions = {
     apis: [
         path.resolve(__dirname, '../../swagger/*.js'),
         path.resolve(__dirname, '../modules/**/*.js'),
-    ], 
+    ],
 };
 
 const setupSwagger = async (fastify) => {

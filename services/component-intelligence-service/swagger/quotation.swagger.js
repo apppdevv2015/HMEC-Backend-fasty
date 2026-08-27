@@ -384,6 +384,7 @@
  *     summary: List all active optional services
  *     description: Public and client-facing catalogue of active value-added optional services for quotation building.
  *     tags: [Optional Quotation Services]
+ *     security: []
  *     parameters:
  *       - in: query
  *         name: search
@@ -440,6 +441,7 @@
  *   get:
  *     summary: Get single optional service details
  *     tags: [Optional Quotation Services]
+ *     security: []
  *     parameters:
  *       - in: path
  *         name: id

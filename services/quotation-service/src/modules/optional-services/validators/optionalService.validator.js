@@ -35,7 +35,7 @@ class OptionalServiceValidator {
             name: trimmedName,
             description: data.description ? data.description.trim() : null,
             sortOrder,
-            isActive: data.isActive !== undefined ? Boolean(data.isActive) : false
+            isActive: data.isActive !== undefined ? Boolean(data.isActive) : true
         };
     }
 

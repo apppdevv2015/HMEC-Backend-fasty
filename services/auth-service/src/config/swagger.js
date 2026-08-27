@@ -27,7 +27,7 @@ const swaggerOptions = {
     apis: [
         path.join(__dirname, '../**/*.js').replace(/\\/g, '/'),
         path.join(__dirname, '../../swagger/*.js').replace(/\\/g, '/')
-    ], 
+    ],
 };
 
 const swaggerDocs = swaggerJsdoc(swaggerOptions);
