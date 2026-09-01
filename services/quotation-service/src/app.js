@@ -7,6 +7,7 @@ const fastifyCors = require('@fastify/cors');
 const setupSwagger = require('./config/swagger');
 const optionalServiceRoutes = require('./modules/optional-services/routes/optionalService.routes');
 const quotationRoutes = require('./modules/quotations/routes/quotation.routes');
+const quotationPlanRoutes = require('./modules/quotation-plans/routes/quotationPlan.routes');
 
 function buildApp(opts = {}) {
     const fastify = Fastify(opts);
@@ -46,6 +47,9 @@ function buildApp(opts = {}) {
 
     fastify.register(quotationRoutes, { prefix: '/quotations' });
     fastify.register(quotationRoutes, { prefix: '/api/v1/quotations' });
+
+    fastify.register(quotationPlanRoutes, { prefix: '/quotation-plans' });
+    fastify.register(quotationPlanRoutes, { prefix: '/api/v1/quotation-plans' });
 
     return fastify;
 }

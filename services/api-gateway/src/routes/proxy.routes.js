@@ -44,6 +44,13 @@ const setupProxy = async (fastify) => {
         rewritePrefix: '/machines'
     });
 
+    // Equipment Types -> Intelligence Service (maps to /machines/equipment-types)
+    await fastify.register(fastifyHttpProxy, {
+        upstream: SERVICES.intelligence,
+        prefix: `${VERSION}/equipment-types`,
+        rewritePrefix: '/machines/equipment-types'
+    });
+
     // Components -> Intelligence Service
     await fastify.register(fastifyHttpProxy, {
         upstream: SERVICES.intelligence,
@@ -91,6 +98,13 @@ const setupProxy = async (fastify) => {
         upstream: SERVICES.quotation,
         prefix: `${VERSION}/quotations`,
         rewritePrefix: '/quotations'
+    });
+
+    // Quotation Plans (Master Pricing Tiers) -> Quotation Service
+    await fastify.register(fastifyHttpProxy, {
+        upstream: SERVICES.quotation,
+        prefix: `${VERSION}/quotation-plans`,
+        rewritePrefix: '/quotation-plans'
     });
 };
 

@@ -16,14 +16,14 @@ class SubscriptionController {
                     if (decoded && decoded.role === 'super_admin') {
                         showAll = true;
                     }
-                } catch (e) {}
+                } catch (e) { }
             }
 
             const plans = await subscriptionService.getAllPlans(!showAll);
             let message = 'Plans fetched successfully';
             if (plans.length === 0) {
-                message = showAll 
-                    ? 'No plans found. Please create a plan first.' 
+                message = showAll
+                    ? 'No plans found. Please create a plan first.'
                     : 'No active plans are currently available.';
             }
             return responseHandler(res, HTTP_STATUS.OK, message, plans);
@@ -35,11 +35,11 @@ class SubscriptionController {
     async createPlan(req, res) {
         try {
             const { plan_name, machine_limit, staff_limit, price, features, validity_days, is_public, is_active } = req.body;
-            const plan = await subscriptionService.createPlan({ 
-                name: plan_name, 
-                machineLimit: machine_limit, 
+            const plan = await subscriptionService.createPlan({
+                name: plan_name,
+                machineLimit: machine_limit,
                 staffLimit: staff_limit,
-                price, 
+                price,
                 features,
                 validityDays: validity_days,
                 isPublic: is_public ?? true,
@@ -84,8 +84,8 @@ class SubscriptionController {
         try {
             const { plan_id, idempotency_key } = req.body;
             const checkoutData = await subscriptionService.initiateCheckout(
-                req.user.id, 
-                plan_id, 
+                req.user.id,
+                plan_id,
                 req.user.companyId,
                 req.user.email,
                 idempotency_key
@@ -113,8 +113,8 @@ class SubscriptionController {
                 const { userId, ...rest } = sub;
                 return rest;
             });
-            const message = cleaned.length > 0 
-                ? 'Subscriptions fetched successfully' 
+            const message = cleaned.length > 0
+                ? 'Subscriptions fetched successfully'
                 : 'No subscriptions found for this company.';
             return responseHandler(res, HTTP_STATUS.OK, message, cleaned);
         } catch (error) {
@@ -129,8 +129,8 @@ class SubscriptionController {
                 const { userId, ...rest } = sub;
                 return rest;
             });
-            const message = cleaned.length > 0 
-                ? 'Subscriptions fetched successfully' 
+            const message = cleaned.length > 0
+                ? 'Subscriptions fetched successfully'
                 : 'No subscriptions found in the system.';
             return responseHandler(res, HTTP_STATUS.OK, message, cleaned);
         } catch (error) {
@@ -146,8 +146,8 @@ class SubscriptionController {
                 const { userId, ...rest } = subscription;
                 cleaned = rest;
             }
-            const message = cleaned 
-                ? 'Active subscription fetched successfully' 
+            const message = cleaned
+                ? 'Active subscription fetched successfully'
                 : 'No active subscription found for this company.';
             return responseHandler(res, HTTP_STATUS.OK, message, cleaned);
         } catch (error) {

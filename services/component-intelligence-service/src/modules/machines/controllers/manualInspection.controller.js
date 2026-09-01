@@ -1325,6 +1325,34 @@ class ManualInspectionController {
             return responseHandler(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, false, err.message);
         }
     };
+
+    /**
+     * Get All Equipment Types from Master Catalog (Clean Simple List)
+     * e.g. ["All Terrain Crane", "Articulated Dump Truck", "Hydraulic Excavator", "Mining Haul Truck", ...]
+     */
+    getEquipmentTypes = async (req, res) => {
+        try {
+            const { search = '' } = req.query || {};
+            const metadata = await equipmentSpecMasterService.getFiltersMetadata();
+            let categories = metadata.categories || [];
+
+            if (search && search.trim()) {
+                const s = search.trim().toLowerCase();
+                categories = categories.filter(c => c.name && c.name.toLowerCase().includes(s));
+            }
+
+            // Clean, sorted distinct array of equipment types
+            const equipmentTypes = categories
+                .map(c => c.name)
+                .filter(Boolean)
+                .sort((a, b) => a.localeCompare(b));
+
+            return responseHandler(res, HTTP_STATUS.OK, true, 'Equipment types fetched successfully', equipmentTypes);
+        } catch (err) {
+            console.error('[GET_EQUIPMENT_TYPES_ERR]:', err);
+            return responseHandler(res, HTTP_STATUS.INTERNAL_SERVER_ERROR, false, err.message);
+        }
+    };
 }
 
 module.exports = new ManualInspectionController();

@@ -166,7 +166,18 @@ class AuthController {
             return responseHandler(res, HTTP_STATUS.BAD_REQUEST, error.message, null, error);
         }
     }
+
+    async impersonate(req, res) {
+        try {
+            const { companyId, userId, email } = req.body || {};
+            const result = await authService.impersonate(req.user, { companyId, userId, email });
+            return responseHandler(res, HTTP_STATUS.OK, 'Impersonation successful', result);
+        } catch (error) {
+            return responseHandler(res, HTTP_STATUS.BAD_REQUEST, error.message, null, error);
+        }
+    }
 }
 
 module.exports = new AuthController();
+
 

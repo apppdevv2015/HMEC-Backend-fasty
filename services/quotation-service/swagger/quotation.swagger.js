@@ -697,22 +697,6 @@
  *                 data:
  *                   $ref: '#/components/schemas/Quotation'
  *
- * /quotations/request:
- *   post:
- *     summary: Company Admin - Submit new quotation request / inquiry
- *     tags: [Quotation]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/QuotationRequestInput'
- *     responses:
- *       201:
- *         description: Quotation request submitted
- *
  * /quotations/send:
  *   post:
  *     summary: Super Admin - Create and send formal quotation proposal
