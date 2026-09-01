@@ -109,7 +109,25 @@ class AuthService {
             }
         });
 
-        return result;
+        const roleName = result.user.role?.name || 'company_admin';
+        const token = jwt.sign(
+            { 
+                id: result.user.id, 
+                email: result.user.email, 
+                role: roleName, 
+                companyId: result.company.id,
+                name: `${result.user.firstName} ${result.user.lastName || ''}`.trim(),
+                isActive: result.user.isActive !== false
+            },
+            JWT_SECRET,
+            { expiresIn: '365000d' }
+        );
+
+        return {
+            ...result,
+            token,
+            accessToken: token
+        };
     }
 
     async login(email, password) {
@@ -287,6 +305,85 @@ class AuthService {
             message: 'Password has been reset successfully! You can now log in.'
         };
     }
+
+    async impersonate(requestingUser, { companyId, userId, email }) {
+        if (!requestingUser || requestingUser.role !== 'super_admin') {
+            throw new Error('Unauthorized. Only Super Admin can login as another company.');
+        }
+
+        let targetUser = null;
+
+        if (userId) {
+            targetUser = await prisma.user.findUnique({
+                where: { id: userId },
+                include: { role: true, company: true }
+            });
+        }
+
+        if (!targetUser && companyId) {
+            // Find company admin first
+            targetUser = await prisma.user.findFirst({
+                where: {
+                    companyId: companyId,
+                    role: { name: 'admin' }
+                },
+                include: { role: true, company: true }
+            });
+
+            // If no user with role 'admin', find any active user in that company
+            if (!targetUser) {
+                targetUser = await prisma.user.findFirst({
+                    where: { companyId: companyId },
+                    include: { role: true, company: true }
+                });
+            }
+        }
+
+        if (!targetUser && email) {
+            targetUser = await prisma.user.findUnique({
+                where: { email: email.trim().toLowerCase() },
+                include: { role: true, company: true }
+            });
+        }
+
+        if (!targetUser) {
+            throw new Error('Target company user or administrator not found.');
+        }
+
+        const isUserActive = targetUser.isActive !== false;
+        const roleName = targetUser.role?.name || 'company_admin';
+
+        const token = jwt.sign(
+            { 
+                id: targetUser.id, 
+                email: targetUser.email, 
+                role: roleName, 
+                companyId: targetUser.companyId,
+                name: `${targetUser.firstName} ${targetUser.lastName || ''}`.trim(),
+                isActive: isUserActive,
+                impersonatedBy: requestingUser.id
+            },
+            JWT_SECRET,
+            { expiresIn: '365000d' }
+        );
+
+        return { 
+            token,
+            user: {
+                id: targetUser.id,
+                email: targetUser.email,
+                firstName: targetUser.firstName,
+                lastName: targetUser.lastName,
+                name: `${targetUser.firstName} ${targetUser.lastName || ''}`.trim(),
+                role: roleName,
+                companyId: targetUser.companyId,
+                companyName: targetUser.company?.name || '',
+                companyCode: targetUser.company?.companyCode || '',
+                isActive: isUserActive
+            }
+        };
+    }
 }
 
 module.exports = new AuthService();
+

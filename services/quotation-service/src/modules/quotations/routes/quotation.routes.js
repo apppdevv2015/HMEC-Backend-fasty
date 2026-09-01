@@ -24,9 +24,6 @@ async function quotationRoutes(fastify, options) {
     fastify.get('/', { preHandler: authMiddleware }, quotationController.getQuotations);
     fastify.get('/:id', { preHandler: authMiddleware }, quotationController.getQuotationById);
 
-    // Company Admin requests quote (Legacy / Snapshot)
-    fastify.post('/request', { preHandler: [authMiddleware, requireCompanyAdmin] }, quotationController.requestQuotation);
-
     // Super Admin sends official quote
     fastify.post('/send', { preHandler: [authMiddleware, requireSuperAdmin] }, quotationController.sendQuotation);
 

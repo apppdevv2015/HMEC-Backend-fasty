@@ -88,6 +88,15 @@ async function machineRoutes(fastify, options) {
         }
     }, manualInspectionController.getMasterCatalog);
 
+    // Get All Equipment Types from Master Catalog
+    fastify.get('/equipment-types', {
+        schema: {
+            description: 'Get all distinct heavy equipment types and machine categories (e.g. Haul Truck, Hydraulic Excavator, Crawler Dozer, All Terrain Crane, Wheel Loader) from Master Catalog',
+            tags: ['Equipment Types'],
+            summary: 'Get All Equipment Types from Master Catalog'
+        }
+    }, manualInspectionController.getEquipmentTypes);
+
     // Dedicated Assigned & Operator Assignment Endpoints
     fastify.get('/assignments', { 
         schema: {

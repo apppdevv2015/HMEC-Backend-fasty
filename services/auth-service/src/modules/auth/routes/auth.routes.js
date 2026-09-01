@@ -9,6 +9,7 @@ async function authRoutes(fastify, options) {
     fastify.post('/forgot-password', authController.forgotPassword);
     fastify.post('/verify-reset-token', authController.verifyResetToken);
     fastify.post('/reset-password', authController.resetPassword);
+    fastify.post('/impersonate', { preHandler: authMiddleware }, authController.impersonate);
     fastify.get('/me', { preHandler: authMiddleware }, authController.getMe);
 
     // Custom role preHandler hook

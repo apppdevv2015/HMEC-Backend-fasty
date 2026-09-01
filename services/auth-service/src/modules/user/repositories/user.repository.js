@@ -102,15 +102,23 @@ class UserRepository {
     }
 
     async updateUser(id, userData) {
+        const updateData = {};
+        if (userData.first_name !== undefined) updateData.firstName = userData.first_name;
+        if (userData.last_name !== undefined) updateData.lastName = userData.last_name;
+        if (userData.email !== undefined) updateData.email = userData.email;
+        if (userData.mobile_number !== undefined) updateData.mobileNumber = userData.mobile_number;
+        if (userData.mobileNumber !== undefined) updateData.mobileNumber = userData.mobileNumber;
+        if (userData.is_active !== undefined) {
+            updateData.isActive = userData.is_active;
+        } else if (userData.isActive !== undefined) {
+            updateData.isActive = userData.isActive;
+        } else if (userData.status !== undefined) {
+            updateData.isActive = userData.status === 'Active' || userData.status === true;
+        }
+
         return await prisma.user.update({
             where: { id },
-            data: {
-                firstName: userData.first_name,
-                lastName: userData.last_name,
-                email: userData.email,
-                mobileNumber: userData.mobile_number,
-                isActive: userData.is_active
-            }
+            data: updateData
         });
     }
 
