@@ -102,6 +102,33 @@ class QuotationController {
             return responseHandler(res, HTTP_STATUS.BAD_REQUEST, false, error.message);
         }
     }
+
+    async createAddonQuotation(req, res) {
+        try {
+            const quotation = await quotationService.createAddonQuotation(req.body, req.user);
+            return responseHandler(res, HTTP_STATUS.CREATED, true, 'Add-on quotation created successfully', quotation);
+        } catch (error) {
+            return responseHandler(res, HTTP_STATUS.BAD_REQUEST, false, error.message);
+        }
+    }
+
+    async submitEftPayment(req, res) {
+        try {
+            const quotation = await quotationService.submitEftPayment(req.params.id, req.body, req.user);
+            return responseHandler(res, HTTP_STATUS.OK, true, 'EFT payment submitted successfully', quotation);
+        } catch (error) {
+            return responseHandler(res, HTTP_STATUS.BAD_REQUEST, false, error.message);
+        }
+    }
+
+    async verifyEftPayment(req, res) {
+        try {
+            const quotation = await quotationService.verifyEftPayment(req.params.id, req.body, req.user);
+            return responseHandler(res, HTTP_STATUS.OK, true, 'EFT payment verified and processed successfully', quotation);
+        } catch (error) {
+            return responseHandler(res, HTTP_STATUS.BAD_REQUEST, false, error.message);
+        }
+    }
 }
 
 module.exports = new QuotationController();

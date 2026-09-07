@@ -16,6 +16,8 @@ async function quotationRoutes(fastify, options) {
 
     fastify.put('/requests/:id', { preHandler: [authMiddleware, requireSuperAdmin] }, quotationController.updateQuotationRequest);
     fastify.put('/inquiries/:id', { preHandler: [authMiddleware, requireSuperAdmin] }, quotationController.updateQuotationRequest);
+    fastify.patch('/requests/:id', { preHandler: [authMiddleware, requireSuperAdmin] }, quotationController.updateQuotationRequest);
+    fastify.patch('/inquiries/:id', { preHandler: [authMiddleware, requireSuperAdmin] }, quotationController.updateQuotationRequest);
 
     fastify.delete('/requests/:id', { preHandler: [authMiddleware, requireSuperAdmin] }, quotationController.deleteQuotationRequest);
     fastify.delete('/inquiries/:id', { preHandler: [authMiddleware, requireSuperAdmin] }, quotationController.deleteQuotationRequest);
@@ -24,8 +26,13 @@ async function quotationRoutes(fastify, options) {
     fastify.get('/', { preHandler: authMiddleware }, quotationController.getQuotations);
     fastify.get('/:id', { preHandler: authMiddleware }, quotationController.getQuotationById);
 
-    // Super Admin sends official quote
+    // Super Admin sends official quote or creates add-on quote
     fastify.post('/send', { preHandler: [authMiddleware, requireSuperAdmin] }, quotationController.sendQuotation);
+    fastify.post('/addon', { preHandler: [authMiddleware, requireSuperAdmin] }, quotationController.createAddonQuotation);
+
+    // EFT Payment Submission & Admin Verification
+    fastify.post('/:id/eft-submit', { preHandler: authMiddleware }, quotationController.submitEftPayment);
+    fastify.post('/:id/verify-eft', { preHandler: [authMiddleware, requireSuperAdmin] }, quotationController.verifyEftPayment);
 
     // Company Admin accepts / rejects
     fastify.post('/:id/accept', { preHandler: [authMiddleware, requireCompanyAdmin] }, quotationController.acceptQuotation);

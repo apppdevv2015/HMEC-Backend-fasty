@@ -1,4 +1,5 @@
 const crypto = require('crypto');
+const prisma = require('../../../config/database');
 const quotationRepository = require('../repositories/quotation.repository');
 const quotationRequestRepository = require('../repositories/quotationRequest.repository');
 const optionalServiceRepository = require('../../optional-services/repositories/optionalService.repository');
@@ -44,11 +45,57 @@ class QuotationService {
         // 1. Delegate validation to dedicated validator
         const validated = quotationRequestValidator.validateCreate(data);
 
-        const companyId = user?.companyId || data.companyId || null;
-        const companyName = validated.companyName || user?.companyName || null;
-        const email = validated.email || user?.email || null;
-        const contactPerson = validated.contactPerson || (user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : null);
-        const phone = validated.phone || user?.mobileNumber || null;
+        let companyId = user?.companyId || data.companyId || null;
+        let companyName = validated.companyName || user?.companyName || null;
+        let email = validated.email || user?.email || null;
+        let contactPerson = validated.contactPerson || (user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : null);
+        let phone = validated.phone || user?.mobileNumber || null;
+
+        // Auto populate company details from DB if user is authenticated
+        if (companyId && !companyName) {
+            try {
+                const company = await prisma.company.findUnique({ where: { id: companyId } });
+                if (company) {
+                    companyName = company.name;
+                }
+            } catch (e) {}
+        }
+        if (user?.id && (!contactPerson || !phone || !email)) {
+            try {
+                const dbUser = await prisma.user.findUnique({ where: { id: user.id } });
+                if (dbUser) {
+                    if (!contactPerson) contactPerson = `${dbUser.firstName} ${dbUser.lastName || ''}`.trim();
+                    if (!phone) phone = dbUser.mobileNumber;
+                    if (!email) email = dbUser.email;
+                }
+            } catch (e) {}
+        }
+
+        // Enforce 1 Demo Trial per company lifetime rule
+        const isTrialRequest =
+            (validated.quotationType && (
+                validated.quotationType.toLowerCase().includes('trial') ||
+                validated.quotationType.toLowerCase().includes('demo')
+            )) ||
+            (data.tierCode === 'TRIAL');
+
+        if (isTrialRequest && companyId) {
+            const existingDemo = await prisma.quotationRequest.findFirst({
+                where: {
+                    companyId,
+                    OR: [
+                        { quotationType: { contains: 'Trial', mode: 'insensitive' } },
+                        { quotationType: { contains: 'Demo', mode: 'insensitive' } }
+                    ]
+                }
+            });
+
+            if (existingDemo) {
+                const err = new Error('Your company has already requested or claimed a Free Demo Trial. Only one Demo trial is allowed per company.');
+                err.statusCode = 400;
+                throw err;
+            }
+        }
 
         const requestId = await this.generateRequestId();
 
@@ -84,7 +131,19 @@ class QuotationService {
 
     async updateQuotationRequest(id, data, user) {
         const req = await this.getQuotationRequestById(id, user);
-        return quotationRequestRepository.update(req.id, data);
+        const updated = await quotationRequestRepository.update(req.id, data);
+
+        // If trial/demo request is approved, activate company evaluation access
+        if ((data.status === 'APPROVED' || data.status === 'SENT' || data.status === 'ACCEPTED') && req.companyId) {
+            try {
+                await prisma.company.update({
+                    where: { id: req.companyId },
+                    data: { subscriptionStatus: 'active' }
+                });
+            } catch (e) {}
+        }
+
+        return updated;
     }
 
     async deleteQuotationRequest(id, user) {
@@ -187,24 +246,113 @@ class QuotationService {
         });
     }
 
-    async acceptQuotation(id, data, user) {
-        const quote = await this.getQuotationById(id, user);
+    async createAddonQuotation(data, user) {
+        const quotationNumber = await this.generateQuotationNumber();
+        const companyId = data.companyId || user?.companyId || 'HME-COMP-' + generateAlphanumericCode(4);
+        const companyName = data.companyName || user?.companyName || 'Valued Client';
+        
+        const machineCount = Number(data.machineCount) || Number(data.extraMachines) || 1;
+        const ratePerMachine = Number(data.ratePerMachine) || 1500;
+        const durationMonths = Number(data.contractDuration || data.durationMonths) || 12;
+        const baseAmount = Number(data.baseAmount) || (machineCount * ratePerMachine * durationMonths);
+        const optionalServicesAmount = Number(data.optionalServicesAmount) || 0;
+        const discountAmount = Number(data.discountAmount) || 0;
+        const taxRate = Number(data.taxRate) || 0.15; // 15% VAT
+        const subtotal = Math.max(0, baseAmount + optionalServicesAmount - discountAmount);
+        const taxAmount = Number(data.taxAmount) || Math.round(subtotal * taxRate * 100) / 100;
+        const totalAmount = Number(data.totalAmount) || (subtotal + taxAmount);
 
-        return quotationRepository.update(quote.id, {
-            status:data.status,
-            acceptedAt: new Date(),
-            signedBy: data.signedBy || user.name || user.email,
-            signatureUrl: data.signatureUrl || data.signature || null
+        const paymentMethod = data.paymentMethod || 'EFT';
+        const eftReferenceNumber = data.eftReferenceNumber || `EFT-${quotationNumber}`;
+
+        const scopeOfWorkData = {
+            quotationType: data.quotationType || 'MACHINE_ADDON',
+            extraMachines: machineCount,
+            machineTypes: data.machineTypes || [],
+            extraSites: data.extraSites || 0,
+            siteNames: data.siteNames || [],
+            paymentMethod,
+            eftReferenceNumber,
+            proofOfPaymentUrl: data.proofOfPaymentUrl || null,
+            bankDetails: {
+                bankName: 'First National Bank (FNB)',
+                accountName: 'HME Intelligence (Pty) Ltd',
+                accountNumber: '62894109823',
+                branchCode: '250655',
+                accountType: 'Current / Cheque',
+                referenceCode: eftReferenceNumber
+            },
+            createdBy: user?.name || user?.email || 'Super Admin',
+            notes: data.notes || ''
+        };
+
+        return quotationRepository.create({
+            quotationNumber,
+            companyId,
+            companyName,
+            contactPerson: data.contactPerson || user?.name || null,
+            contactEmail: data.contactEmail || user?.email || 'finance@client.com',
+            contactPhone: data.contactPhone || null,
+            status: data.status || (data.proofOfPaymentUrl ? 'EFT_SUBMITTED' : 'ISSUED'),
+            tier: data.tier || 'Add-on Fleet Expansion',
+            machineCount,
+            contractDuration: String(durationMonths),
+            billingFrequency: data.billingFrequency || 'Monthly in Advance',
+            baseAmount,
+            optionalServicesAmount,
+            discountAmount,
+            taxAmount,
+            totalAmount,
+            optionalServices: data.optionalServices || [],
+            scopeOfWork: scopeOfWorkData,
+            paymentTerms: `Payment via ${paymentMethod} within 14 days. Ref: ${eftReferenceNumber}`,
+            notes: data.notes || `Machine add-on quote for ${machineCount} unit(s).`,
+            sentAt: new Date(),
+            validUntil: data.validUntil ? new Date(data.validUntil) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
         });
     }
 
-    async rejectQuotation(id, data, user) {
+    async submitEftPayment(id, data, user) {
         const quote = await this.getQuotationById(id, user);
 
+        const currentScope = quote.scopeOfWork && typeof quote.scopeOfWork === 'object' ? quote.scopeOfWork : {};
+        const updatedScope = {
+            ...currentScope,
+            paymentMethod: 'EFT',
+            eftReferenceNumber: data.eftReferenceNumber || currentScope.eftReferenceNumber || `EFT-${quote.quotationNumber}`,
+            proofOfPaymentUrl: data.proofOfPaymentUrl || data.popUrl || currentScope.proofOfPaymentUrl,
+            eftSubmittedAt: new Date().toISOString(),
+            eftSubmittedBy: user?.name || user?.email || 'Client User',
+            submissionNotes: data.notes || ''
+        };
+
         return quotationRepository.update(quote.id, {
-            status:data.status,
-            rejectedAt: new Date(),
-            notes: data.reason ? `${quote.notes ? quote.notes + ' | ' : ''}Rejection Reason: ${data.reason}` : quote.notes
+            status: 'EFT_SUBMITTED',
+            scopeOfWork: updatedScope,
+            notes: data.notes ? `${quote.notes ? quote.notes + ' | ' : ''}EFT Submitted: ${data.notes}` : quote.notes
+        });
+    }
+
+    async verifyEftPayment(id, data, user) {
+        const quote = await this.getQuotationById(id, user);
+        const action = String(data.action || 'APPROVE').toUpperCase();
+
+        const currentScope = quote.scopeOfWork && typeof quote.scopeOfWork === 'object' ? quote.scopeOfWork : {};
+        const isApproved = action === 'APPROVE';
+
+        const updatedScope = {
+            ...currentScope,
+            paymentVerifiedAt: new Date().toISOString(),
+            paymentVerifiedBy: user?.name || user?.email || 'Super Admin',
+            verificationStatus: isApproved ? 'APPROVED' : 'REJECTED',
+            verificationNotes: data.notes || ''
+        };
+
+        return quotationRepository.update(quote.id, {
+            status: isApproved ? 'PAID' : 'REJECTED',
+            scopeOfWork: updatedScope,
+            acceptedAt: isApproved ? new Date() : quote.acceptedAt,
+            notes: `${quote.notes ? quote.notes + ' | ' : ''}EFT ${isApproved ? 'Approved & Paid' : 'Rejected'}: ${data.notes || 'By Admin'}`
         });
     }
 }

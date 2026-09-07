@@ -3,6 +3,15 @@ const responseHandler = require('../../../utils/responseHandler');
 const { HTTP_STATUS } = responseHandler;
 
 class QuotationPlanController {
+    getDemoPlan = async (req, res) => {
+        try {
+            const plan = await quotationPlanService.getDemoPlan();
+            return responseHandler(res, HTTP_STATUS.OK, true, 'Active demo / trial plan fetched successfully', plan);
+        } catch (error) {
+            return responseHandler(res, error.statusCode || HTTP_STATUS.INTERNAL_SERVER_ERROR, false, error.message);
+        }
+    };
+
     getPublicPlans = async (req, res) => {
         try {
             const { search } = req.query || {};

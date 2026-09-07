@@ -1,6 +1,16 @@
 const quotationPlanRepository = require('../repositories/quotationPlan.repository');
 
 class QuotationPlanService {
+    async getDemoPlan() {
+        const trial = await quotationPlanRepository.findActiveTrialPlan();
+        if (!trial) {
+            const err = new Error('No active demo / trial plan template found');
+            err.statusCode = 404;
+            throw err;
+        }
+        return trial;
+    }
+
     async getPublicPlans({ search } = {}) {
         return quotationPlanRepository.findAll({ isActive: true, search });
     }

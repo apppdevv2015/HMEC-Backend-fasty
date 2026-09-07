@@ -27,6 +27,15 @@ async function quotationPlanRoutes(fastify, options) {
         preHandler: [authMiddleware, requireSuperAdmin]
     }, quotationPlanController.getAllPlansForAdmin);
 
+    // 2.5 Get active Demo / Trial plan
+    fastify.get('/demo', {
+        schema: {
+            description: 'Get the active Demo / Free Trial evaluation plan template',
+            tags: ['Quotation Plans'],
+            summary: 'Get active Demo Plan'
+        }
+    }, quotationPlanController.getDemoPlan);
+
     // 3. Get single plan by ID
     fastify.get('/:id', {
         schema: {
