@@ -124,6 +124,19 @@ const DEFAULT_QUOTATION_PLANS = [
 
 function formatPlan(plan) {
     if (!plan) return null;
+    
+    // For Demo / Free Trial plans, duration is custom days — NOT months
+    if (plan.isTrial || plan.tierCode === 'TRIAL') {
+        return {
+            ...plan,
+            durationOptions: [],
+            durationMonths: [],
+            durationLabels: [],
+            durations: [],
+            trialDays: plan.trialDays || 5
+        };
+    }
+
     const rawOptions = Array.isArray(plan.durationOptions) ? plan.durationOptions : [1, 3, 6, 12, 24];
     const durationMonths = rawOptions.map(m => Number(m)).filter(m => !isNaN(m) && m > 0);
     
@@ -153,6 +166,21 @@ function formatPlan(plan) {
 }
 
 class QuotationPlanRepository {
+    async findActiveTrialPlan() {
+        await this.seedDefaultsIfEmpty();
+        const trial = await prisma.quotationPlan.findFirst({
+            where: {
+                OR: [
+                    { isTrial: true },
+                    { tierCode: 'TRIAL' }
+                ],
+                isActive: true
+            },
+            orderBy: { updatedAt: 'desc' }
+        });
+        return formatPlan(trial);
+    }
+
     async seedDefaultsIfEmpty() {
         try {
             const count = await prisma.quotationPlan.count();

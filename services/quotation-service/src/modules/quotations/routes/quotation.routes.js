@@ -16,6 +16,8 @@ async function quotationRoutes(fastify, options) {
 
     fastify.put('/requests/:id', { preHandler: [authMiddleware, requireSuperAdmin] }, quotationController.updateQuotationRequest);
     fastify.put('/inquiries/:id', { preHandler: [authMiddleware, requireSuperAdmin] }, quotationController.updateQuotationRequest);
+    fastify.patch('/requests/:id', { preHandler: [authMiddleware, requireSuperAdmin] }, quotationController.updateQuotationRequest);
+    fastify.patch('/inquiries/:id', { preHandler: [authMiddleware, requireSuperAdmin] }, quotationController.updateQuotationRequest);
 
     fastify.delete('/requests/:id', { preHandler: [authMiddleware, requireSuperAdmin] }, quotationController.deleteQuotationRequest);
     fastify.delete('/inquiries/:id', { preHandler: [authMiddleware, requireSuperAdmin] }, quotationController.deleteQuotationRequest);

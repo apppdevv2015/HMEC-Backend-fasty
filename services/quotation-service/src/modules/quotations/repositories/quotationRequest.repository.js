@@ -80,10 +80,24 @@ class QuotationRequestRepository {
     }
 
     async update(id, data) {
+        const allowedFields = [
+            'userId', 'companyId', 'companyName', 'contactPerson', 'email', 'phone',
+            'siteLocation', 'quotationType', 'numberOfSites', 'siteNames', 'activeMachines',
+            'equipmentTypes', 'contractDuration', 'optionalServices',
+            'implementationRequirements', 'additionalRequirements',
+            'attachmentUrl', 'attachmentFileName', 'attachmentFileType', 'attachmentSize',
+            'status'
+        ];
+        const updateData = {};
+        for (const key of allowedFields) {
+            if (data[key] !== undefined) {
+                updateData[key] = data[key];
+            }
+        }
         return prisma.quotationRequest.update({
             where: { id },
             data: {
-                ...data,
+                ...updateData,
                 updatedAt: new Date()
             }
         });

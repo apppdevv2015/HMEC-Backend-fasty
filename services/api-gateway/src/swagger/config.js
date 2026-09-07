@@ -27,10 +27,12 @@ const swaggerOptions = {
         security: [{ bearerAuth: [] }],
     },
     apis: [
-        // Auth Service swagger docs (lives in auth-service but accessible via shared Docker image)
+        // Auth Service swagger docs
         path.join(__dirname, '..', '..', '..', 'auth-service', 'swagger', '*.swagger.js'),
         // Intelligence Service swagger docs
         path.join(__dirname, '..', '..', '..', 'component-intelligence-service', 'swagger', '*.swagger.js'),
+        // Quotation Service swagger docs
+        path.join(__dirname, '..', '..', '..', 'quotation-service', 'swagger', '*.swagger.js'),
     ],
 };
 

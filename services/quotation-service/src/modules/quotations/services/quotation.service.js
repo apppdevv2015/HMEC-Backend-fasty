@@ -1,4 +1,5 @@
 const crypto = require('crypto');
+const prisma = require('../../../config/database');
 const quotationRepository = require('../repositories/quotation.repository');
 const quotationRequestRepository = require('../repositories/quotationRequest.repository');
 const optionalServiceRepository = require('../../optional-services/repositories/optionalService.repository');
@@ -44,11 +45,57 @@ class QuotationService {
         // 1. Delegate validation to dedicated validator
         const validated = quotationRequestValidator.validateCreate(data);
 
-        const companyId = user?.companyId || data.companyId || null;
-        const companyName = validated.companyName || user?.companyName || null;
-        const email = validated.email || user?.email || null;
-        const contactPerson = validated.contactPerson || (user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : null);
-        const phone = validated.phone || user?.mobileNumber || null;
+        let companyId = user?.companyId || data.companyId || null;
+        let companyName = validated.companyName || user?.companyName || null;
+        let email = validated.email || user?.email || null;
+        let contactPerson = validated.contactPerson || (user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : null);
+        let phone = validated.phone || user?.mobileNumber || null;
+
+        // Auto populate company details from DB if user is authenticated
+        if (companyId && !companyName) {
+            try {
+                const company = await prisma.company.findUnique({ where: { id: companyId } });
+                if (company) {
+                    companyName = company.name;
+                }
+            } catch (e) {}
+        }
+        if (user?.id && (!contactPerson || !phone || !email)) {
+            try {
+                const dbUser = await prisma.user.findUnique({ where: { id: user.id } });
+                if (dbUser) {
+                    if (!contactPerson) contactPerson = `${dbUser.firstName} ${dbUser.lastName || ''}`.trim();
+                    if (!phone) phone = dbUser.mobileNumber;
+                    if (!email) email = dbUser.email;
+                }
+            } catch (e) {}
+        }
+
+        // Enforce 1 Demo Trial per company lifetime rule
+        const isTrialRequest =
+            (validated.quotationType && (
+                validated.quotationType.toLowerCase().includes('trial') ||
+                validated.quotationType.toLowerCase().includes('demo')
+            )) ||
+            (data.tierCode === 'TRIAL');
+
+        if (isTrialRequest && companyId) {
+            const existingDemo = await prisma.quotationRequest.findFirst({
+                where: {
+                    companyId,
+                    OR: [
+                        { quotationType: { contains: 'Trial', mode: 'insensitive' } },
+                        { quotationType: { contains: 'Demo', mode: 'insensitive' } }
+                    ]
+                }
+            });
+
+            if (existingDemo) {
+                const err = new Error('Your company has already requested or claimed a Free Demo Trial. Only one Demo trial is allowed per company.');
+                err.statusCode = 400;
+                throw err;
+            }
+        }
 
         const requestId = await this.generateRequestId();
 
@@ -84,7 +131,19 @@ class QuotationService {
 
     async updateQuotationRequest(id, data, user) {
         const req = await this.getQuotationRequestById(id, user);
-        return quotationRequestRepository.update(req.id, data);
+        const updated = await quotationRequestRepository.update(req.id, data);
+
+        // If trial/demo request is approved, activate company evaluation access
+        if ((data.status === 'APPROVED' || data.status === 'SENT' || data.status === 'ACCEPTED') && req.companyId) {
+            try {
+                await prisma.company.update({
+                    where: { id: req.companyId },
+                    data: { subscriptionStatus: 'active' }
+                });
+            } catch (e) {}
+        }
+
+        return updated;
     }
 
     async deleteQuotationRequest(id, user) {

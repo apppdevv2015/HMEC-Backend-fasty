@@ -187,6 +187,29 @@
  *       200:
  *         description: All master quotation plans list
  *
+ * /quotation-plans/demo:
+ *   get:
+ *     summary: Get the active Demo / Free Trial evaluation plan template
+ *     description: Returns the single active evaluation trial plan configured by Super Admin (with custom trial days, machine allowance, and features).
+ *     tags: [Quotation Plans]
+ *     security: []
+ *     responses:
+ *       200:
+ *         description: Active demo plan template details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Active demo / trial plan fetched successfully
+ *                 data:
+ *                   $ref: '#/components/schemas/QuotationPlan'
+ *
  * /quotation-plans/{id}:
  *   get:
  *     summary: Get single quotation plan details by ID

@@ -13,7 +13,7 @@ function buildApp(options = {}) {
     // Register CORS
     app.register(cors, {
         origin: '*', // Adjust this for production security
-        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+        methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']
     });
 
     // Register Redis
