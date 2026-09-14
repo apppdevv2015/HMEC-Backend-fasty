@@ -106,6 +106,13 @@ const setupProxy = async (fastify) => {
         prefix: `${VERSION}/quotation-plans`,
         rewritePrefix: '/quotation-plans'
     });
+
+    // Uploads (signature/payment-proof files) -> Quotation Service
+    await fastify.register(fastifyHttpProxy, {
+        upstream: SERVICES.quotation,
+        prefix: '/uploads',
+        rewritePrefix: '/uploads'
+    });
 };
 
 module.exports = setupProxy;

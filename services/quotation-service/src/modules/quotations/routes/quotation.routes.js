@@ -37,6 +37,33 @@ async function quotationRoutes(fastify, options) {
     // Company Admin accepts / rejects
     fastify.post('/:id/accept', { preHandler: [authMiddleware, requireCompanyAdmin] }, quotationController.acceptQuotation);
     fastify.post('/:id/reject', { preHandler: [authMiddleware, requireCompanyAdmin] }, quotationController.rejectQuotation);
+
+      // 3. Contracts (built from ACCEPTED quotations)
+    fastify.get('/contracts', { preHandler: authMiddleware }, quotationController.getContracts);
+    fastify.get('/contracts/:id', { preHandler: authMiddleware }, quotationController.getContractById);
+    fastify.post('/contracts', { preHandler: [authMiddleware, requireSuperAdmin] }, quotationController.createContract);
+    fastify.put('/contracts/:id', { preHandler: [authMiddleware, requireSuperAdmin] }, quotationController.updateContract);
+        fastify.delete('/contracts/:id', { preHandler: [authMiddleware, requireSuperAdmin] }, quotationController.deleteContract);
+
+    fastify.post('/contracts/:id/accept', { preHandler: [authMiddleware, requireCompanyAdmin] }, quotationController.acceptContract);
+    fastify.post('/contracts/:id/reject', { preHandler: [authMiddleware, requireCompanyAdmin] }, quotationController.rejectContract);
+
+    // 4. Invoices (built from a Contract; Super Admin generates & sends)
+    fastify.get('/invoices', { preHandler: authMiddleware }, quotationController.getInvoices);
+    fastify.get('/invoices/:id', { preHandler: authMiddleware }, quotationController.getInvoiceById);
+    fastify.get('/invoices/:id/pdf', { preHandler: authMiddleware }, quotationController.getInvoicePdf);
+    fastify.post('/invoices', { preHandler: [authMiddleware, requireSuperAdmin] }, quotationController.createInvoice);
+
+    // 5. Billing Profile (Super Admin's own business + bank details)
+    fastify.get('/billing-profile', { preHandler: [authMiddleware, requireSuperAdmin] }, quotationController.getBillingProfile);
+    fastify.post('/billing-profile', { preHandler: [authMiddleware, requireSuperAdmin] }, quotationController.upsertBillingProfile);
+    fastify.put('/billing-profile', { preHandler: [authMiddleware, requireSuperAdmin] }, quotationController.upsertBillingProfile);
+    fastify.get('/contracts/:id/pdf', { preHandler: authMiddleware }, quotationController.getContractPdf);
+
+
+    fastify.post('/invoices/:id/payment-proof', { preHandler: authMiddleware }, quotationController.submitInvoicePaymentProof);
+    fastify.get('/payment-proofs', { preHandler: [authMiddleware, requireSuperAdmin] }, quotationController.getPaymentProofs);
+    fastify.put('/payment-proofs/:id/verify', { preHandler: [authMiddleware, requireSuperAdmin] }, quotationController.verifyPaymentProof);
 }
 
 module.exports = quotationRoutes;

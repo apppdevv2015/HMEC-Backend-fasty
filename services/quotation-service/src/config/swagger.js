@@ -10,8 +10,8 @@ const swaggerOptions = {
             description: 'API Documentation for Quotations, Optional Services Catalog, Contracts, and Invoicing',
         },
         servers: [
-            { url: 'http://localhost:3004', description: 'Quotation Service Direct (Port 3004)' },
-            { url: 'http://localhost:8000/api/v1', description: 'Through API Gateway (Port 8000)' }
+            { url: 'http://localhost:3006', description: 'Quotation Service Direct (Port 3006)' },
+            { url: 'http://localhost:4000/api/v1', description: 'Through API Gateway (Port 4000)' }
         ],
         components: {
             securitySchemes: {

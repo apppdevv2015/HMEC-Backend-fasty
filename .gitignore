@@ -17,3 +17,5 @@ scripts/create-super-admin.js
 # Database Backups
 *.sql
 
+
+uploads/

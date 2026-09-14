@@ -21,5 +21,5 @@ const rbacMiddleware = (allowedRoles = []) => {
 module.exports = {
     rbacMiddleware,
     requireSuperAdmin: rbacMiddleware(['super_admin', 'superadmin']),
-    requireCompanyAdmin: rbacMiddleware(['company_admin', 'companyadmin', 'super_admin', 'superadmin'])
+    requireCompanyAdmin: rbacMiddleware(['company_admin', 'companyadmin', 'super_admin', 'superadmin', 'admin'])
 };

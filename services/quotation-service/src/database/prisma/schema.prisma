@@ -23,7 +23,9 @@ model Company {
   tickets            Ticket[]
   jobCards           JobCard[]
   machineCategories  MachineCategory[]
-  components         Component[]
+   components         Component[]
+    contracts          Contract[]
+   invoices           Invoice[]
 }
 
 model Role {
@@ -556,21 +558,36 @@ model OptionalServiceCatalog {
 model Quotation {
   id                     String    @id @default(uuid())
   quotationNumber        String    @unique @map("quotation_number")
+  quotationRequestId     String?   @map("quotation_request_id")
+
   companyId              String    @map("company_id")
   companyName            String    @map("company_name")
   contactPerson          String?   @map("contact_person")
   contactEmail           String    @map("contact_email")
   contactPhone           String?   @map("contact_phone")
+
   status                 String    @default("PENDING_REVIEW")
   tier                   String    @default("Enterprise")
   machineCount           Int       @default(1) @map("machine_count")
   contractDuration       String    @default("12") @map("contract_duration")
   billingFrequency       String    @default("Monthly in Advance") @map("billing_frequency")
+
+  licensedMachineAllowance Int      @default(0) @map("licensed_machine_allowance")
+  implementationFee       Decimal  @default(0) @map("implementation_fee") @db.Decimal(12, 2)
+  monthlySiteLicence      Decimal  @default(0) @map("monthly_site_licence") @db.Decimal(12, 2)
+  additionalMachineCharge Decimal  @default(0) @map("additional_machine_charge") @db.Decimal(12, 2)
+
+  trialRequested          Boolean  @default(false) @map("trial_requested")
+  trialDuration           Int?     @map("trial_duration")
+  trialMachines           Int?     @map("trial_machines")
+  trialDescription        String?  @map("trial_description")
+
   baseAmount             Decimal   @default(0) @map("base_amount") @db.Decimal(12, 2)
   optionalServicesAmount Decimal   @default(0) @map("optional_services_amount") @db.Decimal(12, 2)
   discountAmount         Decimal   @default(0) @map("discount_amount") @db.Decimal(12, 2)
   taxAmount              Decimal   @default(0) @map("tax_amount") @db.Decimal(12, 2)
   totalAmount            Decimal   @default(0) @map("total_amount") @db.Decimal(12, 2)
+
   optionalServices       Json      @default("[]") @map("optional_services")
   scopeOfWork            Json?     @map("scope_of_work")
   paymentTerms           String?   @map("payment_terms")
@@ -583,6 +600,8 @@ model Quotation {
   signatureUrl           String?   @map("signature_url")
   createdAt              DateTime  @default(now()) @map("created_at")
   updatedAt              DateTime  @updatedAt @map("updated_at")
+
+    contracts               Contract[]
 
   @@index([companyId])
   @@index([status])
@@ -672,4 +691,155 @@ model QuotationPlan {
   updatedAt       DateTime @updatedAt @map("updated_at")
 
   @@map("quotation_plans")
+}
+
+model Contract {
+  id             String    @id @default(uuid())
+  contractNumber String    @unique @map("contract_number")
+
+  quotationId    String    @map("quotation_id")
+  companyId      String    @map("company_id")
+
+  startDate      DateTime  @map("start_date")
+  endDate        DateTime  @map("end_date")
+  poNumber       String?   @map("po_number")
+  description    String?
+
+  status         String    @default("DRAFT")
+  sentAt         DateTime? @map("sent_at")
+
+   superAdminSignatureUrl   String?   @map("super_admin_signature_url")
+  superAdminSignedBy       String?   @map("super_admin_signed_by")
+  superAdminSignedByUserId String?   @map("super_admin_signed_by_user_id")
+  superAdminSignedAt       DateTime? @map("super_admin_signed_at")
+
+  companySignatureUrl      String?   @map("company_signature_url")
+  companySignedBy          String?   @map("company_signed_by")
+  companySignedByUserId    String?   @map("company_signed_by_user_id")
+  companySignedAt          DateTime? @map("company_signed_at")
+
+  acceptanceDescription String?   @map("acceptance_description")
+
+  rejectedBy       String?   @map("rejected_by")
+  rejectedByUserId String?   @map("rejected_by_user_id")
+  rejectedAt       DateTime? @map("rejected_at")
+  rejectionReason  String?   @map("rejection_reason")
+
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+    quotation      Quotation @relation(fields: [quotationId], references: [id])
+  company        Company   @relation(fields: [companyId], references: [id])
+  invoices       Invoice[]
+
+  @@index([companyId])
+  @@index([quotationId])
+  @@index([status])
+  @@map("contracts")
+}
+
+model BillingProfile {
+  id                 String   @id @default(uuid())
+
+  // Issuer (Super Admin's own business) details — printed as "From" on invoice
+  businessName       String   @map("business_name")
+  addressLine        String   @map("address_line")
+  gstin              String?
+  phone              String?
+  email              String?
+
+  // Bank details — used to pre-fill every generated invoice
+  bankName           String   @map("bank_name")
+  accountHolderName  String   @map("account_holder_name")
+  accountNumber      String   @map("account_number")
+  ifscCode           String   @map("ifsc_code")
+  branch             String?
+
+  isActive           Boolean  @default(true) @map("is_active")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  @@map("billing_profiles")
+}
+
+model Invoice {
+  id                String    @id @default(uuid())
+  invoiceNumber     String    @unique @map("invoice_number")
+
+  contractId        String    @map("contract_id")
+  companyId         String    @map("company_id")
+  quotationId       String?   @map("quotation_id")
+
+  // Snapshot of "Bill To" details at generation time (so invoice never
+  // changes even if the client's company profile changes later)
+  billToName        String    @map("bill_to_name")
+  billToAddress     String?   @map("bill_to_address")
+  billToGstin       String?   @map("bill_to_gstin")
+
+  // Snapshot of issuer + bank details at generation time
+  issuerSnapshot    Json      @map("issuer_snapshot")
+  bankDetailsSnapshot Json    @map("bank_details_snapshot")
+
+  contractNumber    String    @map("contract_number")
+  quotationNumber   String?   @map("quotation_number")
+  contractPeriodStart DateTime @map("contract_period_start")
+  contractPeriodEnd   DateTime @map("contract_period_end")
+
+  lineItems         Json      @map("line_items")
+  subtotal          Decimal   @default(0) @db.Decimal(12, 2)
+  totalAmount       Decimal   @default(0) @map("total_amount") @db.Decimal(12, 2)
+
+  paymentTerms      String?   @map("payment_terms")
+  notes             String?
+
+  status            String    @default("GENERATED")
+  invoiceDate       DateTime  @default(now()) @map("invoice_date")
+  dueDate           DateTime  @map("due_date")
+
+  pdfUrl            String?   @map("pdf_url")
+  paymentProofs     PaymentProof[] 
+
+  createdById       String?   @map("created_by_id")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  contract          Contract  @relation(fields: [contractId], references: [id])
+  company           Company   @relation(fields: [companyId], references: [id])
+
+  @@index([companyId])
+  @@index([contractId])
+  @@index([status])
+  @@map("invoices")
+}
+
+model PaymentProof {
+  id                    String    @id @default(uuid())
+
+  invoiceId             String    @map("invoice_id")
+  invoiceNumber         String    @map("invoice_number")
+  companyId             String    @map("company_id")
+
+  submittedById         String?   @map("submitted_by_id")
+  submittedByName       String?   @map("submitted_by_name")
+  submittedByEmail      String?   @map("submitted_by_email")
+
+  paymentMethod         String    @map("payment_method")
+  paymentDate           DateTime  @map("payment_date")
+  amountPaid            Decimal   @map("amount_paid") @db.Decimal(12, 2)
+  transactionReference  String    @map("transaction_reference")
+  proofFileUrl           String    @map("proof_file_url")
+
+  status                String    @default("PENDING") @map("status")
+  verifiedAt            DateTime? @map("verified_at")
+  verifiedBy             String?   @map("verified_by")
+  verifiedByUserId       String?   @map("verified_by_user_id")
+
+  createdAt             DateTime  @default(now()) @map("created_at")
+
+  invoice               Invoice   @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+  @@index([companyId])
+  @@index([status])
+  @@map("payment_proofs")
 }
