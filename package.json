@@ -8,6 +8,7 @@
     "scripts": {
         "dev": "concurrently \"npm run dev --workspace=services/api-gateway\" \"npm run dev --workspace=services/component-intelligence-service\" \"npm run dev --workspace=services/auth-service\" \"npm run dev --workspace=services/quotation-service\"",
         "dev:all": "concurrently \"npm run dev --workspace=services/api-gateway\" \"npm run dev --workspace=services/component-intelligence-service\" \"npm run dev --workspace=services/auth-service\" \"npm run dev --workspace=services/quotation-service\" \"npm run dev --workspace=services/data-ingestion-service\" \"npm run dev --workspace=services/fleet-intelligence-service\" \"npm run dev --workspace=services/notification-service\"",
+        "build": "npx prisma generate --schema=database/prisma/schema.prisma && npx prisma generate --schema=services/auth-service/src/database/prisma/schema.prisma && npx prisma generate --schema=services/component-intelligence-service/src/database/prisma/schema.prisma && npx prisma generate --schema=services/quotation-service/src/database/prisma/schema.prisma",
         "start": "docker compose -f infra/compose/docker-compose.local.yml up --build",
         "infra": "docker compose -f infra/compose/docker-compose.infra.yml up -d",
         "db:push": "npx prisma db push --schema=database/prisma/schema.prisma",
