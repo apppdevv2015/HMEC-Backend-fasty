@@ -18,8 +18,9 @@ const setupProxy = async (fastify) => {
     rewritePrefix: "",
   });
 
-  for (const [name, url] of Object.entries(SERVICES)) {
+   for (const [name, url] of Object.entries(SERVICES)) {
     if (name === "notifications") continue;
+    if (!url) continue; 
 
     await fastify.register(fastifyHttpProxy, {
       upstream: url,
