@@ -35,7 +35,6 @@ class HealthEngineService {
 
             let paramScore = 100;
 
-            // 1. Qualitative / Text matching
             if (strVal.includes('crit') || strVal.includes('fail') || strVal.includes('severe') || strVal.includes('bad') || strVal.includes('damage') || strVal.includes('leak')) {
                 status = 'Critical';
                 paramScore = 20;
@@ -50,7 +49,6 @@ class HealthEngineService {
                 return;
             }
 
-            // 2. Numeric evaluation with Safe Operating Range (safeMin, safeMax)
             const num = parseFloat(rawVal);
             if (!isNaN(num)) {
                 const hasMin = f.safeMin !== undefined && f.safeMin !== null && !isNaN(Number(f.safeMin));

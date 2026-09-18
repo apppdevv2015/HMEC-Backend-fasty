@@ -35,8 +35,13 @@ async function componentRoutes(fastify, options) {
         preHandler: [authMiddleware, isAdmin] 
     }, componentController.deleteComponent);
 
-    // --- Intelligence Engine Endpoints ---
 
+    fastify.get(
+        '/engineer-dashboard',
+        { preHandler: authMiddleware },
+        componentController.getEngineerDashboardComponents
+    );
+  
     // Get full component register (with intelligence metrics)
     fastify.get('/register', { preHandler: authMiddleware }, intelligenceController.getRegister);
 

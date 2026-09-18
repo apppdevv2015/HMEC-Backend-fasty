@@ -86,6 +86,39 @@ class ComponentController {
             return responseHandler(res, HTTP_STATUS.BAD_REQUEST, false, error.message);
         }
     }
+
+    async getEngineerDashboardComponents(req, res) {
+        try {
+            const companyId = req.user?.companyId;
+
+            if (!companyId) {
+                return responseHandler(
+                    res,
+                    HTTP_STATUS.BAD_REQUEST,
+                    false,
+                    'Company ID is required'
+                );
+            }
+
+            const components =
+                await componentService.getEngineerDashboardComponents(companyId);
+
+            return responseHandler(
+                res,
+                HTTP_STATUS.OK,
+                true,
+                'Engineer dashboard components fetched successfully',
+                components
+            );
+        } catch (error) {
+            return responseHandler(
+                res,
+                HTTP_STATUS.BAD_REQUEST,
+                false,
+                error.message
+            );
+        }
+    }
 }
 
 module.exports = new ComponentController();
