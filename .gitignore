@@ -19,3 +19,6 @@ scripts/create-super-admin.js
 
 
 uploads/
+
+# Prisma generated client
+services/auth-service/src/database/generated/

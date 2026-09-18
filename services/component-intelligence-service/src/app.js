@@ -9,6 +9,7 @@ const machineRoutes = require('./modules/machines/routes/machine.routes');
 const maintenanceRoutes = require('./modules/maintenance/routes/maintenance.routes');
 const jobCardRoutes = require('./modules/job-cards/routes/job-card.routes');
 const intelligenceRoutes = require('./modules/intelligence/routes/intelligence.routes');
+const alertRoutes = require('./modules/alert/alert.routes');
 
 const path = require('path');
 const fs = require('fs');
@@ -56,6 +57,7 @@ function buildApp(options = {}) {
     app.register(maintenanceRoutes, { prefix: '/maintenance' });
     app.register(jobCardRoutes, { prefix: '/job-cards' });
     app.register(intelligenceRoutes, { prefix: '/' });
+    app.register(alertRoutes, { prefix: '/alerts' });
 
     return app;
 }

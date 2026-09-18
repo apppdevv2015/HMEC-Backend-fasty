@@ -153,7 +153,6 @@ class MachineRepository {
         }
         return await enrichMachinesWithCompany(machine);
     }
-
     async countMachinesByCompany(companyId) {
         return await prisma.machine.count({
             where: { companyId }

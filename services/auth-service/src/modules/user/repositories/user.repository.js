@@ -10,8 +10,6 @@ class UserRepository {
             AND: [
                 !isSuperAdmin ? { role: { name: { notIn: ['super_admin', 'sub_super_admin'] } } } : { role: { name: { not: 'super_admin' } } },
                 { id: { not: currentUserId } },
-                // If super admin and companyId provided, filter by it. 
-                // If not super admin, always filter by their own companyId.
                 isSuperAdmin && (filters.companyId || filters.company_id) ? { companyId: filters.companyId || filters.company_id } : (!isSuperAdmin ? { companyId } : {}),
                 search ? {
                     OR: [

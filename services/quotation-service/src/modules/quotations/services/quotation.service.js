@@ -1,5 +1,13 @@
 const crypto = require("crypto");
 const prisma = require("../../../config/database");
+
+const redisModule = require("../../../config/redis");
+
+const {
+  notifyUser,
+  notifySuperAdmins,
+} = require("../../../../../../shared/notifications/notificationPublisher");
+
 const quotationRepository = require("../repositories/quotation.repository");
 const quotationValidator = require("../validators/quotation.validator");
 const quotationRequestRepository = require("../repositories/quotationRequest.repository");
@@ -25,7 +33,6 @@ const generateAlphanumericCode = (length = 4) => {
   return result;
 };
 
-// Helper to get current Date string in YYYYMMDD format
 const getFormattedDate = () => {
   const now = new Date();
   const year = now.getFullYear();
@@ -228,24 +235,12 @@ class QuotationService {
     });
   }
 
-  /**
-   * POST /quotations/send
-   * Super Admin fills the SendQuotationDrawer form (Commercial Details,
-   * Trial Option, Additional Services, Notes) and sends the official
-   * quotation against the client's original QuotationRequest.
-   *
-   * The payload shape here matches `QuotationDraft` on the frontend
-   * exactly — licensedMachineAllowance, implementationFee,
-   * monthlySiteLicence, additionalMachineCharge, trial fields, and
-   * services as { serviceId, selected, price } — nothing generic.
-   */
   async sendQuotation(data, user) {
     const validated = quotationValidator.validateSend(data);
 
     const quotationNumber =
       data.quotationNumber || (await this.generateQuotationNumber());
 
-    // If sent against a real inquiry, verify it exists and access is allowed.
     let linkedRequest = null;
     if (validated.quotationRequestId) {
       linkedRequest = await quotationRequestRepository.findById(
@@ -274,7 +269,6 @@ class QuotationService {
       sentAt: new Date(),
     });
 
-    // Keep the originating inquiry's lifecycle status in sync.
     if (linkedRequest) {
       await quotationRequestRepository.update(linkedRequest.id, {
         status: isTrial ? "APPROVED" : "SENT",
@@ -288,6 +282,26 @@ class QuotationService {
           });
         } catch (e) {}
       }
+    }
+    try {
+      const targetCompanyId = quotation.companyId;
+      if (targetCompanyId) {
+        await notifyUser(prisma, redisModule, {
+          companyId: targetCompanyId,
+          role: "admin",
+          title: "New Quotation Received",
+          message: `Quotation #${quotation.quotationNumber} has been sent for your review`,
+          type: "Quotation",
+          severity: "info",
+          actorId: user?.id || null,
+          actorName: user?.name || user?.email || "Super Admin",
+          actorRole: "SUPER_ADMIN",
+          entityType: "Quotation",
+          entityId: quotation.id,
+        });
+      }
+    } catch (err) {
+      console.error("[NOTIFY] sendQuotation notification failed:", err.message);
     }
 
     return quotation;
@@ -443,11 +457,33 @@ class QuotationService {
       throw new Error("signedBy is required");
     }
 
-    return quotationRepository.update(quote.id, {
+    const updated = await quotationRepository.update(quote.id, {
       status: "ACCEPTED",
       acceptedAt: new Date(),
       signedBy: data.signedBy.trim(),
     });
+
+    try {
+      await notifySuperAdmins(prisma, redisModule, {
+        companyId: quote.companyId,
+        title: "Quotation Accepted",
+        message: `Quotation #${quote.quotationNumber} was accepted by ${data.signedBy.trim()}`,
+        type: "Quotation",
+        severity: "success",
+        actorId: user?.id || null,
+        actorName: user?.name || user?.email || "Company Admin",
+        actorRole: "admin",
+        entityType: "Quotation",
+        entityId: quote.id,
+      });
+    } catch (err) {
+      console.error(
+        "[NOTIFY] acceptQuotation notification failed:",
+        err.message,
+      );
+    }
+
+    return updated;
   }
 
   async rejectQuotation(id, data, user) {
@@ -459,10 +495,32 @@ class QuotationService {
       );
     }
 
-    return quotationRepository.update(quote.id, {
+    const updated = await quotationRepository.update(quote.id, {
       status: "REJECTED",
       rejectedAt: new Date(),
     });
+
+    try {
+      await notifySuperAdmins(prisma, redisModule, {
+        companyId: quote.companyId,
+        title: "Quotation Rejected",
+        message: `Quotation #${quote.quotationNumber} was rejected by ${user?.name || user?.email || "Company Admin"}`,
+        type: "Quotation",
+        severity: "warning",
+        actorId: user?.id || null,
+        actorName: user?.name || user?.email || "admin",
+        actorRole: "admin",
+        entityType: "Quotation",
+        entityId: quote.id,
+      });
+    } catch (err) {
+      console.error(
+        "[NOTIFY] rejectQuotation notification failed:",
+        err.message,
+      );
+    }
+
+    return updated;
   }
 
   // ===== CONTRACT FUNCTIONS =====
@@ -515,7 +573,7 @@ class QuotationService {
 
     const contractNumber = await this.generateContractNumber();
 
-    return quotationRepository.createContract({
+    const contract = await quotationRepository.createContract({
       ...validated,
       contractNumber,
       companyId: quote.companyId,
@@ -524,9 +582,31 @@ class QuotationService {
       superAdminSignedByUserId: user?.id || null,
       superAdminSignedAt: new Date(),
     });
+
     await quotationRepository.update(quote.id, {
       status: "CONTRACT_CREATED",
     });
+
+    try {
+      await notifyUser(prisma, redisModule, {
+        companyId: contract.companyId,
+        role: "admin",
+        title: "New Contract Ready",
+        message: `Contract #${contract.contractNumber} has been created and is ready for your signature`,
+        type: "Contract",
+        severity: "info",
+        actorId: user?.id || null,
+        actorName: user?.name || user?.email || "Super Admin",
+        actorRole: "SUPER_ADMIN",
+        entityType: "Contract",
+        entityId: contract.id,
+      });
+    } catch (err) {
+      console.error(
+        "[NOTIFY] createContract notification failed:",
+        err.message,
+      );
+    }
 
     return contract;
   }
@@ -550,7 +630,6 @@ class QuotationService {
       );
     }
 
-    // Super Admin signature must already exist before company can accept
     if (!contract.superAdminSignatureUrl) {
       throw new Error(
         "Contract cannot be accepted: Super Admin signature is missing",
@@ -563,7 +642,7 @@ class QuotationService {
 
     const validated = quotationValidator.validateAcceptContract(data);
 
-    return quotationRepository.updateContract(contract.id, {
+    const updated = await quotationRepository.updateContract(contract.id, {
       status: "ACCEPTED",
       companySignatureUrl: data.signatureUrl,
       companySignedBy: validated.signedBy,
@@ -571,8 +650,31 @@ class QuotationService {
       companySignedAt: new Date(),
       acceptanceDescription: validated.acceptanceDescription,
     });
+
+    try {
+      await notifySuperAdmins(prisma, redisModule, {
+        companyId: contract.companyId,
+        title: "Contract Accepted",
+        message: `Contract #${contract.contractNumber} was signed by ${validated.signedBy}`,
+        type: "Contract",
+        severity: "success",
+        actorId: user?.id || null,
+        actorName: user?.name || user?.email || "Company Admin",
+        actorRole: "admin",
+        entityType: "Contract",
+        entityId: contract.id,
+      });
+    } catch (err) {
+      console.error(
+        "[NOTIFY] acceptContract notification failed:",
+        err.message,
+      );
+    }
+
+    return updated;
   }
 
+  // NAYA
   async rejectContract(id, data, user) {
     const contract = await this.getContractById(id, user);
 
@@ -584,13 +686,35 @@ class QuotationService {
 
     const validated = quotationValidator.validateRejectContract(data);
 
-    return quotationRepository.updateContract(contract.id, {
+    const updated = await quotationRepository.updateContract(contract.id, {
       status: "REJECTED",
       rejectionReason: validated.rejectionReason,
       rejectedBy: user?.name || user?.email || null,
       rejectedByUserId: user?.id || null,
       rejectedAt: new Date(),
     });
+
+    try {
+      await notifySuperAdmins(prisma, redisModule, {
+        companyId: contract.companyId,
+        title: "Contract Rejected",
+        message: `Contract #${contract.contractNumber} was rejected by ${user?.name || user?.email || "Company Admin"}${validated.rejectionReason ? `: ${validated.rejectionReason}` : ""}`,
+        type: "Contract",
+        severity: "warning",
+        actorId: user?.id || null,
+        actorName: user?.name || user?.email || "Company Admin",
+        actorRole: "admin",
+        entityType: "Contract",
+        entityId: contract.id,
+      });
+    } catch (err) {
+      console.error(
+        "[NOTIFY] rejectContract notification failed:",
+        err.message,
+      );
+    }
+
+    return updated;
   }
 
   // ===== INVOICE FUNCTIONS =====
@@ -831,6 +955,26 @@ class QuotationService {
       status: "PAID",
     });
 
+    try {
+      await notifyUser(prisma, redisModule, {
+        companyId: proof.companyId,
+        role: "admin",
+        title: "Payment Verified",
+        message: `Payment for invoice #${proof.invoiceNumber} has been verified`,
+        type: "Payment",
+        severity: "success",
+        actorId: user?.id || null,
+        actorName: user?.name || user?.email || "Super Admin",
+        actorRole: "SUPER_ADMIN",
+        entityType: "PaymentProof",
+        entityId: proof.id,
+      });
+    } catch (err) {
+      console.error(
+        "[NOTIFY] verifyPaymentProof notification failed:",
+        err.message,
+      );
+    }
     return updatedProof;
   }
 

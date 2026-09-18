@@ -1,13 +1,26 @@
 const componentRepository = require('../repositories/component.repository');
 const intelligenceService = require('../../intelligence/services/intelligence.service');
+const { notifyUser, notifyRoles } = require("../../../../../../shared/notifications/notificationPublisher");
+const redisModule = require("../../../../../auth-service/src/redis/redis.client");
+const prisma = require("../../../database/prismaClient");
+
 
 class ComponentService {
-    /**
-     * Register a new component to a machine
-     */
-    async addComponent(data) {
-        if (data.plannedLife <= 0) data.plannedLife = 1; // Prevent division by zero
-        return await componentRepository.create(data);
+        async addComponent(data) {
+        if (data.plannedLife <= 0) data.plannedLife = 1;
+        const component = await componentRepository.create(data);
+
+        await notifyRoles(prisma, redisModule, {
+            companyId: data.companyId,
+            roles: ['ADMIN', 'SUB_ADMIN'],
+            title: 'New Component Registered',
+            message: `Component "${component.name || component.description}" registered.`,
+            type: 'Component',
+            entityType: 'Component',
+            entityId: component.id,
+        });
+
+        return component;
     }
 
     /**
@@ -19,11 +32,20 @@ class ComponentService {
         return intelligenceService.processRegister(components);
     }
 
-    /**
-     * Update component details (Edit functionality)
-     */
-    async updateComponent(id, data) {
-        return await componentRepository.update(id, data);
+       async updateComponent(id, data) {
+        const component = await componentRepository.update(id, data);
+
+        await notifyRoles(prisma, redisModule, {
+            companyId: component.companyId,
+            roles: ['ADMIN', 'SUB_ADMIN'],
+            title: 'Component Updated',
+            message: `Component "${component.name}" was updated.`,
+            type: 'Component',
+            entityType: 'Component',
+            entityId: component.id,
+        });
+
+        return component;
     }
 
     /**
@@ -57,20 +79,57 @@ class ComponentService {
             throw new Error('Access denied: You are not authorized to inspect this component.');
         }
 
-        // 3. Perform update (only operational fields currentHours and condition allowed)
+                // 3. Perform update (only operational fields currentHours and condition allowed)
         const updateData = {
             currentHours: data.currentHours,
             condition: data.condition
         };
 
-        return await componentRepository.update(id, updateData);
+        const updated = await componentRepository.update(id, updateData);
+
+        if (updated.assignedSupervisorId) {
+            await notifyUser(prisma, redisModule, {
+                companyId,
+                userId: updated.assignedSupervisorId,
+                title: 'Component Inspected',
+                message: `Component "${updated.name}" inspected. Condition: ${updated.condition}, Hours: ${updated.currentHours}.`,
+                type: 'Inspection',
+                entityType: 'Component',
+                entityId: id,
+            });
+        }
+
+        await notifyRoles(prisma, redisModule, {
+            companyId,
+            roles: ['ADMIN', 'SUB_ADMIN'],
+            title: 'Component Inspected',
+            message: `Component "${updated.name}" inspected. Condition: ${updated.condition}, Hours: ${updated.currentHours}.`,
+            type: 'Inspection',
+            entityType: 'Component',
+            entityId: id,
+        });
+
+        return updated;
     }
 
-    /**
-     * Delete an existing component by its ID
-     */
-    async deleteComponent(id) {
-        return await componentRepository.delete(id);
+      async deleteComponent(id) {
+        const existing = await componentRepository.findById(id);
+        const deleted = await componentRepository.delete(id);
+
+        if (existing) {
+            await notifyRoles(prisma, redisModule, {
+                companyId: existing.companyId,
+                roles: ['ADMIN', 'SUB_ADMIN'],
+                title: 'Component Deleted',
+                message: `Component "${existing.name}" was removed.`,
+                type: 'Component',
+                severity: 'warning',
+                entityType: 'Component',
+                entityId: id,
+            });
+        }
+
+        return deleted;
     }
 
     /**
@@ -84,6 +143,18 @@ class ComponentService {
         const components = await componentRepository.findAll(companyId);
         return intelligenceService.processRegister(components);
     }
+
+async getEngineerDashboardComponents(companyId) {
+    if (!companyId) {
+        throw new Error('Company ID is required');
+    }
+
+    const components =
+        await componentRepository.findAllForEngineerDashboard(companyId);
+
+    return intelligenceService.processRegister(components);
+}
+
 }
 
 module.exports = new ComponentService();

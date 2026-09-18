@@ -116,6 +116,19 @@ const INVOICE_CONTRACT_SELECT = Object.freeze({
  * @param {readonly string[]} allowedFields
  * @returns {Record<string, any>}
  */
+
+const QUOTATION_FIELD_NAME_MAP = Object.freeze({
+  quotationRequestId: "quotation_request_id",
+  licensedMachineAllowance: "licensed_machine_allowance",
+  implementationFee: "implementation_fee",
+  monthlySiteLicence: "monthly_site_licence",
+  additionalMachineCharge: "additional_machine_charge",
+  trialRequested: "trial_requested",
+  trialDuration: "trial_duration",
+  trialMachines: "trial_machines",
+  trialDescription: "trial_description",
+});
+
 function pickAllowed(source, allowedFields) {
   const result = {};
   for (const key of allowedFields) {
@@ -198,7 +211,11 @@ class QuotationRepository {
    * @param {Record<string, any>} data
    * @returns {Promise<object>}
    */
-  async create(data) {
+    /**
+   * @param {Record<string, any>} data
+   * @returns {Promise<object>}
+   */
+   async create(data) {
     return prisma.quotation.create({
       data: {
         quotationNumber: data.quotationNumber,
@@ -271,7 +288,7 @@ class QuotationRepository {
    * @param {Record<string, any>} data
    * @returns {Promise<object>}
    */
-  async update(id, data) {
+   async update(id, data) {
     const updateData = pickAllowed(data, QUOTATION_UPDATABLE_FIELDS);
 
     return prisma.quotation.update({

@@ -258,14 +258,26 @@ model MaintenanceLog {
 }
 
 model Notification {
-  id        String   @id @default(uuid())
-  companyId String   @map("company_id")
-  message   String
-  type      String
-  isRead    Boolean  @default(false) @map("is_read")
-  createdAt DateTime @default(now()) @map("created_at")
-  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  id         String   @id @default(uuid())
+  companyId  String?  @map("company_id")
+  userId     String?  @map("user_id")
+  role       String?  @map("role")
+  title      String?  @map("title")
+  message    String
+  type       String
+  severity   String   @default("info")
+  actorId    String?  @map("actor_id")
+  actorName  String?  @map("actor_name")
+  actorRole  String?  @map("actor_role")
+  entityType String?  @map("entity_type")
+  entityId   String?  @map("entity_id")
+  link       String?  @map("link")
+  isRead     Boolean  @default(false) @map("is_read")
+  createdAt  DateTime @default(now()) @map("created_at")
+  company    Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
+  @@index([userId])
+  @@index([companyId, role])
   @@map("notifications")
 }
 

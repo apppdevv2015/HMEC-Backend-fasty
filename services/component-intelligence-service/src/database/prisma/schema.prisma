@@ -9,49 +9,52 @@ datasource db {
 }
 
 model Company {
-  id                 String              @id @default(uuid())
-  companyCode        String              @unique
-  name               String              @unique
-  subscriptionStatus String              @default("active")
-  createdAt          DateTime            @default(now())
-  updatedAt          DateTime            @updatedAt
+  id                 String            @id @default(uuid())
+  companyCode        String            @unique
+  name               String            @unique
+  subscriptionStatus String            @default("active")
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  components         Component[]
   users              User[]
+  contracts          contracts[]
+  invoices           invoices[]
+  jobCards           JobCard[]
+  machineCategories  MachineCategory[]
   maintenanceLogs    MaintenanceLog[]
   notifications      Notification[]
   recommendations    Recommendation[]
   subscriptions      Subscription[]
   tickets            Ticket[]
-  jobCards           JobCard[]
-  machineCategories  MachineCategory[]
-  components         Component[]
+  alerts             Alert[]
 }
 
 model Role {
   id        String   @id @default(uuid())
   name      String   @unique
-  isActive  Boolean  @default(true) @map("is_active")
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
+  isActive  Boolean  @default(true) @map("is_active")
   users     User[]
 }
 
 model User {
-  id           String   @id @default(uuid())
-  email        String   @unique
-  password     String
-  firstName    String
-  lastName     String?
-  mobileNumber String?
-  isActive     Boolean  @default(true)
-  roleId       String
-  companyId    String
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id              String          @id @default(uuid())
+  email           String          @unique
+  password        String
+  firstName       String
+  lastName        String?
+  mobileNumber    String?
+  isActive        Boolean         @default(true)
+  roleId          String
+  companyId       String
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
   company         Company         @relation(fields: [companyId], references: [id])
   role            Role            @relation(fields: [roleId], references: [id])
-  createdTickets  Ticket[]        @relation("CreatedTickets")
-  assignedTickets Ticket[]        @relation("AssignedTickets")
   ticketMessages  TicketMessage[]
+  assignedTickets Ticket[]        @relation("AssignedTickets")
+  createdTickets  Ticket[]        @relation("CreatedTickets")
 }
 
 model SubscriptionPlan {
@@ -87,33 +90,34 @@ model Subscription {
 }
 
 model Machine {
-  id                     String           @id @default(uuid())
+  id                     String            @id @default(uuid())
   name                   String
-  manufacturer           String?          @map("manufacturer")
+  manufacturer           String?           @map("manufacturer")
   model                  String
-  serialNumber           String           @unique
-  imageUrl               String?          @map("image_url")
+  serialNumber           String            @unique
+  imageUrl               String?           @map("image_url")
   companyId              String
-  createdAt              DateTime         @default(now())
-  updatedAt              DateTime         @updatedAt
+  createdAt              DateTime          @default(now())
+  updatedAt              DateTime          @updatedAt
   site                   String?
-  status                 String?          @default("Healthy")
-  costPerHourTarget      Decimal?         @map("cost_per_hour_target") @db.Decimal(10, 2)
-  costPerTonTarget       Decimal?         @map("cost_per_ton_target") @db.Decimal(10, 2)
-  equipmentType          String?          @map("equipment_type")
-  assignedOperatorId     String?          @map("assigned_operator_id")
-  assignedOperatorName   String?          @map("assigned_operator_name")
-  assignedArtisanId      String?          @map("assigned_artisan_id")
-  assignedArtisanName    String?          @map("assigned_artisan_name")
-  assignedSupervisorId   String?          @map("assigned_supervisor_id")
-  assignedSupervisorName String?          @map("assigned_supervisor_name")
-  healthScore            Int?             @map("health_score")
-  condition              Int              @default(1)
+  status                 String?           @default("Healthy")
+  costPerHourTarget      Decimal?          @map("cost_per_hour_target") @db.Decimal(10, 2)
+  costPerTonTarget       Decimal?          @map("cost_per_ton_target") @db.Decimal(10, 2)
+  equipmentType          String?           @map("equipment_type")
+  assignedOperatorId     String?           @map("assigned_operator_id")
+  assignedOperatorName   String?           @map("assigned_operator_name")
+  assignedArtisanId      String?           @map("assigned_artisan_id")
+  assignedArtisanName    String?           @map("assigned_artisan_name")
+  assignedSupervisorId   String?           @map("assigned_supervisor_id")
+  assignedSupervisorName String?           @map("assigned_supervisor_name")
+  healthScore            Int?              @map("health_score")
+  condition              Int               @default(1)
   components             Component[]
+  componentHealthRecords ComponentHealth[]
+  jobCards               JobCard[]
   maintenanceLogs        MaintenanceLog[]
   recommendations        Recommendation[]
-  jobCards               JobCard[]
-  componentHealthRecords ComponentHealth[]
+  alerts                 Alert[]
 }
 
 model MachineCategory {
@@ -125,7 +129,6 @@ model MachineCategory {
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-
   company     Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@unique([name, companyId])
@@ -181,14 +184,14 @@ model Component {
   healthScore            Int?                @map("health_score")
   inspectionParameters   Json?               @map("inspection_parameters")
   lastInspectedAt        DateTime?           @map("last_inspected_at")
-  machine                Machine             @relation(fields: [machineId], references: [id])
   company                Company?            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  machine                Machine             @relation(fields: [machineId], references: [id])
   componentCosts         ComponentCost[]
+  healthRecords          ComponentHealth[]
   failurePredictions     FailurePrediction[]
+  jobCards               JobCard[]
   maintenanceLogs        MaintenanceLog[]
   recommendations        Recommendation[]
-  jobCards               JobCard[]
-  healthRecords          ComponentHealth[]
 }
 
 model ComponentCost {
@@ -258,14 +261,27 @@ model MaintenanceLog {
 }
 
 model Notification {
-  id        String   @id @default(uuid())
-  companyId String   @map("company_id")
-  message   String
-  type      String
-  isRead    Boolean  @default(false) @map("is_read")
-  createdAt DateTime @default(now()) @map("created_at")
-  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  id          String   @id @default(uuid())
+  companyId   String?  @map("company_id")
+  message     String
+  type        String
+  isRead      Boolean  @default(false) @map("is_read")
+  createdAt   DateTime @default(now()) @map("created_at")
+  actor_id    String?
+  actor_name  String?
+  actor_role  String?
+  entity_id   String?
+  entity_type String?
+  link        String?
+  role        String?
+  severity    String   @default("info")
+  title       String?
+  user_id     String?
+  company     Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
+  @@index([companyId, isRead])
+  @@index([role])
+  @@index([user_id])
   @@map("notifications")
 }
 
@@ -309,10 +325,10 @@ model Ticket {
   assignedToId String?         @map("assigned_to_id")
   createdAt    DateTime        @default(now()) @map("created_at")
   updatedAt    DateTime        @updatedAt @map("updated_at")
+  messages     TicketMessage[]
+  assignedTo   User?           @relation("AssignedTickets", fields: [assignedToId], references: [id])
   company      Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
   createdBy    User            @relation("CreatedTickets", fields: [createdById], references: [id], onDelete: Cascade)
-  assignedTo   User?           @relation("AssignedTickets", fields: [assignedToId], references: [id])
-  messages     TicketMessage[]
 
   @@map("tickets")
 }
@@ -323,58 +339,57 @@ model TicketMessage {
   senderId  String   @map("sender_id")
   message   String
   createdAt DateTime @default(now()) @map("created_at")
-  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
   sender    User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
 
   @@map("ticket_messages")
 }
 
 model JobCard {
-  id                        String                     @id @default(uuid())
-  jobCardNumber             String                     @unique @map("job_card_number")
-  companyId                 String                     @map("company_id")
-  machineId                 String                     @map("machine_id")
-  componentId               String?                    @map("component_id")
-  maintenanceType           String                     @default("PREVENTIVE") @map("maintenance_type")
-  priority                  String                     @default("MEDIUM")
-  status                    String                     @default("OPEN")
-  title                     String
-  description               String?
-  plannedStartDate          DateTime?                  @map("planned_start_date")
-  plannedFinishDate         DateTime?                  @map("planned_finish_date")
-  actualStartDate           DateTime?                  @map("actual_start_date")
-  actualFinishDate          DateTime?                  @map("actual_finish_date")
-  assignedTechnicianId      String?                    @map("assigned_technician_id")
-  assignedTechnicianName    String?                    @map("assigned_technician_name")
-  assignedSupervisorId      String?                    @map("assigned_supervisor_id")
-  assignedSupervisorName    String?                    @map("assigned_supervisor_name")
-  assignedPlannerId         String?                    @map("assigned_planner_id")
-  assignedPlannerName       String?                    @map("assigned_planner_name")
-  allocatedLaborHours       Decimal?                   @default(0) @map("allocated_labor_hours") @db.Decimal(8, 2)
-  actualLaborHours          Decimal?                   @default(0) @map("actual_labor_hours") @db.Decimal(8, 2)
-  downtimeHours             Decimal?                   @default(0) @map("downtime_hours") @db.Decimal(8, 2)
-  requiredTools             String?                    @map("required_tools")
-  rootCause                 String?                    @map("root_cause")
-  correctiveAction          String?                    @map("corrective_action")
-  postRepairCondition       String?                    @map("post_repair_condition")
-  totalCost                 Decimal?                   @default(0) @map("total_cost") @db.Decimal(15, 2)
-  supervisorNotes           String?                    @map("supervisor_notes")
-  engineeringNotes          String?                    @map("engineering_notes")
-  supervisorApprovedAt      DateTime?                  @map("supervisor_approved_at")
-  engineeringApprovedAt     DateTime?                  @map("engineering_approved_at")
-  closedAt                  DateTime?                  @map("closed_at")
-  createdAt                 DateTime                   @default(now()) @map("created_at")
-  updatedAt                 DateTime                   @updatedAt @map("updated_at")
-
-  company                   Company                    @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  machine                   Machine                    @relation(fields: [machineId], references: [id], onDelete: Cascade)
-  component                 Component?                 @relation(fields: [componentId], references: [id])
-  laborLogs                 JobCardLaborLog[]
-  parts                     JobCardPart[]
-  findings                  JobCardInspectionFinding[]
-  attachments               JobCardAttachment[]
-  auditLogs                 JobCardAuditLog[]
-  voiceNotes                JobCardVoiceNote[]
+  id                     String                     @id @default(uuid())
+  jobCardNumber          String                     @unique @map("job_card_number")
+  companyId              String                     @map("company_id")
+  machineId              String                     @map("machine_id")
+  componentId            String?                    @map("component_id")
+  maintenanceType        String                     @default("PREVENTIVE") @map("maintenance_type")
+  priority               String                     @default("MEDIUM")
+  status                 String                     @default("OPEN")
+  title                  String
+  description            String?
+  plannedStartDate       DateTime?                  @map("planned_start_date")
+  plannedFinishDate      DateTime?                  @map("planned_finish_date")
+  actualStartDate        DateTime?                  @map("actual_start_date")
+  actualFinishDate       DateTime?                  @map("actual_finish_date")
+  assignedTechnicianId   String?                    @map("assigned_technician_id")
+  assignedTechnicianName String?                    @map("assigned_technician_name")
+  assignedSupervisorId   String?                    @map("assigned_supervisor_id")
+  assignedSupervisorName String?                    @map("assigned_supervisor_name")
+  assignedPlannerId      String?                    @map("assigned_planner_id")
+  assignedPlannerName    String?                    @map("assigned_planner_name")
+  allocatedLaborHours    Decimal?                   @default(0) @map("allocated_labor_hours") @db.Decimal(8, 2)
+  actualLaborHours       Decimal?                   @default(0) @map("actual_labor_hours") @db.Decimal(8, 2)
+  downtimeHours          Decimal?                   @default(0) @map("downtime_hours") @db.Decimal(8, 2)
+  requiredTools          String?                    @map("required_tools")
+  rootCause              String?                    @map("root_cause")
+  correctiveAction       String?                    @map("corrective_action")
+  postRepairCondition    String?                    @map("post_repair_condition")
+  totalCost              Decimal?                   @default(0) @map("total_cost") @db.Decimal(15, 2)
+  supervisorNotes        String?                    @map("supervisor_notes")
+  engineeringNotes       String?                    @map("engineering_notes")
+  supervisorApprovedAt   DateTime?                  @map("supervisor_approved_at")
+  engineeringApprovedAt  DateTime?                  @map("engineering_approved_at")
+  closedAt               DateTime?                  @map("closed_at")
+  createdAt              DateTime                   @default(now()) @map("created_at")
+  updatedAt              DateTime                   @updatedAt @map("updated_at")
+  attachments            JobCardAttachment[]
+  auditLogs              JobCardAuditLog[]
+  findings               JobCardInspectionFinding[]
+  laborLogs              JobCardLaborLog[]
+  parts                  JobCardPart[]
+  voiceNotes             JobCardVoiceNote[]
+  company                Company                    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  component              Component?                 @relation(fields: [componentId], references: [id])
+  machine                Machine                    @relation(fields: [machineId], references: [id], onDelete: Cascade)
 
   @@map("job_cards")
 }
@@ -396,16 +411,16 @@ model JobCardLaborLog {
 }
 
 model JobCardPart {
-  id          String   @id @default(uuid())
-  jobCardId   String   @map("job_card_id")
-  partName    String   @map("part_name")
-  partNumber  String?  @map("part_number")
-  quantity    Int      @default(1)
-  unitCost    Decimal  @default(0) @map("unit_cost") @db.Decimal(15, 2)
-  totalCost   Decimal  @default(0) @map("total_cost") @db.Decimal(15, 2)
-  isConsumed  Boolean  @default(true) @map("is_consumed")
-  createdAt   DateTime @default(now()) @map("created_at")
-  jobCard     JobCard  @relation(fields: [jobCardId], references: [id], onDelete: Cascade)
+  id         String   @id @default(uuid())
+  jobCardId  String   @map("job_card_id")
+  partName   String   @map("part_name")
+  partNumber String?  @map("part_number")
+  quantity   Int      @default(1)
+  unitCost   Decimal  @default(0) @map("unit_cost") @db.Decimal(15, 2)
+  totalCost  Decimal  @default(0) @map("total_cost") @db.Decimal(15, 2)
+  isConsumed Boolean  @default(true) @map("is_consumed")
+  createdAt  DateTime @default(now()) @map("created_at")
+  jobCard    JobCard  @relation(fields: [jobCardId], references: [id], onDelete: Cascade)
 
   @@map("job_card_parts")
 }
@@ -439,21 +454,21 @@ model JobCardAttachment {
 }
 
 model JobCardAuditLog {
-  id            String   @id @default(uuid())
-  jobCardId     String   @map("job_card_id")
-  action        String   @map("action")
-  title         String
-  description   String
-  fieldChanged  String?  @map("field_changed")
-  oldValue      String?  @map("old_value")
-  newValue      String?  @map("new_value")
-  userId        String?  @map("user_id")
-  userName      String   @map("user_name")
-  userRole      String?  @map("user_role")
-  userEmail     String?  @map("user_email")
-  badgeColor    String?  @map("badge_color")
-  createdAt     DateTime @default(now()) @map("created_at")
-  jobCard       JobCard  @relation(fields: [jobCardId], references: [id], onDelete: Cascade)
+  id           String   @id @default(uuid())
+  jobCardId    String   @map("job_card_id")
+  action       String   @map("action")
+  title        String
+  description  String
+  fieldChanged String?  @map("field_changed")
+  oldValue     String?  @map("old_value")
+  newValue     String?  @map("new_value")
+  userId       String?  @map("user_id")
+  userName     String   @map("user_name")
+  userRole     String?  @map("user_role")
+  userEmail    String?  @map("user_email")
+  badgeColor   String?  @map("badge_color")
+  createdAt    DateTime @default(now()) @map("created_at")
+  jobCard      JobCard  @relation(fields: [jobCardId], references: [id], onDelete: Cascade)
 
   @@map("job_card_audit_logs")
 }
@@ -462,7 +477,7 @@ model JobCardVoiceNote {
   id              String   @id @default(uuid())
   jobCardId       String   @map("job_card_id")
   title           String
-  audioUrl        String   @map("audio_url") @db.Text
+  audioUrl        String   @map("audio_url")
   durationSeconds Decimal  @default(0) @map("duration_seconds") @db.Decimal(8, 2)
   userId          String?  @map("user_id")
   userName        String   @map("user_name")
@@ -474,19 +489,18 @@ model JobCardVoiceNote {
 }
 
 model ComponentHealth {
-  id                   String     @id @default(uuid())
-  machineId            String     @map("machine_id")
-  componentId          String?    @map("component_id")
-  componentName        String     @map("component_name")
-  serialNumber         String?    @map("serial_number")
-  parameters           Json       @map("parameters")
-  healthScore          Int        @map("health_score")
-  status               String     @default("Healthy")
-  createdAt            DateTime   @default(now()) @map("created_at")
-  updatedAt            DateTime   @updatedAt @map("updated_at")
-
-  machine              Machine    @relation(fields: [machineId], references: [id], onDelete: Cascade)
-  component            Component? @relation(fields: [componentId], references: [id], onDelete: SetNull)
+  id            String     @id @default(uuid())
+  machineId     String     @map("machine_id")
+  componentId   String?    @map("component_id")
+  componentName String     @map("component_name")
+  serialNumber  String?    @map("serial_number")
+  parameters    Json       @map("parameters")
+  healthScore   Int        @map("health_score")
+  status        String     @default("Healthy")
+  createdAt     DateTime   @default(now()) @map("created_at")
+  updatedAt     DateTime   @updatedAt @map("updated_at")
+  component     Component? @relation(fields: [componentId], references: [id])
+  machine       Machine    @relation(fields: [machineId], references: [id], onDelete: Cascade)
 
   @@map("component_health")
 }
@@ -554,35 +568,45 @@ model OptionalServiceCatalog {
 }
 
 model Quotation {
-  id                     String    @id @default(uuid())
-  quotationNumber        String    @unique @map("quotation_number")
-  companyId              String    @map("company_id")
-  companyName            String    @map("company_name")
-  contactPerson          String?   @map("contact_person")
-  contactEmail           String    @map("contact_email")
-  contactPhone           String?   @map("contact_phone")
-  status                 String    @default("PENDING_REVIEW")
-  tier                   String    @default("Enterprise")
-  machineCount           Int       @default(1) @map("machine_count")
-  contractDuration       String    @default("12") @map("contract_duration")
-  billingFrequency       String    @default("Monthly in Advance") @map("billing_frequency")
-  baseAmount             Decimal   @default(0) @map("base_amount") @db.Decimal(12, 2)
-  optionalServicesAmount Decimal   @default(0) @map("optional_services_amount") @db.Decimal(12, 2)
-  discountAmount         Decimal   @default(0) @map("discount_amount") @db.Decimal(12, 2)
-  taxAmount              Decimal   @default(0) @map("tax_amount") @db.Decimal(12, 2)
-  totalAmount            Decimal   @default(0) @map("total_amount") @db.Decimal(12, 2)
-  optionalServices       Json      @default("[]") @map("optional_services")
-  scopeOfWork            Json?     @map("scope_of_work")
-  paymentTerms           String?   @map("payment_terms")
-  notes                  String?
-  validUntil             DateTime? @map("valid_until")
-  sentAt                 DateTime? @map("sent_at")
-  acceptedAt             DateTime? @map("accepted_at")
-  rejectedAt             DateTime? @map("rejected_at")
-  signedBy               String?   @map("signed_by")
-  signatureUrl           String?   @map("signature_url")
-  createdAt              DateTime  @default(now()) @map("created_at")
-  updatedAt              DateTime  @updatedAt @map("updated_at")
+  id                         String      @id @default(uuid())
+  quotationNumber            String      @unique @map("quotation_number")
+  companyId                  String      @map("company_id")
+  companyName                String      @map("company_name")
+  contactPerson              String?     @map("contact_person")
+  contactEmail               String      @map("contact_email")
+  contactPhone               String?     @map("contact_phone")
+  status                     String      @default("PENDING_REVIEW")
+  tier                       String      @default("Enterprise")
+  machineCount               Int         @default(1) @map("machine_count")
+  contractDuration           String      @default("12") @map("contract_duration")
+  billingFrequency           String      @default("Monthly in Advance") @map("billing_frequency")
+  baseAmount                 Decimal     @default(0) @map("base_amount") @db.Decimal(12, 2)
+  optionalServicesAmount     Decimal     @default(0) @map("optional_services_amount") @db.Decimal(12, 2)
+  discountAmount             Decimal     @default(0) @map("discount_amount") @db.Decimal(12, 2)
+  taxAmount                  Decimal     @default(0) @map("tax_amount") @db.Decimal(12, 2)
+  totalAmount                Decimal     @default(0) @map("total_amount") @db.Decimal(12, 2)
+  optionalServices           Json        @default("[]") @map("optional_services")
+  scopeOfWork                Json?       @map("scope_of_work")
+  paymentTerms               String?     @map("payment_terms")
+  notes                      String?
+  validUntil                 DateTime?   @map("valid_until")
+  sentAt                     DateTime?   @map("sent_at")
+  acceptedAt                 DateTime?   @map("accepted_at")
+  rejectedAt                 DateTime?   @map("rejected_at")
+  signedBy                   String?     @map("signed_by")
+  signatureUrl               String?     @map("signature_url")
+  createdAt                  DateTime    @default(now()) @map("created_at")
+  updatedAt                  DateTime    @updatedAt @map("updated_at")
+  additional_machine_charge  Decimal     @default(0) @db.Decimal(12, 2)
+  implementation_fee         Decimal     @default(0) @db.Decimal(12, 2)
+  licensed_machine_allowance Int         @default(0)
+  monthly_site_licence       Decimal     @default(0) @db.Decimal(12, 2)
+  quotation_request_id       String?
+  trial_description          String?
+  trial_duration             Int?
+  trial_machines             Int?
+  trial_requested            Boolean     @default(false)
+  contracts                  contracts[]
 
   @@index([companyId])
   @@index([status])
@@ -590,30 +614,30 @@ model Quotation {
 }
 
 model QuotationInquiry {
-  id                         String    @id @default(uuid())
-  inquiryId                  String    @unique @map("inquiry_id")
-  companyId                  String    @map("company_id")
-  companyName                String    @map("company_name")
-  contactPerson              String?   @map("contact_person")
+  id                         String   @id @default(uuid())
+  inquiryId                  String   @unique @map("inquiry_id")
+  companyId                  String   @map("company_id")
+  companyName                String   @map("company_name")
+  contactPerson              String?  @map("contact_person")
   email                      String
   phone                      String?
-  siteLocation               String?   @map("site_location")
-  quotationType              String    @map("quotation_type")
-  numberOfSites              Int       @default(1) @map("number_of_sites")
-  siteNames                  Json      @default("[]") @map("site_names")
-  activeMachines             Int       @default(1) @map("active_machines")
-  equipmentTypes             Json      @default("[]") @map("equipment_types")
-  contractDuration           String    @default("12 Months") @map("contract_duration")
-  implementationRequirements String?   @map("implementation_requirements")
-  additionalRequirements     String?   @map("additional_requirements")
-  attachmentUrl              String?   @map("attachment_url")
-  attachmentFileName         String?   @map("attachment_file_name")
-  attachmentFileType         String?   @map("attachment_file_type")
-  attachmentSize             Int?      @map("attachment_size")
-  status                     String    @default("ACTIVE")
-  quotationStatus            String?   @map("quotation_status")
-  createdAt                  DateTime  @default(now()) @map("created_at")
-  updatedAt                  DateTime  @updatedAt @map("updated_at")
+  siteLocation               String?  @map("site_location")
+  quotationType              String   @map("quotation_type")
+  numberOfSites              Int      @default(1) @map("number_of_sites")
+  siteNames                  Json     @default("[]") @map("site_names")
+  activeMachines             Int      @default(1) @map("active_machines")
+  equipmentTypes             Json     @default("[]") @map("equipment_types")
+  contractDuration           String   @default("12 Months") @map("contract_duration")
+  implementationRequirements String?  @map("implementation_requirements")
+  additionalRequirements     String?  @map("additional_requirements")
+  attachmentUrl              String?  @map("attachment_url")
+  attachmentFileName         String?  @map("attachment_file_name")
+  attachmentFileType         String?  @map("attachment_file_type")
+  attachmentSize             Int?     @map("attachment_size")
+  status                     String   @default("ACTIVE")
+  quotationStatus            String?  @map("quotation_status")
+  createdAt                  DateTime @default(now()) @map("created_at")
+  updatedAt                  DateTime @updatedAt @map("updated_at")
 
   @@index([companyId])
   @@index([status])
@@ -621,31 +645,31 @@ model QuotationInquiry {
 }
 
 model QuotationRequest {
-  id                         String    @id @default(uuid())
-  requestId                  String    @unique @map("request_id")
-  userId                     String?   @map("user_id")
-  companyId                  String?   @map("company_id")
-  companyName                String    @map("company_name")
-  contactPerson              String?   @map("contact_person")
+  id                         String   @id @default(uuid())
+  requestId                  String   @unique @map("request_id")
+  userId                     String?  @map("user_id")
+  companyId                  String?  @map("company_id")
+  companyName                String?  @map("company_name")
+  contactPerson              String?  @map("contact_person")
   email                      String?
   phone                      String?
-  siteLocation               String?   @map("site_location")
-  quotationType              String    @map("quotation_type")
-  numberOfSites              Int       @default(1) @map("number_of_sites")
-  siteNames                  Json      @default("[]") @map("site_names")
-  activeMachines             Int       @default(1) @map("active_machines")
-  equipmentTypes             Json      @default("[]") @map("equipment_types")
-  contractDuration           String    @default("12 Months") @map("contract_duration")
-  optionalServices           Json      @default("[]") @map("optional_services")
-  implementationRequirements String?   @map("implementation_requirements")
-  additionalRequirements     String?   @map("additional_requirements")
-  attachmentUrl              String?   @map("attachment_url")
-  attachmentFileName         String?   @map("attachment_file_name")
-  attachmentFileType         String?   @map("attachment_file_type")
-  attachmentSize             Int?      @map("attachment_size")
-  status                     String    @default("PENDING")
-  createdAt                  DateTime  @default(now()) @map("created_at")
-  updatedAt                  DateTime  @updatedAt @map("updated_at")
+  siteLocation               String?  @map("site_location")
+  quotationType              String   @map("quotation_type")
+  numberOfSites              Int      @default(1) @map("number_of_sites")
+  siteNames                  Json     @default("[]") @map("site_names")
+  activeMachines             Int      @default(1) @map("active_machines")
+  equipmentTypes             Json     @default("[]") @map("equipment_types")
+  contractDuration           String   @default("12 Months") @map("contract_duration")
+  implementationRequirements String?  @map("implementation_requirements")
+  additionalRequirements     String?  @map("additional_requirements")
+  attachmentUrl              String?  @map("attachment_url")
+  attachmentFileName         String?  @map("attachment_file_name")
+  attachmentFileType         String?  @map("attachment_file_type")
+  attachmentSize             Int?     @map("attachment_size")
+  status                     String   @default("PENDING")
+  createdAt                  DateTime @default(now()) @map("created_at")
+  updatedAt                  DateTime @updatedAt @map("updated_at")
+  optionalServices           Json     @default("[]") @map("optional_services")
 
   @@index([companyId])
   @@index([userId])
@@ -674,4 +698,139 @@ model QuotationPlan {
   @@map("quotation_plans")
 }
 
+model billing_profiles {
+  id                  String   @id
+  business_name       String
+  address_line        String
+  gstin               String?
+  phone               String?
+  email               String?
+  bank_name           String
+  account_holder_name String
+  account_number      String
+  ifsc_code           String
+  branch              String?
+  is_active           Boolean  @default(true)
+  created_at          DateTime @default(now())
+  updated_at          DateTime
+}
 
+model contracts {
+  id                            String     @id
+  contract_number               String     @unique
+  quotation_id                  String
+  company_id                    String
+  start_date                    DateTime
+  end_date                      DateTime
+  po_number                     String?
+  description                   String?
+  status                        String     @default("DRAFT")
+  sent_at                       DateTime?
+  created_at                    DateTime   @default(now())
+  updated_at                    DateTime
+  acceptance_description        String?
+  rejected_at                   DateTime?
+  rejected_by                   String?
+  rejected_by_user_id           String?
+  rejection_reason              String?
+  super_admin_signature_url     String?
+  super_admin_signed_by         String?
+  super_admin_signed_by_user_id String?
+  super_admin_signed_at         DateTime?
+  company_signature_url         String?
+  company_signed_by             String?
+  company_signed_by_user_id     String?
+  company_signed_at             DateTime?
+  Company                       Company    @relation(fields: [company_id], references: [id])
+  quotations                    Quotation  @relation(fields: [quotation_id], references: [id])
+  invoices                      invoices[]
+
+  @@index([company_id])
+  @@index([quotation_id])
+  @@index([status])
+}
+
+model invoices {
+  id                    String           @id
+  invoice_number        String           @unique
+  contract_id           String
+  company_id            String
+  quotation_id          String?
+  bill_to_name          String
+  bill_to_address       String?
+  bill_to_gstin         String?
+  issuer_snapshot       Json
+  bank_details_snapshot Json
+  contract_number       String
+  quotation_number      String?
+  contract_period_start DateTime
+  contract_period_end   DateTime
+  line_items            Json
+  subtotal              Decimal          @default(0) @db.Decimal(12, 2)
+  total_amount          Decimal          @default(0) @db.Decimal(12, 2)
+  payment_terms         String?
+  notes                 String?
+  status                String           @default("GENERATED")
+  invoice_date          DateTime         @default(now())
+  due_date              DateTime
+  pdf_url               String?
+  created_by_id         String?
+  created_at            DateTime         @default(now())
+  updated_at            DateTime
+  Company               Company          @relation(fields: [company_id], references: [id])
+  contracts             contracts        @relation(fields: [contract_id], references: [id])
+  payment_proofs        payment_proofs[]
+
+  @@index([company_id])
+  @@index([contract_id])
+  @@index([status])
+}
+
+model payment_proofs {
+  id                    String    @id
+  invoice_id            String
+  invoice_number        String
+  company_id            String
+  submitted_by_id       String?
+  submitted_by_name     String?
+  submitted_by_email    String?
+  payment_method        String
+  payment_date          DateTime
+  amount_paid           Decimal   @db.Decimal(12, 2)
+  transaction_reference String
+  proof_file_url        String
+  created_at            DateTime  @default(now())
+  status                String    @default("PENDING")
+  verified_at           DateTime?
+  verified_by           String?
+  verified_by_user_id   String?
+  invoices              invoices  @relation(fields: [invoice_id], references: [id], onDelete: Cascade)
+
+  @@index([company_id])
+  @@index([invoice_id])
+  @@index([status])
+}
+
+model Alert {
+  id               String   @id @default(uuid())
+  companyId        String   @map("company_id")
+  machineId        String   @map("machine_id")
+  componentName    String   @map("component_name")
+  parameterName    String?  @map("parameter_name")
+  previousHealth   Int      @map("previous_health")
+  currentHealth    Int      @map("current_health")
+  healthDrop       Int      @map("health_drop")
+  status           String
+  message          String
+  parameterDetails Json?    @map("parameter_details")
+  isRead           Boolean  @default(false) @map("is_read")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  machine Machine @relation(fields: [machineId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([machineId])
+  @@index([createdAt])
+  @@map("alerts")
+}

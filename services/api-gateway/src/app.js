@@ -24,7 +24,7 @@ function buildApp(options = {}) {
 
     // Register WebSocket support
     app.register(require('@fastify/websocket'), {
-        options: { maxPayload: 1048576 } // 1MB max payload
+        options: { maxPayload: 1048576 }
     });
 
     // Request Logger hook

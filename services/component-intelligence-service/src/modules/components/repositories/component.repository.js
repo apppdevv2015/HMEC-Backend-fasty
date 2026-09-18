@@ -172,6 +172,40 @@ class ComponentRepository {
         return await enrichComponentsWithCompany(components);
     }
 
+    async findAllForEngineerDashboard(companyId) {
+        if (!companyId) {
+            throw new Error('Company ID is required');
+        }
+
+        const validCompanyId = await resolveCompanyId(companyId);
+
+        const companyIds = [
+            companyId,
+            ...(validCompanyId ? [validCompanyId] : [])
+        ];
+
+        const components = await prisma.component.findMany({
+            where: {
+                OR: [
+                    { companyId: { in: companyIds } },
+                    {
+                        machine: {
+                            companyId: { in: companyIds }
+                        }
+                    }
+                ]
+            },
+            include: {
+                machine: true
+            },
+            orderBy: {
+                createdAt: 'desc'
+            }
+        });
+
+        return components;
+    }
+
     async findByMachineId(machineId) {
         if (!machineId) return [];
 
