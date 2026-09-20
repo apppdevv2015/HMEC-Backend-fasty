@@ -2,7 +2,10 @@
  * @swagger
  * tags:
  *   name: Quotation Plans
- *   description: "Master Pricing Tiers & Subscription Packages Catalog (Free Trial, Up to 10 machines: R25k, 11-25: R45k, 26-75: R95k, 76-150: R150k, 151+: Custom)"
+ *   description: >
+ *     Master Pricing Tiers & Subscription Packages Catalog.
+ *     Free Trial, Up to 10 machines: R25k, 11-25: R45k, 26-75: R95k,
+ *     76-150: R150k, 151+: Custom.
  */
 
 /**
