@@ -1,7 +1,7 @@
 require('dotenv').config();
 const buildApp = require('./app');
 // const PORT = process.env.PORT || 3001;
-const PORT = process.env.COMPONENT_SERVICE_PORT || 3001;
+const PORT = process.env.PORT || 3001;
 
 const start = async () => {
     const app = buildApp({ logger: true });
