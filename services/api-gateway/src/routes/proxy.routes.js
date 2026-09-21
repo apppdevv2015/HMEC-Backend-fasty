@@ -1,5 +1,7 @@
 const fastifyHttpProxy = require("@fastify/http-proxy");
 
+const VERSION = "/api/v1";
+
 const SERVICES = {
   intelligence: process.env.INTELLIGENCE_SERVICE_URL,
   auth: process.env.AUTH_SERVICE_URL,
@@ -9,112 +11,74 @@ const SERVICES = {
   quotation: process.env.QUOTATION_SERVICE_URL || "http://localhost:3006",
 };
 
-const setupProxy = async (fastify) => {
-  const VERSION = "/api/v1";
+const cleanUrl = (url) => (url ? String(url).trim().replace(/\/+$/, "") : "");
 
-  await fastify.register(fastifyHttpProxy, {
-    upstream: SERVICES.auth,
-    prefix: "/api/auth",
-    rewritePrefix: "",
-  });
+async function registerProxy(fastify, { service, prefix, rewritePrefix }) {
+  const upstream = cleanUrl(SERVICES[service]);
 
-   for (const [name, url] of Object.entries(SERVICES)) {
-    if (name === "notifications") continue;
-    if (!url) continue; 
-
-    await fastify.register(fastifyHttpProxy, {
-      upstream: url,
-      prefix: `${VERSION}/${name}`,
-      rewritePrefix: "",
-    });
+  if (!upstream) {
+    console.warn(
+      `[GATEWAY][PROXY] SKIPPED ${prefix} -> ${service}: env URL set nahi hai`
+    );
+    return;
   }
 
   await fastify.register(fastifyHttpProxy, {
-    upstream: SERVICES.auth,
-    prefix: `${VERSION}/notifications`,
-    rewritePrefix: "/notifications",
+    upstream,
+    prefix,
+    rewritePrefix,
+    replyOptions: {
+      onError: (reply, info) => {
+        const err = (info && info.error) || info || {};
+        const detail = String(err.message || "unknown");
+        console.error(
+          `[GATEWAY][PROXY-ERROR] ${reply.request.method} ${reply.request.url} -> ${service} (${upstream}) | code=${err.code || "NONE"} | message=${detail}`
+        );
+        reply.code(502).send({
+          success: false,
+          message: `${service} service unreachable`,
+          code: err.code || "UPSTREAM_ERROR",
+          detail,
+        });
+      },
+    },
   });
 
-  await fastify.register(fastifyHttpProxy, {
-    upstream: SERVICES.auth,
-    prefix: `${VERSION}/plans`,
-    rewritePrefix: "/plans",
-  });
+  console.log(`[GATEWAY][PROXY] ${prefix} -> ${service} (${upstream}) rewrite="${rewritePrefix}"`);
+}
 
-  
-  await fastify.register(fastifyHttpProxy, {
-    upstream: SERVICES.intelligence,
-    prefix: `${VERSION}/machines`,
-    rewritePrefix: "/machines",
-  });
+const setupProxy = async (fastify) => {
+  const routes = [];
 
- 
-  await fastify.register(fastifyHttpProxy, {
-    upstream: SERVICES.intelligence,
-    prefix: `${VERSION}/equipment-types`,
-    rewritePrefix: "/machines/equipment-types",
-  });
 
-  await fastify.register(fastifyHttpProxy, {
-    upstream: SERVICES.intelligence,
-    prefix: `${VERSION}/components`,
-    rewritePrefix: "/components",
-  });
-
-  await fastify.register(fastifyHttpProxy, {
-    upstream: SERVICES.intelligence,
-    prefix: `${VERSION}/maintenance`,
-    rewritePrefix: "/maintenance",
-  });
-
-  await fastify.register(fastifyHttpProxy, {
-    upstream: SERVICES.intelligence,
-    prefix: `${VERSION}/alerts`,
-    rewritePrefix: "/alerts",
-  });
-
-  await fastify.register(fastifyHttpProxy, {
-    upstream: SERVICES.auth,
-    prefix: `${VERSION}/tickets`,
-    rewritePrefix: "/tickets",
-  });
-
-  await fastify.register(fastifyHttpProxy, {
-    upstream: SERVICES.intelligence,
-    prefix: `${VERSION}/job-cards`,
-    rewritePrefix: "/job-cards",
-  });
+  routes.push({ service: "auth", prefix: "/api/auth", rewritePrefix: "" });
 
  
-  await fastify.register(fastifyHttpProxy, {
-    upstream: SERVICES.intelligence,
-    prefix: `${VERSION}/manual-inspections`,
-    rewritePrefix: "/machines",
-  });
+  for (const name of Object.keys(SERVICES)) {
+    if (name === "notifications") continue;
+    routes.push({ service: name, prefix: `${VERSION}/${name}`, rewritePrefix: "" });
+  }
 
-  await fastify.register(fastifyHttpProxy, {
-    upstream: SERVICES.quotation,
-    prefix: `${VERSION}/optional-services`,
-    rewritePrefix: "/optional-services",
-  });
+  routes.push(
+    { service: "auth", prefix: `${VERSION}/notifications`, rewritePrefix: "/notifications" },
+    { service: "auth", prefix: `${VERSION}/plans`, rewritePrefix: "/plans" },
+    { service: "intelligence", prefix: `${VERSION}/machines`, rewritePrefix: "/machines" },
+    { service: "intelligence", prefix: `${VERSION}/equipment-types`, rewritePrefix: "/machines/equipment-types" },
+    { service: "intelligence", prefix: `${VERSION}/components`, rewritePrefix: "/components" },
+    { service: "intelligence", prefix: `${VERSION}/maintenance`, rewritePrefix: "/maintenance" },
+    { service: "intelligence", prefix: `${VERSION}/alerts`, rewritePrefix: "/alerts" },
+    { service: "auth", prefix: `${VERSION}/tickets`, rewritePrefix: "/tickets" },
+    { service: "intelligence", prefix: `${VERSION}/job-cards`, rewritePrefix: "/job-cards" },
+    { service: "intelligence", prefix: `${VERSION}/manual-inspections`, rewritePrefix: "/machines" },
+    { service: "quotation", prefix: `${VERSION}/optional-services`, rewritePrefix: "/optional-services" },
+    { service: "quotation", prefix: `${VERSION}/quotations`, rewritePrefix: "/quotations" },
+    { service: "quotation", prefix: `${VERSION}/quotation-plans`, rewritePrefix: "/quotation-plans" },
+    { service: "quotation", prefix: "/uploads", rewritePrefix: "/uploads" }
+  );
 
-  await fastify.register(fastifyHttpProxy, {
-    upstream: SERVICES.quotation,
-    prefix: `${VERSION}/quotations`,
-    rewritePrefix: "/quotations",
-  });
-
-  await fastify.register(fastifyHttpProxy, {
-    upstream: SERVICES.quotation,
-    prefix: `${VERSION}/quotation-plans`,
-    rewritePrefix: "/quotation-plans",
-  });
-
-  await fastify.register(fastifyHttpProxy, {
-    upstream: SERVICES.quotation,
-    prefix: "/uploads",
-    rewritePrefix: "/uploads",
-  });
+  for (const route of routes) {
+    await registerProxy(fastify, route);
+  }
 };
 
 module.exports = setupProxy;
