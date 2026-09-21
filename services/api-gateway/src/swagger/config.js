@@ -42,8 +42,7 @@ const setupSwagger = async (fastify) => {
     await fastify.register(require('@fastify/swagger'), {
         openapi: swaggerDocs,
         transform: ({ schema, url }) => {
-            // Hide all dynamically scanned proxy and internal routes from this gateway instance.
-            // This is because they are already fully documented via swagger-jsdoc from the microservices.
+           
             return {
                 schema: {
                     ...schema,

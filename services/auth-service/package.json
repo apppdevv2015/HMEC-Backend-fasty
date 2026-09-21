@@ -26,6 +26,7 @@
         "module-alias": "^2.3.4",
         "nodemailer": "^6.9.13",
         "pg": "^8.11.5",
+        "redis": "^6.2.1",
         "swagger-jsdoc": "^6.2.8"
     },
     "devDependencies": {
