@@ -3,7 +3,7 @@ const buildApp = require('./app');
 const seedDefaultOptionalServices = require('./utils/seedDefaultServices');
 
 // const PORT = process.env.QUOTATION_SERVICE_PORT || process.env.PORT || 3006;
-const PORT = process.env.QUOTATION_SERVICE_PORT || 3006;
+const PORT = process.env.PORT || 3006;
 
 const HOST = process.env.HOST || '0.0.0.0';
 
