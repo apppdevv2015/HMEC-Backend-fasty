@@ -74,7 +74,6 @@ const setupProxy = async (fastify) => {
     // =========================================================
 // AUTH SERVICE
 // =========================================================
-
 {
     service: "auth",
     prefix: "/api/auth",
@@ -84,7 +83,7 @@ const setupProxy = async (fastify) => {
 {
     service: "auth",
     prefix: `${VERSION}/auth`,
-    rewritePrefix: "/auth",
+    rewritePrefix: "/",
 },
 
 {
@@ -122,7 +121,6 @@ const setupProxy = async (fastify) => {
     prefix: `${VERSION}/tickets`,
     rewritePrefix: "/tickets",
 },
-
         // =========================================================
         // INTELLIGENCE SERVICE
         // =========================================================
