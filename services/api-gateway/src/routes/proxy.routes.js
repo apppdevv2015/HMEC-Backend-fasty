@@ -71,141 +71,150 @@ const setupProxy = async (fastify) => {
         // AUTH SERVICE
         // =========================================================
 
-        {
-            service: "auth",
-            prefix: "/api/auth",
-            rewritePrefix: "",
-        },
+    // =========================================================
+// AUTH SERVICE
+// =========================================================
 
-        {
-            service: "auth",
-            prefix: `${VERSION}/auth`,
-            rewritePrefix: "",
-        },
+{
+    service: "auth",
+    prefix: "/api/auth",
+    rewritePrefix: "/auth",
+},
 
-        {
-            service: "auth",
-            prefix: `${VERSION}/notifications`,
-            rewritePrefix: "/notifications",
-        },
+{
+    service: "auth",
+    prefix: `${VERSION}/auth`,
+    rewritePrefix: "/auth",
+},
 
-        {
-            service: "auth",
-            prefix: `${VERSION}/plans`,
-            rewritePrefix: "/plans",
-        },
+{
+    service: "auth",
+    prefix: `${VERSION}/users`,
+    rewritePrefix: "/users",
+},
 
-        {
-            service: "auth",
-            prefix: `${VERSION}/tickets`,
-            rewritePrefix: "/tickets",
-        },
+{
+    service: "auth",
+    prefix: `${VERSION}/roles`,
+    rewritePrefix: "/roles",
+},
+
+{
+    service: "auth",
+    prefix: `${VERSION}/notifications`,
+    rewritePrefix: "/notifications",
+},
+
+{
+    service: "auth",
+    prefix: `${VERSION}/plans`,
+    rewritePrefix: "/plans",
+},
+
+{
+    service: "auth",
+    prefix: `${VERSION}/subscriptions`,
+    rewritePrefix: "/subscriptions",
+},
+
+{
+    service: "auth",
+    prefix: `${VERSION}/tickets`,
+    rewritePrefix: "/tickets",
+},
 
         // =========================================================
         // INTELLIGENCE SERVICE
         // =========================================================
 
-        {
-            service: "intelligence",
-            prefix: `${VERSION}/intelligence`,
-            rewritePrefix: "",
-        },
+       // =========================================================
+// INTELLIGENCE SERVICE
+// =========================================================
 
-        {
-            service: "intelligence",
-            prefix: `${VERSION}/machines`,
-            rewritePrefix: "/machines",
-        },
+{
+    service: "intelligence",
+    prefix: `${VERSION}/intelligence`,
+    rewritePrefix: "/",
+},
 
-        {
-            service: "intelligence",
-            prefix: `${VERSION}/equipment-types`,
-            rewritePrefix: "/machines/equipment-types",
-        },
+{
+    service: "intelligence",
+    prefix: `${VERSION}/machines`,
+    rewritePrefix: "/machines",
+},
 
-        {
-            service: "intelligence",
-            prefix: `${VERSION}/components`,
-            rewritePrefix: "/components",
-        },
+{
+    service: "intelligence",
+    prefix: `${VERSION}/equipment-types`,
+    rewritePrefix: "/machines/equipment-types",
+},
 
-        {
-            service: "intelligence",
-            prefix: `${VERSION}/maintenance`,
-            rewritePrefix: "/maintenance",
-        },
+{
+    service: "intelligence",
+    prefix: `${VERSION}/components`,
+    rewritePrefix: "/components",
+},
 
-        {
-            service: "intelligence",
-            prefix: `${VERSION}/alerts`,
-            rewritePrefix: "/alerts",
-        },
+{
+    service: "intelligence",
+    prefix: `${VERSION}/maintenance`,
+    rewritePrefix: "/maintenance",
+},
 
-        {
-            service: "intelligence",
-            prefix: `${VERSION}/job-cards`,
-            rewritePrefix: "/job-cards",
-        },
+{
+    service: "intelligence",
+    prefix: `${VERSION}/alerts`,
+    rewritePrefix: "/alerts",
+},
 
-        {
-            service: "intelligence",
-            prefix: `${VERSION}/manual-inspections`,
-            rewritePrefix: "/machines",
-        },
+{
+    service: "intelligence",
+    prefix: `${VERSION}/job-cards`,
+    rewritePrefix: "/job-cards",
+},
 
-        // =========================================================
-        // QUOTATION SERVICE
-        // =========================================================
-
-        {
-            service: "quotation",
-            prefix: `${VERSION}/quotation`,
-            rewritePrefix: "",
-        },
-
-        {
-            service: "quotation",
-            prefix: `${VERSION}/optional-services`,
-            rewritePrefix: "/optional-services",
-        },
-
-        {
-            service: "quotation",
-            prefix: `${VERSION}/quotations`,
-            rewritePrefix: "/quotations",
-        },
-
-        {
-            service: "quotation",
-            prefix: `${VERSION}/quotation-plans`,
-            rewritePrefix: "/quotation-plans",
-        },
-
-        {
-            service: "quotation",
-            prefix: "/uploads",
-            rewritePrefix: "/uploads",
-        },
+{
+    service: "intelligence",
+    prefix: `${VERSION}/manual-inspections`,
+    rewritePrefix: "/machines",
+},
 
         // =========================================================
-        // FLEET SERVICE
-        // =========================================================
+// QUOTATION SERVICE
+// =========================================================
 
-        {
-            service: "fleet",
-            prefix: `${VERSION}/fleet`,
-            rewritePrefix: "",
-        },
+// =========================================================
+// QUOTATION SERVICE
+// =========================================================
 
-        // =========================================================
-        // INGESTION SERVICE
-        // =========================================================
+// =========================================================
+// QUOTATION SERVICE
+// =========================================================
 
-        {
-            service: "ingestion",
-            prefix: `${VERSION}/ingestion`,
-            rewritePrefix: "",
-        },
+{
+    service: "quotation",
+    prefix: `${VERSION}/optional-services`,
+    rewritePrefix: "/optional-services",
+},
+
+{
+    service: "quotation",
+    prefix: `${VERSION}/quotations`,
+    rewritePrefix: "/quotations",
+},
+
+{
+    service: "quotation",
+    prefix: `${VERSION}/quotation-plans`,
+    rewritePrefix: "/quotation-plans",
+},
+
+{
+    service: "quotation",
+    prefix: "/uploads",
+    rewritePrefix: "/uploads",
+},
+       
     ];
 
     for (const route of routes) {
