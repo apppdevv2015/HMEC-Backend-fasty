@@ -7,7 +7,7 @@
 
 /**
  * @swagger
- * /auth/roles:
+ * /roles:
  *   get:
  *     summary: Get all roles (Requires Auth)
  *     tags: [Roles]
@@ -24,7 +24,9 @@
  *           schema:
  *             type: object
  *             properties:
- *               name: { type: string, example: "supervisor" }
+ *               name:
+ *                 type: string
+ *                 example: "supervisor"
  *     responses:
  *       201:
  *         description: Role created
@@ -32,7 +34,7 @@
 
 /**
  * @swagger
- * /auth/roles/{id}:
+ * /roles/{id}:
  *   get:
  *     summary: Get role by ID
  *     tags: [Roles]
@@ -61,7 +63,9 @@
  *           schema:
  *             type: object
  *             properties:
- *               name: { type: string, example: "updated_role" }
+ *               name:
+ *                 type: string
+ *                 example: "updated_role"
  *     responses:
  *       200:
  *         description: Role updated
