@@ -303,20 +303,26 @@ function buildInvoiceHtml(invoice) {
 
 class InvoicePdfService {
   /**
-   * @param {object} invoice - full Invoice record (from DB)
+   * @param {object} invoice 
    * @returns {Promise<Buffer>}
    */
   async generatePdfBuffer(invoice) {
     const html = buildInvoiceHtml(invoice);
-
-    const browser = await puppeteer.launch({
+        const browser = await puppeteer.launch({
       headless: "new",
-      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+      args: [
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
+        "--disable-gpu",
+        "--font-render-hinting=none",
+      ],
     });
-
     try {
       const page = await browser.newPage();
-      await page.setContent(html, { waitUntil: "networkidle0" });
+      await page.setContent(html, { waitUntil: "domcontentloaded", timeout: 60000 });
+
+
 
       const pdfBuffer = await page.pdf({
         format: "A4",
