@@ -32,11 +32,11 @@ function buildApp(opts = {}) {
     origin: true,
     credentials: true,
   });
- fastify.register(fastifyMultipart, {
-  limits: {
-    fileSize: 5 * 1024 * 1024,
-  },
-});
+  fastify.register(fastifyMultipart, {
+    limits: {
+      fileSize: 5 * 1024 * 1024,
+    },
+  });
 
   fastify.register(fastifyStatic, {
     root: path.join(process.cwd(), "uploads"),
