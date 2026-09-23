@@ -36,26 +36,8 @@ async function publishRedisAlert(channel, payload) {
 
 class MachineService {
   async addMachine(data) {
-    const subscription = await machineRepository.getCompanyActiveSubscription(
-      data.companyId,
-    );
-    if (!subscription) {
-      throw new Error(
-        "No active subscription found. Please subscribe to a plan to add machines.",
-      );
-    }
 
-    const machineLimit = subscription.plan.machineLimit;
-    const currentMachinesCount = await machineRepository.countMachinesByCompany(
-      data.companyId,
-    );
-
-    if (currentMachinesCount >= machineLimit) {
-      throw new Error(
-        `Subscription limit reached. Your current plan allows a maximum of ${machineLimit} machines. Please upgrade your plan to add more.`,
-      );
-    }
-
+  
     const rawImg =
       data.imageUrl || data.image_url || data.image || data.photo || null;
     const savedImgUrl = saveMachineImageFile(rawImg);

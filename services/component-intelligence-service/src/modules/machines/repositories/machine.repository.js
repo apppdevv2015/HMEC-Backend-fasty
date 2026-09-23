@@ -59,8 +59,15 @@ async function enrichMachinesWithCompany(machines) {
 
 class MachineRepository {
     async create(data) {
-        const machine = await prisma.machine.create({ data });
-        return await enrichMachinesWithCompany(machine);
+        try {
+            const machine = await prisma.machine.create({ data });
+            return await enrichMachinesWithCompany(machine);
+        } catch (err) {
+            if (err.code === 'P2002' && err.meta?.target?.includes('serialNumber')) {
+                throw new Error(`Machine with serial number "${data.serialNumber}" already exists. Please use a different serial number.`);
+            }
+            throw err;
+        }
     }
 
     async findAll(companyId) {

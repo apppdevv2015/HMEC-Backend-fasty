@@ -1,4 +1,4 @@
-const { PrismaClient } = require('@prisma/client');
+const { PrismaClient } = require('../../../../node_modules/.prisma-clients/quotation-client');
 require('dotenv').config();
 
 const prisma = new PrismaClient({

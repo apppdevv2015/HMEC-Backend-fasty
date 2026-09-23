@@ -211,7 +211,6 @@ function buildInvoiceHtml(invoice) {
                 <h1>${escapeHtml(issuer.businessName)}</h1>
                 <p>
                     ${escapeHtml(issuer.addressLine)}<br/>
-                    ${issuer.gstin ? `GSTIN: ${escapeHtml(issuer.gstin)}<br/>` : ""}
                     ${issuer.phone ? `Phone: ${escapeHtml(issuer.phone)}<br/>` : ""}
                     ${issuer.email ? `Email: ${escapeHtml(issuer.email)}` : ""}
                 </p>
@@ -232,7 +231,6 @@ function buildInvoiceHtml(invoice) {
             <p>
                 <b>${escapeHtml(invoice.billToName)}</b><br/>
                 ${invoice.billToAddress ? `${escapeHtml(invoice.billToAddress)}<br/>` : ""}
-                ${invoice.billToGstin ? `GSTIN: ${escapeHtml(invoice.billToGstin)}` : ""}
             </p>
         </div>
         <div class="info-box">
@@ -303,12 +301,12 @@ function buildInvoiceHtml(invoice) {
 
 class InvoicePdfService {
   /**
-   * @param {object} invoice 
+   * @param {object} invoice
    * @returns {Promise<Buffer>}
    */
   async generatePdfBuffer(invoice) {
     const html = buildInvoiceHtml(invoice);
-        const browser = await puppeteer.launch({
+    const browser = await puppeteer.launch({
       headless: "new",
       args: [
         "--no-sandbox",
@@ -320,9 +318,10 @@ class InvoicePdfService {
     });
     try {
       const page = await browser.newPage();
-      await page.setContent(html, { waitUntil: "domcontentloaded", timeout: 60000 });
-
-
+      await page.setContent(html, {
+        waitUntil: "domcontentloaded",
+        timeout: 60000,
+      });
 
       const pdfBuffer = await page.pdf({
         format: "A4",

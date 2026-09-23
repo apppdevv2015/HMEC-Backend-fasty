@@ -831,7 +831,6 @@ class QuotationService {
     const issuerSnapshot = {
       businessName: billingProfile.businessName,
       addressLine: billingProfile.addressLine,
-      gstin: billingProfile.gstin,
       phone: billingProfile.phone,
       email: billingProfile.email,
     };
@@ -852,7 +851,7 @@ class QuotationService {
 
       billToName: contract.company?.name || quotation?.companyName || "N/A",
       billToAddress: null,
-      billToGstin: null,
+
 
       issuerSnapshot,
       bankDetailsSnapshot,

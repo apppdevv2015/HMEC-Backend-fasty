@@ -133,6 +133,12 @@ function sanitizeComponentPayload(data) {
 class ComponentRepository {
     async create(data) {
         const payload = sanitizeComponentPayload(data);
+        payload.machineId = data.machineId || data.machine?.id || null;
+        payload.companyId = data.companyId || null;
+        payload.serialNumber = data.serialNumber
+            ? String(data.serialNumber)
+            : `COMP-${Date.now().toString(36).toUpperCase()}-${Math.floor(Math.random() * 900 + 100)}`;
+
         const component = await prisma.component.create({
             data: payload,
             include: {
