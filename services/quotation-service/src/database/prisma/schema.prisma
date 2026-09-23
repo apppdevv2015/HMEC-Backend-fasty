@@ -669,6 +669,21 @@ model QuotationRequest {
   equipmentTypes             Json      @default("[]") @map("equipment_types")
   contractDuration           String    @default("12 Months") @map("contract_duration")
   optionalServices           Json      @default("[]") @map("optional_services")
+
+ tier                       String?
+  billingFrequency           String?   @map("billing_frequency")
+  licensedMachineAllowance   Int?      @map("licensed_machine_allowance")
+  onceOffImplementationFee   Decimal?  @map("once_off_implementation_fee") @db.Decimal(12, 2)
+  monthlySiteLicence         Decimal?  @map("monthly_site_licence") @db.Decimal(12, 2)
+  additionalMachineCharge    Decimal?  @map("additional_machine_charge") @db.Decimal(12, 2)
+  paymentTerms               String?   @map("payment_terms")
+  trialRequested             Boolean?  @map("trial_requested")
+  trialDuration              String?   @map("trial_duration")
+  trialMachines              Int?      @map("trial_machines")
+  trialDescription           String?   @map("trial_description")
+  notes                      String?
+  draftOptionalServices      Json?     @map("draft_optional_services")
+
   implementationRequirements String?   @map("implementation_requirements")
   additionalRequirements     String?   @map("additional_requirements")
   attachmentUrl              String?   @map("attachment_url")
