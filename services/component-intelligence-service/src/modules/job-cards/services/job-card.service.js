@@ -40,6 +40,8 @@ const TECH_STATUSES = [
   "WAITING_FOR_PARTS",
   "WAITING_FOR_APPROVAL",
 ];
+const ADMIN_ROLE_NAMES = ["admin", "sub_admin", "company_admin"];
+const SUPERVISOR_ROLE_NAMES = ["supervisor"];
 const STATUS_FLOW = {
   DRAFT: ["OPEN", "ASSIGNED", "CANCELLED"],
   OPEN: ["ASSIGNED", "CANCELLED"],
@@ -106,6 +108,87 @@ async function resolveStaff(companyId, userId, roleKeyword) {
   });
   if (!u) throw new Error(`Selected ${roleKeyword} not found in this company.`);
   return [u.firstName, u.lastName].filter(Boolean).join(" ").trim();
+}
+
+async function notifyJobCardReviewers(companyId, jobCard, actor, notification) {
+  const [admins, supervisors] = await Promise.all([
+    prisma.user.findMany({
+      where: {
+        companyId,
+        isActive: true,
+        role: { name: { in: ADMIN_ROLE_NAMES, mode: "insensitive" } },
+      },
+      select: { id: true },
+    }),
+    jobCard.assignedSupervisorId
+      ? Promise.resolve([])
+      : prisma.user.findMany({
+          where: {
+            companyId,
+            isActive: true,
+            role: { name: { in: SUPERVISOR_ROLE_NAMES, mode: "insensitive" } },
+          },
+          select: { id: true },
+        }),
+  ]);
+  const recipients = new Set([
+    jobCard.assignedSupervisorId || null,
+    ...supervisors.map((supervisor) => supervisor.id),
+    ...admins.map((admin) => admin.id),
+  ]);
+  recipients.delete(null);
+  recipients.delete(undefined);
+  recipients.delete(actor?.id);
+
+  for (const userId of recipients) {
+    await notifyUser(prisma, redisModule, {
+      companyId,
+      userId,
+      ...notification,
+      actorId: actor?.id || null,
+      actorName: actor?.name || null,
+      actorRole: actor?.role || null,
+      entityType: "JobCard",
+      entityId: jobCard.id,
+    });
+  }
+}
+
+async function notifyJobCardApprovalRecipient(companyId, jobCard, actor, notification) {
+  const actorRole = String(actor?.role || "").toLowerCase();
+  const notifyAdmins = actorRole.includes("supervisor");
+  const recipients = notifyAdmins
+    ? await prisma.user.findMany({
+        where: {
+          companyId,
+          isActive: true,
+          role: { name: { in: ADMIN_ROLE_NAMES, mode: "insensitive" } },
+        },
+        select: { id: true },
+      }).then((users) => users.map((user) => user.id))
+    : jobCard.assignedSupervisorId
+      ? [jobCard.assignedSupervisorId]
+      : await prisma.user.findMany({
+          where: {
+            companyId,
+            isActive: true,
+            role: { name: { in: SUPERVISOR_ROLE_NAMES, mode: "insensitive" } },
+          },
+          select: { id: true },
+        }).then((users) => users.map((user) => user.id));
+
+  for (const userId of new Set(recipients.filter((id) => id && id !== actor?.id))) {
+    await notifyUser(prisma, redisModule, {
+      companyId,
+      userId,
+      ...notification,
+      actorId: actor?.id || null,
+      actorName: actor?.name || null,
+      actorRole: actor?.role || null,
+      entityType: "JobCard",
+      entityId: jobCard.id,
+    });
+  }
 }
 
 async function recalcCost(jobCardId) {
@@ -227,6 +310,9 @@ class JobCardService {
         message: `Job Card #${jobCard.jobCardNumber} - "${jobCard.title}" assigned to you`,
         type: "Task",
         severity: "info",
+        actorId: actor?.id,
+        actorName: actor?.name,
+        actorRole: actor?.role,
         entityType: "JobCard",
         entityId: jobCard.id,
       });
@@ -450,6 +536,9 @@ class JobCardService {
         title: "Task Assigned",
         message: `Job Card #${existing.jobCardNumber} assigned to you`,
         type: "Task",
+        actorId: actor?.id,
+        actorName: actor?.name,
+        actorRole: actor?.role,
         entityType: "JobCard",
         entityId: id,
       });
@@ -553,22 +642,42 @@ class JobCardService {
       { fieldChanged: "status", oldValue: jobCard.status, newValue: status },
     );
 
-    const notifyTargets = [
-      jobCard.assignedTechnicianId,
-      jobCard.assignedSupervisorId,
-    ]
-      .filter(Boolean)
-      .filter((uid) => uid !== actor?.id);
-    for (const targetUserId of notifyTargets) {
-      await notifyUser(prisma, redisModule, {
-        companyId,
-        userId: targetUserId,
-        title: "Job Card Status Updated",
-        message: `Job Card #${jobCard.jobCardNumber} status changed to ${status}`,
-        type: "Task",
-        entityType: "JobCard",
-        entityId: id,
-      });
+    const statusNotification = {
+      title:
+        status === "WAITING_FOR_APPROVAL"
+          ? "Job Card Report Submitted"
+          : status === "IN_PROGRESS"
+            ? "Job Card Work Started"
+            : "Job Card Status Updated",
+      message:
+        status === "WAITING_FOR_APPROVAL"
+          ? `Report submitted for Job Card #${jobCard.jobCardNumber}; review is required.`
+          : status === "IN_PROGRESS"
+            ? `Work started on Job Card #${jobCard.jobCardNumber}.`
+            : `Job Card #${jobCard.jobCardNumber} status changed to ${status}`,
+      type: "Task",
+    };
+    if (["IN_PROGRESS", "WAITING_FOR_APPROVAL"].includes(status)) {
+      await notifyJobCardReviewers(companyId, jobCard, actor, statusNotification);
+    } else {
+      const notifyTargets = [
+        jobCard.assignedTechnicianId,
+        jobCard.assignedSupervisorId,
+      ]
+        .filter(Boolean)
+        .filter((uid) => uid !== actor?.id);
+      for (const targetUserId of notifyTargets) {
+        await notifyUser(prisma, redisModule, {
+          companyId,
+          userId: targetUserId,
+          ...statusNotification,
+          actorId: actor?.id || null,
+          actorName: actor?.name || null,
+          actorRole: actor?.role || null,
+          entityType: "JobCard",
+          entityId: id,
+        });
+      }
     }
 
     return updated;
@@ -609,6 +718,11 @@ class JobCardService {
         await jobCardRepository.updateJobCard(id, {
           status: "IN_PROGRESS",
           actualStartDate: jobCard.actualStartDate || now,
+        });
+        await notifyJobCardReviewers(companyId, jobCard, actor, {
+          title: "Job Card Work Started",
+          message: `Work started on Job Card #${jobCard.jobCardNumber}.`,
+          type: "Task",
         });
       }
     } else {
@@ -864,18 +978,12 @@ class JobCardService {
       },
     );
 
-    if (jobCard.assignedTechnicianId) {
-      await notifyUser(prisma, redisModule, {
-        companyId,
-        userId: jobCard.assignedTechnicianId,
-        title: "Job Card Approved",
-        message: `Job Card #${jobCard.jobCardNumber}: ${title}`,
-        type: "Task",
-        severity: "success",
-        entityType: "JobCard",
-        entityId: id,
-      });
-    }
+    await notifyJobCardApprovalRecipient(companyId, jobCard, actor, {
+      title: "Job Card Approved",
+      message: `Job Card #${jobCard.jobCardNumber}: ${title}`,
+      type: "Task",
+      severity: "success",
+    });
 
     return updated;
   }

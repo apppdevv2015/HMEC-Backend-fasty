@@ -271,21 +271,21 @@ model Notification {
   type        String
   isRead      Boolean  @default(false) @map("is_read")
   createdAt   DateTime @default(now()) @map("created_at")
-  actor_id    String?
-  actor_name  String?
-  actor_role  String?
-  entity_id   String?
-  entity_type String?
+  actorId     String?  @map("actor_id")
+  actorName   String?  @map("actor_name")
+  actorRole   String?  @map("actor_role")
+  entityId    String?  @map("entity_id")
+  	entityType String? @map("entity_type")
   link        String?
   role        String?
   severity    String   @default("info")
   title       String?
-  user_id     String?
+  userId      String?  @map("user_id")
   company     Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@index([companyId, isRead])
   @@index([role])
-  @@index([user_id])
+  @@index([userId])
   @@map("notifications")
 }
 
