@@ -3,9 +3,12 @@ const prisma = require("../../../database/prismaClient");
 const healthEngineService = require("../services/healthEngine.service");
 const equipmentSpecMasterService = require("../services/equipmentSpecMaster.service");
 const responseHandler = require("../../../utils/responseHandler");
-const alertService = require('../../alert/alert.service');
-const { notifyUser, notifyRoles } = require("../../../../../../shared/notifications/notificationPublisher");
-const redisModule = require("../../../../../auth-service/src/redis/redis.client");;
+const alertService = require("../../alert/alert.service");
+const {
+  notifyUser,
+  notifyRoles,
+} = require("../../../../../../shared/notifications/notificationPublisher");
+const redisModule = require("../../../../../auth-service/src/redis/redis.client");
 
 const { HTTP_STATUS } = responseHandler;
 
@@ -19,6 +22,7 @@ class ManualInspectionController {
         customFields = [],
         componentCategory = "General",
         componentName = "",
+        componentId = null,
         brand = "",
         category = "",
         modelName = "",
@@ -150,6 +154,7 @@ class ManualInspectionController {
         for (const c of batchComponents) {
           const cName =
             c.componentName || c.componentCategory || "General Component";
+          const cComponentId = c.componentId || null;
           const cCategory = c.componentCategory || "General";
           const cParams = c.customFields || [];
 
@@ -221,6 +226,7 @@ class ManualInspectionController {
 
           processedComponents.push({
             componentName: cName,
+            componentId: cComponentId,
             componentCategory: cCategory,
             healthScore: cHealth.healthScore,
             status: cHealth.status,
@@ -248,11 +254,11 @@ class ManualInspectionController {
                 componentName: comp.componentName,
               },
             });
-
             if (existingRec) {
               await tx.componentHealth.update({
                 where: { id: existingRec.id },
                 data: {
+                  componentId: comp.componentId || existingRec.componentId || null,
                   componentName: comp.componentName,
                   serialNumber: finalSerialNumber,
                   parameters: comp.parameters,
@@ -265,6 +271,7 @@ class ManualInspectionController {
               await tx.componentHealth.create({
                 data: {
                   machineId: targetMachineId,
+                  componentId: comp.componentId || null,
                   componentName: comp.componentName,
                   serialNumber: finalSerialNumber,
                   parameters: comp.parameters,
@@ -272,6 +279,20 @@ class ManualInspectionController {
                   status: comp.status,
                 },
               });
+            }
+
+            if (comp.componentId) {
+              await tx.component
+                .update({
+                  where: { id: comp.componentId },
+                  data: {
+                    healthScore: comp.healthScore,
+                    lastInspectedAt: new Date(),
+                  },
+                })
+                .catch((e) =>
+                  console.warn("[BATCH_COMPONENT_HEALTH_SYNC_WARN]:", e.message),
+                );
             }
           }
 
@@ -343,33 +364,38 @@ class ManualInspectionController {
           });
         });
 
-                await Promise.all(
-    processedComponents.map((comp) =>
-        alertService.evaluate({
-            companyId,
-            machineId: targetMachineId,
-            machineName: finalMachineName,
-            componentName: comp.componentName,
-            previousHealth: comp.previousHealth,
-            currentHealth: comp.healthScore,
-            status: comp.status,
-            parameterChanges: comp.parameterChanges,
-            issues: comp.issues,
-        })
-    )
-);
+        await Promise.all(
+          processedComponents.map((comp) =>
+            alertService.evaluate({
+              companyId,
+              machineId: targetMachineId,
+              machineName: finalMachineName,
+              componentName: comp.componentName,
+              previousHealth: comp.previousHealth,
+              currentHealth: comp.healthScore,
+              status: comp.status,
+              parameterChanges: comp.parameterChanges,
+              issues: comp.issues,
+            }),
+          ),
+        );
 
         await notifyRoles(prisma, redisModule, {
           companyId,
-          roles: ['ADMIN', 'SUB_ADMIN'],
-          title: 'Pre-Start Inspection Submitted',
+          roles: ["ADMIN", "SUB_ADMIN"],
+          title: "Pre-Start Inspection Submitted",
           message: `${userName} submitted full inspection for "${finalMachineName}" — Health: ${overallMachineHealth}% (${machineStatus})`,
-          type: 'Inspection',
-          severity: machineStatus === 'Critical' ? 'critical' : machineStatus === 'Warning' ? 'warning' : 'info',
+          type: "Inspection",
+          severity:
+            machineStatus === "Critical"
+              ? "critical"
+              : machineStatus === "Warning"
+                ? "warning"
+                : "info",
           actorId: userId,
           actorName: userName,
           actorRole: userRole,
-          entityType: 'Machine',
+          entityType: "Machine",
           entityId: targetMachineId,
         });
 
@@ -377,13 +403,18 @@ class ManualInspectionController {
           await notifyUser(prisma, redisModule, {
             companyId,
             userId: resolvedMachine.assignedSupervisorId,
-            title: 'Pre-Start Inspection Submitted',
+            title: "Pre-Start Inspection Submitted",
             message: `${userName} submitted full inspection for "${finalMachineName}" — Health: ${overallMachineHealth}% (${machineStatus})`,
-            type: 'Inspection',
-            severity: machineStatus === 'Critical' ? 'critical' : machineStatus === 'Warning' ? 'warning' : 'info',
+            type: "Inspection",
+            severity:
+              machineStatus === "Critical"
+                ? "critical"
+                : machineStatus === "Warning"
+                  ? "warning"
+                  : "info",
             actorId: userId,
             actorName: userName,
-            entityType: 'Machine',
+            entityType: "Machine",
             entityId: targetMachineId,
           });
         }
@@ -495,11 +526,12 @@ class ManualInspectionController {
           where: { machineId: targetMachineId, componentName: compName },
         });
 
-        if (existingRec) {
+                if (existingRec) {
           previousHealth = existingRec.healthScore;
           componentHealthRecord = await prisma.componentHealth.update({
             where: { id: existingRec.id },
             data: {
+              componentId: componentId || existingRec.componentId || null,
               componentName: compName,
               serialNumber: finalSerialNumber,
               parameters: safeParams,
@@ -512,6 +544,7 @@ class ManualInspectionController {
           componentHealthRecord = await prisma.componentHealth.create({
             data: {
               machineId: targetMachineId,
+              componentId: componentId || null,
               componentName: compName,
               serialNumber: finalSerialNumber,
               parameters: safeParams,
@@ -519,6 +552,20 @@ class ManualInspectionController {
               status: healthResult.status,
             },
           });
+        }
+
+        if (componentId) {
+          await prisma.component
+            .update({
+              where: { id: componentId },
+              data: {
+                healthScore: healthResult.healthScore,
+                lastInspectedAt: new Date(),
+              },
+            })
+            .catch((e) =>
+              console.warn("[COMPONENT_MASTER_HEALTH_SYNC_WARN]:", e.message),
+            );
         }
       } catch (e) {
         console.warn("[COMPONENT_HEALTH_SYNC_WARN]:", e.message);
@@ -604,7 +651,7 @@ class ManualInspectionController {
         console.error("[AUDIT_LOG_INSERT_ERR]:", auditErr);
       }
 
-       await alertService.evaluate({
+      await alertService.evaluate({
         companyId,
         machineId: targetMachineId,
         machineName: finalMachineName,
@@ -618,15 +665,20 @@ class ManualInspectionController {
 
       await notifyRoles(prisma, redisModule, {
         companyId,
-        roles: ['ADMIN', 'SUB_ADMIN'],
-        title: 'Pre-Start Inspection Submitted',
+        roles: ["ADMIN", "SUB_ADMIN"],
+        title: "Pre-Start Inspection Submitted",
         message: `${userName} submitted inspection for ${compName} on "${finalMachineName}" — ${healthResult.status} (${healthResult.healthScore}%)`,
-        type: 'Inspection',
-        severity: healthResult.status === 'Critical' ? 'critical' : healthResult.status === 'Warning' ? 'warning' : 'info',
+        type: "Inspection",
+        severity:
+          healthResult.status === "Critical"
+            ? "critical"
+            : healthResult.status === "Warning"
+              ? "warning"
+              : "info",
         actorId: userId,
         actorName: userName,
         actorRole: userRole,
-        entityType: 'Machine',
+        entityType: "Machine",
         entityId: targetMachineId,
       });
 
@@ -634,12 +686,12 @@ class ManualInspectionController {
         await notifyUser(prisma, redisModule, {
           companyId,
           userId: resolvedMachine.assignedSupervisorId,
-          title: 'Pre-Start Inspection Submitted',
+          title: "Pre-Start Inspection Submitted",
           message: `${userName} submitted inspection for ${compName} on "${finalMachineName}" — ${healthResult.status} (${healthResult.healthScore}%)`,
-          type: 'Inspection',
+          type: "Inspection",
           actorId: userId,
           actorName: userName,
-          entityType: 'Machine',
+          entityType: "Machine",
           entityId: targetMachineId,
         });
       }

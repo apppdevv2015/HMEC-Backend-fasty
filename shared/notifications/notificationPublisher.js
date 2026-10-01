@@ -43,23 +43,30 @@ async function notifyUser(
     return null;
   }
 
-  const notification = await prisma.notification.create({
-    data: {
-      ...(companyId ? { company: { connect: { id: companyId } } } : {}),
-      userId: userId,
-      role: role ? normalizeRoleForStorage(role) : null,
-      title,
-      message,
-      type,
-      severity,
-       actorId: actorId,
-      actorName: actorName,
-      actorRole: actorRole,
-      entityType: entityType,
-      entityId: entityId,
-      link,
-    },
-  });
+  let notification;
+  try {
+    notification = await prisma.notification.create({
+      data: {
+        companyId: companyId || null,
+        userId: userId,
+        role: role ? normalizeRoleForStorage(role) : null,
+        title,
+        message,
+        type,
+        severity,
+        actorId: actorId,
+        actorName: actorName,
+        actorRole: actorRole,
+        entityType: entityType,
+        entityId: entityId,
+        link,
+      },
+    });
+  } catch (err) {
+    console.error("[NOTIFY] DB create failed:", err.message);
+    return null;
+  }
+
   try {
     const channel = resolveChannel({ userId, companyId, role });
     if (!channel) {
