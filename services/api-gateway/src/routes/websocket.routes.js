@@ -122,11 +122,23 @@ const setupWebsocket = async (fastify) => {
       redisSubscriber.on("message", (channel, message) => {
         try {
           if (connection.socket.readyState !== 1) return;
+
+          const parsedData = JSON.parse(message);
+
+          // Sender ko uski khud ki trigger ki hui notification wapas mat bhejo
+          const actorId = parsedData.actorId ?? parsedData.actor_id ?? null;
+          if (actorId && String(actorId) === String(userId)) {
+            console.log(
+              `[WS-ALERT-SKIP] Skipped self-notification for User: ${userId} on ${channel}`,
+            );
+            return;
+          }
+
           connection.socket.send(
             JSON.stringify({
               type: "ALERT",
               channel,
-              data: JSON.parse(message),
+              data: parsedData,
               timestamp: new Date(),
             }),
           );
@@ -155,15 +167,15 @@ const setupWebsocket = async (fastify) => {
         console.log(`[WS-ALERT-GATEWAY] Client disconnected. User: ${userId}`);
 
         try {
-          const channels = [
+          const closeChannels = [
             userChannel,
             roleChannel,
             superAdminChannel,
             globalChannel,
           ].filter(Boolean);
 
-          if (channels.length > 0) {
-            await redisSubscriber.unsubscribe(...channels);
+          if (closeChannels.length > 0) {
+            await redisSubscriber.unsubscribe(...closeChannels);
           }
 
           await redisSubscriber.disconnect();

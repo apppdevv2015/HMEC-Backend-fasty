@@ -167,6 +167,9 @@ model Component {
   currentHours           Int                 @default(0)
   plannedLife            Int                 @default(0)
   replacementCost        Decimal             @default(0)
+  leadTimeWeeks          Int?                @map("lead_time_weeks")
+    currency               String              @default("ZAR")
+  dailyUsageHours        Decimal?            @map("daily_usage_hours") @db.Decimal(5, 2)
   condition              Int                 @default(1)
   createdAt              DateTime            @default(now())
   updatedAt              DateTime            @updatedAt
@@ -375,6 +378,8 @@ model JobCard {
   correctiveAction       String?                    @map("corrective_action")
   postRepairCondition    String?                    @map("post_repair_condition")
   totalCost              Decimal?                   @default(0) @map("total_cost") @db.Decimal(15, 2)
+  laborRate              Decimal?                   @default(0) @map("labor_rate") @db.Decimal(10, 2)
+  laborCost              Decimal?                   @default(0) @map("labor_cost") @db.Decimal(15, 2)
   supervisorNotes        String?                    @map("supervisor_notes")
   engineeringNotes       String?                    @map("engineering_notes")
   supervisorApprovedAt   DateTime?                  @map("supervisor_approved_at")
@@ -387,7 +392,6 @@ model JobCard {
   findings               JobCardInspectionFinding[]
   laborLogs              JobCardLaborLog[]
   parts                  JobCardPart[]
-  voiceNotes             JobCardVoiceNote[]
   company                Company                    @relation(fields: [companyId], references: [id], onDelete: Cascade)
   component              Component?                 @relation(fields: [componentId], references: [id])
   machine                Machine                    @relation(fields: [machineId], references: [id], onDelete: Cascade)
@@ -472,21 +476,6 @@ model JobCardAuditLog {
   jobCard      JobCard  @relation(fields: [jobCardId], references: [id], onDelete: Cascade)
 
   @@map("job_card_audit_logs")
-}
-
-model JobCardVoiceNote {
-  id              String   @id @default(uuid())
-  jobCardId       String   @map("job_card_id")
-  title           String
-  audioUrl        String   @map("audio_url")
-  durationSeconds Decimal  @default(0) @map("duration_seconds") @db.Decimal(8, 2)
-  userId          String?  @map("user_id")
-  userName        String   @map("user_name")
-  userRole        String?  @map("user_role")
-  createdAt       DateTime @default(now()) @map("created_at")
-  jobCard         JobCard  @relation(fields: [jobCardId], references: [id], onDelete: Cascade)
-
-  @@map("job_card_voice_notes")
 }
 
 model ComponentHealth {

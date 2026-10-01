@@ -8,6 +8,11 @@ const prisma = require("../../../database/prismaClient");
 class ComponentService {
         async addComponent(data) {
         if (data.plannedLife <= 0) data.plannedLife = 1;
+                const machine = await prisma.machine.findFirst({
+            where: { id: data.machineId, companyId: data.companyId },
+            select: { id: true }
+        });
+        if (!machine) throw new Error('Machine not found for this company.');
         const component = await componentRepository.create(data);
 
         await notifyRoles(prisma, redisModule, {
@@ -23,17 +28,14 @@ class ComponentService {
         return component;
     }
 
-    /**
-     * Get the full component register with calculated intelligence metrics
-     * This logic powers the dashboard table view
-     */
+  
     async getComponentRegister(companyId, machineId) {
         const components = await componentRepository.findAll(companyId, machineId);
         return intelligenceService.processRegister(components);
     }
 
-       async updateComponent(id, data) {
-        const component = await componentRepository.update(id, data);
+       async updateComponent(id, data, companyId) {
+        const component = await componentRepository.update(id, data, companyId);
 
         await notifyRoles(prisma, redisModule, {
             companyId: component.companyId,
@@ -48,9 +50,71 @@ class ComponentService {
         return component;
     }
 
-    /**
-     * Get summary statistics for the dashboard cards
-     */
+   
+
+
+    async getFinancialSummary(companyId) {
+        const components = await this.getComponentRegister(companyId);
+        const money = (c) => Number(c.replacementCost) || 0;
+        const needsBudget = components.filter((c) =>
+            ['Replace Now', 'Order Now', 'Plan Budget'].includes(c.intelligence.financialStatus)
+        );
+
+        const byMonthMap = {};
+        const bySupplierMap = {};
+        for (const c of needsBudget) {
+            const month = c.intelligence.budgetMonth || 'Unscheduled';
+            byMonthMap[month] = (byMonthMap[month] || 0) + money(c);
+
+            const supplier = c.supplier || 'Unknown';
+            if (!bySupplierMap[supplier]) bySupplierMap[supplier] = { supplier, components: 0, amount: 0 };
+            bySupplierMap[supplier].components += 1;
+            bySupplierMap[supplier].amount += money(c);
+        }
+
+        const row = (c) => ({
+            id: c.id,
+            name: c.name,
+            machineName: c.machine?.name || null,
+            supplier: c.supplier || null,
+            healthPercent: c.intelligence.healthPercent,
+            remainingHours: c.intelligence.remainingHours,
+            replacementCost: money(c),
+            leadTimeWeeks: c.leadTimeWeeks,
+            orderByDate: c.intelligence.orderByDate,
+            daysToOrder: c.intelligence.daysToOrder,
+            budgetMonth: c.intelligence.budgetMonth,
+            financialStatus: c.intelligence.financialStatus
+        });
+
+        const statusCount = (s) => components.filter((c) => c.intelligence.financialStatus === s).length;
+
+        return {
+            currency: components[0]?.currency || 'ZAR',
+            totalComponents: components.length,
+            totalReplacementValue: components.reduce((s, c) => s + money(c), 0),
+            budgetRequired: needsBudget.reduce((s, c) => s + money(c), 0),
+            statusCounts: {
+                replaceNow: statusCount('Replace Now'),
+                orderNow: statusCount('Order Now'),
+                planBudget: statusCount('Plan Budget'),
+                usageNotSet: statusCount('Usage Not Set'),
+                ok: statusCount('OK')
+            },
+            monthlyForecast: Object.entries(byMonthMap)
+                .sort(([a], [b]) => a.localeCompare(b))
+                .map(([month, amount]) => ({ month, amount })),
+            bySupplier: Object.values(bySupplierMap).sort((a, b) => b.amount - a.amount),
+            actionRequired: components
+                .filter((c) => ['Replace Now', 'Order Now'].includes(c.intelligence.financialStatus))
+                .sort((a, b) => (a.intelligence.daysToOrder ?? -9999) - (b.intelligence.daysToOrder ?? -9999))
+                .map(row),
+            plannedBudget: components
+                .filter((c) => c.intelligence.financialStatus === 'Plan Budget')
+                .map(row)
+        };
+    }
+    
     async getDashboardStats(companyId) {
         const components = await this.getComponentRegister(companyId);
         
@@ -63,9 +127,6 @@ class ComponentService {
         };
     }
 
-    /**
-     * Inspect component - restricted to staff/engineers belonging to the same company
-     */
     async inspectComponent(id, data, companyId, role) {
         // 1. Fetch component with machine details
         const component = await componentRepository.findById(id);
@@ -73,20 +134,19 @@ class ComponentService {
             throw new Error('Component not found');
         }
 
-        // 2. Multi-tenant isolation guardrail: Check if component belongs to the engineer's company
-        // Super Admins and Sub Super Admins can bypass this check
-        if (role !== 'super_admin' && role !== 'sub_super_admin' && component.machine.companyId !== companyId) {
+     
+       if (role !== 'super_admin' && role !== 'sub_super_admin' && component.companyId !== companyId) {
             throw new Error('Access denied: You are not authorized to inspect this component.');
         }
 
-                // 3. Perform update (only operational fields currentHours and condition allowed)
+                
         const updateData = {
             currentHours: data.currentHours,
             condition: data.condition
         };
 
-        const updated = await componentRepository.update(id, updateData);
-
+               const isSuper = role === 'super_admin' || role === 'sub_super_admin';
+        const updated = await componentRepository.update(id, updateData, isSuper ? null : companyId);
         if (updated.assignedSupervisorId) {
             await notifyUser(prisma, redisModule, {
                 companyId,
@@ -112,9 +172,9 @@ class ComponentService {
         return updated;
     }
 
-      async deleteComponent(id) {
+     async deleteComponent(id, companyId) {
         const existing = await componentRepository.findById(id);
-        const deleted = await componentRepository.delete(id);
+        const deleted = await componentRepository.delete(id, companyId);
 
         if (existing) {
             await notifyRoles(prisma, redisModule, {
@@ -132,12 +192,9 @@ class ComponentService {
         return deleted;
     }
 
-    /**
-     * Fetch components filtered by machineId or companyId with intelligence metrics
-     */
     async getComponents(query, companyId) {
         if (query.machineId) {
-            const components = await componentRepository.findByMachineId(query.machineId);
+                        const components = await componentRepository.findByMachineId(query.machineId, companyId);
             return intelligenceService.processRegister(components);
         }
         const components = await componentRepository.findAll(companyId);

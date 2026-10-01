@@ -141,25 +141,30 @@ class MachineRepository {
         };
     }
 
-    async findById(id) {
-        if (!id) return null;
-        let machine = null;
-        try {
-            machine = await prisma.machine.findFirst({
-                where: {
-                    OR: [
-                        { id: id },
-                        { serialNumber: id },
-                        { name: id }
-                    ]
-                },
-                include: { components: true }
-            });
-        } catch (e) {
-            console.warn('[FIND_BY_ID_WARN]:', e.message);
-        }
-        return await enrichMachinesWithCompany(machine);
+    async findById(id, companyId = null) {
+    if (!id) return null;
+    let machine = null;
+    try {
+        const where = {
+            OR: [
+                { id: id },
+                { serialNumber: id },
+                { name: id }
+            ]
+        };
+        if (companyId) where.companyId = companyId;
+
+        machine = await prisma.machine.findFirst({
+            where,
+            include: { components: true }
+        });
+    } catch (e) {
+        console.warn('[FIND_BY_ID_WARN]:', e.message);
     }
+    return await enrichMachinesWithCompany(machine);
+}
+
+
     async countMachinesByCompany(companyId) {
         return await prisma.machine.count({
             where: { companyId }

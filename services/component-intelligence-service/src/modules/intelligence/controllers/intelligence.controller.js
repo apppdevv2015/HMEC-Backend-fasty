@@ -1,12 +1,14 @@
 const componentService = require('../../components/services/component.service');
 const intelligenceService = require('../services/intelligence.service');
 const responseHandler = require('../../../utils/responseHandler');
+const { getCompanyScope } = require('../../../middlewares/auth.middleware');
 const { HTTP_STATUS } = responseHandler;
 
 class IntelligenceController {
     async getRegister(req, res) {
         try {
-            const { companyId, machineId } = req.query;
+            const companyId = getCompanyScope(req);
+const { machineId } = req.query;
             const components = await componentService.getComponentRegister(companyId, machineId);
             return responseHandler(res, HTTP_STATUS.OK, true, 'Intelligence register fetched', components);
         } catch (error) {
@@ -16,7 +18,7 @@ class IntelligenceController {
 
     async getDashboardStats(req, res) {
         try {
-            const { companyId } = req.query;
+            const companyId = getCompanyScope(req);
             const stats = await componentService.getDashboardStats(companyId);
             return responseHandler(res, HTTP_STATUS.OK, true, 'Dashboard stats fetched', stats);
         } catch (error) {
@@ -26,7 +28,7 @@ class IntelligenceController {
 
     async getFleetHeatMap(req, res) {
         try {
-            const { companyId } = req.query;
+            const companyId = getCompanyScope(req);
             const data = await intelligenceService.getFleetHeatMap(companyId);
             return responseHandler(res, HTTP_STATUS.OK, true, 'Fleet heatmap data fetched successfully', data);
         } catch (error) {
@@ -36,7 +38,7 @@ class IntelligenceController {
 
     async getFleetMonitoring(req, res) {
         try {
-            const { companyId } = req.query;
+           const companyId = getCompanyScope(req);
             const data = await intelligenceService.getFleetMonitoring(companyId);
             return responseHandler(res, HTTP_STATUS.OK, true, 'Fleet monitoring data fetched successfully', data);
         } catch (error) {
