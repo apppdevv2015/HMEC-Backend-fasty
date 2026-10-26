@@ -112,7 +112,7 @@ class QuotationService {
 
     const requestId = await this.generateRequestId();
 
-    return quotationRequestRepository.create({
+    const request = await quotationRequestRepository.create({
       ...validated,
       requestId,
       userId: user?.id || data.userId || null,
@@ -123,6 +123,28 @@ class QuotationService {
       phone,
       status: data.status || "PENDING",
     });
+
+    try {
+      await notifySuperAdmins(prisma, redisModule, {
+        companyId,
+        title: "New Quotation Request",
+        message: `New quotation request (#${requestId}) received from ${companyName || "a company"}`,
+        type: "QuotationRequest",
+        severity: "info",
+        actorId: user?.id || null,
+        actorName: contactPerson || user?.name || user?.email || "Client",
+        actorRole: "admin",
+        entityType: "QuotationRequest",
+        entityId: request.id,
+      });
+    } catch (err) {
+      console.error(
+        "[NOTIFY] createQuotationRequest notification failed:",
+        err.message,
+      );
+    }
+
+    return request;
   }
 
   async getQuotationRequests(user, query = {}) {
@@ -852,7 +874,6 @@ class QuotationService {
       billToName: contract.company?.name || quotation?.companyName || "N/A",
       billToAddress: null,
 
-
       issuerSnapshot,
       bankDetailsSnapshot,
 
@@ -874,6 +895,24 @@ class QuotationService {
 
       createdById: user?.id || null,
     });
+
+    try {
+      await notifyUser(prisma, redisModule, {
+        companyId: invoice.companyId,
+        role: "admin",
+        title: "New Invoice Generated",
+        message: `Invoice #${invoice.invoiceNumber} has been generated — check payment/bank details`,
+        type: "Invoice",
+        severity: "info",
+        actorId: user?.id || null,
+        actorName: user?.name || user?.email || "Super Admin",
+        actorRole: "SUPER_ADMIN",
+        entityType: "Invoice",
+        entityId: invoice.id,
+      });
+    } catch (err) {
+      console.error("[NOTIFY] createInvoice notification failed:", err.message);
+    }
 
     return invoice;
   }
@@ -908,7 +947,7 @@ class QuotationService {
       throw new Error("Payment proof file is required");
     }
 
-    return quotationRepository.createPaymentProof({
+    const proof = await quotationRepository.createPaymentProof({
       ...validated,
       invoiceId: invoice.id,
       invoiceNumber: invoice.invoiceNumber,
@@ -922,6 +961,28 @@ class QuotationService {
           : null),
       submittedByEmail: user?.email || null,
     });
+
+    try {
+      await notifySuperAdmins(prisma, redisModule, {
+        companyId: invoice.companyId,
+        title: "Payment Proof Submitted",
+        message: `Payment proof submitted for invoice #${invoice.invoiceNumber}`,
+        type: "Payment",
+        severity: "info",
+        actorId: user?.id || null,
+        actorName: user?.name || user?.email || "Company Admin",
+        actorRole: "admin",
+        entityType: "PaymentProof",
+        entityId: proof.id,
+      });
+    } catch (err) {
+      console.error(
+        "[NOTIFY] submitInvoicePaymentProof notification failed:",
+        err.message,
+      );
+    }
+
+    return proof;
   }
 
   async verifyPaymentProof(id, data, user) {

@@ -44,8 +44,9 @@ class MachineController {
     };
 
     getMachineAssignment = async (req, res) => {
-        try {
-            const assignment = await machineService.getMachineAssignment(req.params.id);
+    try {
+        const assignment = await machineService.getMachineAssignment(req.params.id, req.user);
+        
             return responseHandler(res, HTTP_STATUS.OK, true, 'Machine assignment details fetched successfully', assignment);
         } catch (error) {
             return responseHandler(res, HTTP_STATUS.BAD_REQUEST, false, error.message);

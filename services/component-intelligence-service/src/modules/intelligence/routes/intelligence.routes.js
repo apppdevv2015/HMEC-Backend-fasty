@@ -2,7 +2,7 @@ const intelligenceController = require('../controllers/intelligence.controller')
 const intelligenceValidation = require('../../../validations/intelligence.validation');
 const machineController = require('../../machines/controllers/machine.controller');
 const machineValidation = require('../../../validations/machine.validation');
-const { authMiddleware, isAdmin } = require('../../../middlewares/auth.middleware');
+const { authMiddleware, isAdmin, requireRoles } = require('../../../middlewares/auth.middleware');
 
 async function intelligenceRoutes(fastify, options) {
     fastify.get('/register', { 
@@ -30,8 +30,8 @@ async function intelligenceRoutes(fastify, options) {
         preHandler: [authMiddleware, isAdmin, machineValidation]
     }, machineController.updateMachine);
 
-    fastify.delete('/fleet-heatmap/:id', {
-        preHandler: [authMiddleware, isAdmin]
+       fastify.delete('/fleet-heatmap/:id', {
+        preHandler: [authMiddleware, requireRoles(['admin'])]
     }, machineController.deleteMachine);
 }
 

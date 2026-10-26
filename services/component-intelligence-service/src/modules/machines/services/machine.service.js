@@ -158,10 +158,12 @@ class MachineService {
 
   async assignMachine(id, data, user) {
     const assignedAt = data.assignedAt || new Date().toISOString();
-
     const companyId = user?.companyId || data.companyId;
+    const isSuperAdmin = ['super_admin', 'sub_super_admin'].includes(
+      String(user?.role || '').toLowerCase()
+    );
+    let targetMachine = await machineRepository.findById(id, isSuperAdmin ? null : companyId);
 
-    let targetMachine = await machineRepository.findById(id);
     if (!targetMachine) {
       try {
         targetMachine = await prisma.machine.findFirst({
@@ -266,55 +268,48 @@ class MachineService {
     if (data.assignedArtisanName !== undefined)
       artisanName = data.assignedArtisanName;
 
-    for (const uId of uniqueUserIds) {
-      let foundUser = null;
-      try {
-        foundUser = await prisma.user.findUnique({
-          where: { id: uId },
-          include: { role: true },
-        });
-      } catch (e) {}
+for (const uId of uniqueUserIds) {
+  let foundUser = null;
+  try {
+    foundUser = await prisma.user.findUnique({
+      where: { id: uId },
+      include: { role: true },
+    });
+  } catch (e) {}
 
-      if (foundUser) {
-        if (
-          companyId &&
-          foundUser.companyId &&
-          foundUser.companyId !== companyId
-        ) {
-          throw new Error(
-            `Access denied. User '${foundUser.firstName}' belongs to a different company.`,
-          );
-        }
-        const fullName =
-          `${foundUser.firstName} ${foundUser.lastName || ""}`.trim();
-        const roleName = (foundUser.role?.name || "").toLowerCase();
+  if (!foundUser) {
+    throw new Error(`User with ID '${uId}' not found. Cannot assign a non-existent user.`);
+  }
 
-        if (roleName.includes("operator")) {
-          operatorId = foundUser.id;
-          operatorName = fullName;
-        } else if (
-          roleName.includes("artisan") ||
-          roleName.includes("engineer") ||
-          roleName.includes("technician")
-        ) {
-          artisanId = foundUser.id;
-          artisanName = fullName;
-        } else {
-          throw new Error(
-            `User '${fullName}' has role '${foundUser.role?.name || "User"}' and cannot be assigned to a machine. Only Operators and Artisans can be assigned.`,
-          );
-        }
-      }
-    }
+  if (
+    companyId &&
+    foundUser.companyId &&
+    foundUser.companyId !== companyId
+  ) {
+    throw new Error(
+      `Access denied. User '${foundUser.firstName}' belongs to a different company.`,
+    );
+  }
+  const fullName =
+    `${foundUser.firstName} ${foundUser.lastName || ""}`.trim();
+  const roleName = (foundUser.role?.name || "").toLowerCase();
 
-    if (data.operatorId && data.operatorId !== operatorId) {
-      operatorId = data.operatorId;
-      operatorName = data.operatorName || operatorName || "Operator";
-    }
-    if (data.artisanId && data.artisanId !== artisanId) {
-      artisanId = data.artisanId;
-      artisanName = data.artisanName || artisanName || "Artisan";
-    }
+  if (roleName.includes("operator")) {
+    operatorId = foundUser.id;
+    operatorName = fullName;
+  } else if (
+    roleName.includes("artisan") ||
+    roleName.includes("engineer") ||
+    roleName.includes("technician")
+  ) {
+    artisanId = foundUser.id;
+    artisanName = fullName;
+  } else {
+    throw new Error(
+      `User '${fullName}' has role '${foundUser.role?.name || "User"}' and cannot be assigned to a machine. Only Operators and Artisans can be assigned.`,
+    );
+  }
+}
 
     const dbData = {
       assignedOperatorId: operatorId,
@@ -373,7 +368,11 @@ class MachineService {
   }
 
   async unassignMachine(id, user, options = {}) {
-    let targetMachine = await machineRepository.findById(id);
+    const companyId = user?.companyId;
+    const isSuperAdmin = ['super_admin', 'sub_super_admin'].includes(
+      String(user?.role || '').toLowerCase()
+    );
+    let targetMachine = await machineRepository.findById(id, isSuperAdmin ? null : companyId);
     if (!targetMachine) {
       try {
         targetMachine = await prisma.machine.findFirst({
@@ -385,11 +384,8 @@ class MachineService {
     }
 
     if (!targetMachine) {
-      return {
-        machineId: id,
-        message: "Machine unassigned successfully",
-      };
-    }
+    throw new Error("Machine not found.");
+}
 
     const role = String(options.role || "").toLowerCase();
     let dbData = {};
@@ -458,9 +454,13 @@ class MachineService {
     };
   }
 
-  async getMachineAssignment(id) {
-    const machine = await machineRepository.findById(id);
+  async getMachineAssignment(id, user = null) {
+    const isSuperAdmin = ['super_admin', 'sub_super_admin'].includes(
+      String(user?.role || '').toLowerCase()
+    );
+    const machine = await machineRepository.findById(id, isSuperAdmin ? null : user?.companyId);
     if (!machine) throw new Error("Machine not found");
+
     return {
       machineId: machine.id,
       machineName: machine.name,

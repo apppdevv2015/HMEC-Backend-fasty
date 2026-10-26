@@ -1,8 +1,7 @@
 const componentController = require('../controllers/component.controller');
 const intelligenceController = require('../../intelligence/controllers/intelligence.controller');
 const { componentValidation, inspectValidation } = require('../../../validations/component.validation');
-const { authMiddleware, isAdmin } = require('../../../middlewares/auth.middleware');
-
+const { authMiddleware, isAdmin, requireRoles } = require('../../../middlewares/auth.middleware');
 async function componentRoutes(fastify, options) {
     // Get all components for a machine or company
     fastify.get('/', { preHandler: authMiddleware }, componentController.getComponents);
@@ -17,24 +16,23 @@ async function componentRoutes(fastify, options) {
 
     // Register a new component - Authorized Users (Admins, Supervisors, Artisans, Operators)
     fastify.post('/', { 
-        preHandler: [authMiddleware, componentValidation] 
+        preHandler: [authMiddleware, isAdmin, componentValidation] 
     }, componentController.addComponent);
 
     // Update a component - Authorized Users
     fastify.put('/:id', { 
-        preHandler: [authMiddleware, componentValidation] 
+        preHandler: [authMiddleware, isAdmin, componentValidation] 
     }, componentController.updateComponent);
 
     // Update component operational metrics (Engineers/Inspectors/Operators) - Tenant Restricted
-    fastify.put('/:id/inspect', { 
-        preHandler: [authMiddleware, inspectValidation] 
+        fastify.put('/:id/inspect', { 
+        preHandler: [authMiddleware, requireRoles(['admin','sub_admin', 'supervisor', 'engineers','super_admin', 'operator', 'artisan']), inspectValidation] 
     }, componentController.inspectComponent);
 
     // Delete a component - Admin Only
-    fastify.delete('/:id', { 
-        preHandler: [authMiddleware, isAdmin] 
+       fastify.delete('/:id', { 
+        preHandler: [authMiddleware, requireRoles(['admin'])] 
     }, componentController.deleteComponent);
-
 
     fastify.get(
         '/engineer-dashboard',
@@ -47,7 +45,10 @@ async function componentRoutes(fastify, options) {
 
     // Get dashboard stats (for analytics cards)
     fastify.get('/dashboard-stats', { preHandler: authMiddleware }, intelligenceController.getDashboardStats);
-}
 
+      fastify.get('/financial-summary', {
+        preHandler: [authMiddleware, requireRoles(['admin', 'supervisor', 'manager', 'engineer'])]
+    }, componentController.getFinancialSummary);
+}
 module.exports = componentRoutes;
 

@@ -1,10 +1,61 @@
 const Decimal = require('decimal.js');
 
 class IntelligenceService {
-    /**
-     * Safe, 100% accurate, high-precision calculation engine
-     * Bypasses division-by-zero, negative numbers, and null values safely.
-     */
+        
+    calculateFinancials(comp, remainingHours, riskStatus, replacementCost) {
+        const DAY = 24 * 60 * 60 * 1000;
+        const now = new Date();
+        const dailyHours = Number(comp.dailyUsageHours) > 0 ? Number(comp.dailyUsageHours) : 0;
+        const leadTimeWeeks =
+            comp.leadTimeWeeks !== null && comp.leadTimeWeeks !== undefined
+                ? Number(comp.leadTimeWeeks)
+                : null;
+
+        let daysRemaining = null;
+        let replacementDate = null;
+        let orderByDate = null;
+        let daysToOrder = null;
+        let budgetMonth = null;
+
+        if (dailyHours > 0) {
+            daysRemaining = Math.ceil(remainingHours / dailyHours);
+            replacementDate = new Date(now.getTime() + daysRemaining * DAY);
+            if (leadTimeWeeks !== null) {
+                orderByDate = new Date(replacementDate.getTime() - leadTimeWeeks * 7 * DAY);
+                daysToOrder = Math.ceil((orderByDate.getTime() - now.getTime()) / DAY);
+            }
+            const target = orderByDate || replacementDate;
+            budgetMonth = (target > now ? target : now).toISOString().slice(0, 7);
+        }
+
+        const planningDays = daysToOrder !== null ? daysToOrder : daysRemaining;
+        let financialStatus;
+        if (remainingHours <= 0 || riskStatus === 'Critical') financialStatus = 'Replace Now';
+        else if (daysToOrder !== null && daysToOrder <= 0) financialStatus = 'Order Now';
+        else if (riskStatus === 'Warning' || (planningDays !== null && planningDays <= 90)) financialStatus = 'Plan Budget';
+        else if (dailyHours === 0) financialStatus = 'Usage Not Set';
+        else financialStatus = 'OK';
+
+        if (financialStatus === 'Replace Now' || financialStatus === 'Order Now') {
+            budgetMonth = now.toISOString().slice(0, 7);
+        }
+
+        const needsBudget = ['Replace Now', 'Order Now', 'Plan Budget'].includes(financialStatus);
+
+        return {
+            currency: comp.currency || 'ZAR',
+            dailyUsageHours: dailyHours || null,
+            daysRemaining,
+            replacementDate: replacementDate ? replacementDate.toISOString() : null,
+            orderByDate: orderByDate ? orderByDate.toISOString() : null,
+            daysToOrder,
+            budgetMonth,
+            financialStatus,
+            budgetRequired: needsBudget ? replacementCost.toFixed(2) : '0.00'
+        };
+    }
+
+
     calculateMetrics(comp) {
         // Safe conversions to avoid NaN/null parsing issues
         const plannedLife = Number(comp.expectedLifeHours ?? comp.plannedLife ?? 0) <= 0 ? 1 : Number(comp.expectedLifeHours ?? comp.plannedLife);
@@ -24,6 +75,7 @@ class IntelligenceService {
         let lifeUsedPercent = hoursDecimal.div(plannedDecimal).times(100).round().toNumber();
         if (lifeUsedPercent > 100) lifeUsedPercent = 100;
         if (lifeUsedPercent < 0) lifeUsedPercent = 0;
+                const healthPercent = 100 - lifeUsedPercent;
 
         // 3. Calculate Remaining Hours
         let remainingHours = plannedLife - hoursRun;
@@ -54,14 +106,16 @@ class IntelligenceService {
             estimatedSavings = replacementCost.times(1.5);
         }
 
-        return { 
+         return { 
             hoursRun, 
             lifeUsedPercent, 
             remainingHours, 
+            healthPercent,
             riskStatus, 
             riskColor,
             riskDriver,
-            estimatedSavings: estimatedSavings.toFixed(2)
+                        estimatedSavings: estimatedSavings.toFixed(2),
+            ...this.calculateFinancials(comp, remainingHours, riskStatus, replacementCost)
         };
     }
 

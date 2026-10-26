@@ -164,6 +164,11 @@ const setupProxy = async (fastify) => {
     prefix: `${VERSION}/job-cards`,
     rewritePrefix: "/job-cards",
 },
+{
+    service: "intelligence",
+    prefix: "/uploads/job_cards",
+    rewritePrefix: "/uploads/job_cards",
+},
 
 {
     service: "intelligence",

@@ -1,6 +1,4 @@
 const { z } = require('zod');
-
-// Query validation schema for Intelligence module
 const querySchema = z.object({
     companyId: z.string({
         required_error: "companyId query parameter is required"
@@ -29,7 +27,6 @@ const intelligenceValidation = async (request, reply) => {
         return;
     }
     
-    // Replace request.query with sanitized/parsed values
     request.query = result.data;
 };
 
