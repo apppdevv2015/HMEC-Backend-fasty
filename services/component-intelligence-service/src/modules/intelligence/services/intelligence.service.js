@@ -75,7 +75,7 @@ class IntelligenceService {
         let lifeUsedPercent = hoursDecimal.div(plannedDecimal).times(100).round().toNumber();
         if (lifeUsedPercent > 100) lifeUsedPercent = 100;
         if (lifeUsedPercent < 0) lifeUsedPercent = 0;
-                const healthPercent = 100 - lifeUsedPercent;
+                
 
         // 3. Calculate Remaining Hours
         let remainingHours = plannedLife - hoursRun;
@@ -110,7 +110,6 @@ class IntelligenceService {
             hoursRun, 
             lifeUsedPercent, 
             remainingHours, 
-            healthPercent,
             riskStatus, 
             riskColor,
             riskDriver,

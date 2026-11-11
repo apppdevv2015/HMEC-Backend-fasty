@@ -6,9 +6,9 @@ const prisma = require("../../../database/prismaClient");
 
 
 class ComponentService {
-        async addComponent(data) {
+    async addComponent(data) {
         if (data.plannedLife <= 0) data.plannedLife = 1;
-                const machine = await prisma.machine.findFirst({
+        const machine = await prisma.machine.findFirst({
             where: { id: data.machineId, companyId: data.companyId },
             select: { id: true }
         });
@@ -28,13 +28,13 @@ class ComponentService {
         return component;
     }
 
-  
+
     async getComponentRegister(companyId, machineId) {
         const components = await componentRepository.findAll(companyId, machineId);
         return intelligenceService.processRegister(components);
     }
 
-       async updateComponent(id, data, companyId) {
+    async updateComponent(id, data, companyId) {
         const component = await componentRepository.update(id, data, companyId);
 
         await notifyRoles(prisma, redisModule, {
@@ -50,7 +50,7 @@ class ComponentService {
         return component;
     }
 
-   
+
 
 
     async getFinancialSummary(companyId) {
@@ -77,7 +77,6 @@ class ComponentService {
             name: c.name,
             machineName: c.machine?.name || null,
             supplier: c.supplier || null,
-            healthPercent: c.intelligence.healthPercent,
             remainingHours: c.intelligence.remainingHours,
             replacementCost: money(c),
             leadTimeWeeks: c.leadTimeWeeks,
@@ -114,10 +113,10 @@ class ComponentService {
                 .map(row)
         };
     }
-    
+
     async getDashboardStats(companyId) {
         const components = await this.getComponentRegister(companyId);
-        
+
         return {
             totalComponents: components.length,
             critical: components.filter(c => c.intelligence.riskStatus === 'Critical').length,
@@ -134,18 +133,18 @@ class ComponentService {
             throw new Error('Component not found');
         }
 
-     
-       if (role !== 'super_admin' && role !== 'sub_super_admin' && component.companyId !== companyId) {
+
+        if (role !== 'super_admin' && role !== 'sub_super_admin' && component.companyId !== companyId) {
             throw new Error('Access denied: You are not authorized to inspect this component.');
         }
 
-                
+
         const updateData = {
             currentHours: data.currentHours,
             condition: data.condition
         };
 
-               const isSuper = role === 'super_admin' || role === 'sub_super_admin';
+        const isSuper = role === 'super_admin' || role === 'sub_super_admin';
         const updated = await componentRepository.update(id, updateData, isSuper ? null : companyId);
         if (updated.assignedSupervisorId) {
             await notifyUser(prisma, redisModule, {
@@ -172,7 +171,7 @@ class ComponentService {
         return updated;
     }
 
-     async deleteComponent(id, companyId) {
+    async deleteComponent(id, companyId) {
         const existing = await componentRepository.findById(id);
         const deleted = await componentRepository.delete(id, companyId);
 
@@ -194,23 +193,23 @@ class ComponentService {
 
     async getComponents(query, companyId) {
         if (query.machineId) {
-                        const components = await componentRepository.findByMachineId(query.machineId, companyId);
+            const components = await componentRepository.findByMachineId(query.machineId, companyId);
             return intelligenceService.processRegister(components);
         }
         const components = await componentRepository.findAll(companyId);
         return intelligenceService.processRegister(components);
     }
 
-async getEngineerDashboardComponents(companyId) {
-    if (!companyId) {
-        throw new Error('Company ID is required');
+    async getEngineerDashboardComponents(companyId) {
+        if (!companyId) {
+            throw new Error('Company ID is required');
+        }
+
+        const components =
+            await componentRepository.findAllForEngineerDashboard(companyId);
+
+        return intelligenceService.processRegister(components);
     }
-
-    const components =
-        await componentRepository.findAllForEngineerDashboard(companyId);
-
-    return intelligenceService.processRegister(components);
-}
 
 }
 
