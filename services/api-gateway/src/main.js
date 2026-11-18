@@ -2,7 +2,7 @@ require('dotenv').config({
     path: require('path').resolve(__dirname, '../../../.env')
 });
 const buildApp = require('./app');
-const PORT = process.env.API_GATEWAY_PORT;
+const PORT = Number(process.env.PORT || process.env.API_GATEWAY_PORT || 3000);
 const HOST = '0.0.0.0';
 
 const app = buildApp();
