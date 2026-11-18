@@ -1,7 +1,7 @@
 require('dotenv').config();
 const buildApp = require('./app');
 
-const PORT = process.env.COMPONENT_INTELLIGENCE_SERVICE_PORT;
+const PORT = process.env.PORT || process.env.COMPONENT_INTELLIGENCE_SERVICE_PORT || 3001;
 
 const start = async () => {
     const app = buildApp({ logger: true });
